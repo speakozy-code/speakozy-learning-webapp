@@ -56,7 +56,7 @@ export function StudentDashboard() {
           <div className="row" style={{ marginTop: '.8rem' }}>
             <Badge tone="green">{level?.title || 'No level'}</Badge>
             <Badge tone="blue">Plan: {PLANS[user.plan || 'starter']?.label || 'Starter'}</Badge>
-            <span style={{ color: '#b8c4d6', fontSize: '.85rem' }}>Levels available: {Math.min(allowedLevelCount(user), data.levels.length)} of {data.levels.length}</span>
+            <span style={{ color: '#b8c4d6', fontSize: '.85rem' }}>Levels available: {Math.min(user.subscribed === false ? data.levels.length : allowedLevelCount(user), data.levels.length)} of {data.levels.length}</span>
           </div>
         </div>
         <Button onClick={() => go(next ? `/session/${next.id}` : '/roadmap')}>{next ? 'Continue studying' : 'Open roadmap'}</Button>
