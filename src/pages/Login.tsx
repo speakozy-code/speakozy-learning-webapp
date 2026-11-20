@@ -3,51 +3,83 @@ import { useApp } from '../lib/store';
 import { Button, Field, Card } from '../components/UI';
 import { go } from '../App';
 
+const LANDING = 'https://speakozy.com';
+
 export default function Login() {
-  const { login, demo } = useApp();
+  const { login, signup, signInWithGoogle, demo } = useApp();
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
   async function submit(e?: React.FormEvent) {
     e?.preventDefault();
-    setError(''); setBusy(true);
+    setError('');
+    if (mode === 'signup') {
+      if (password.length < 6) { setError('Password must be at least 6 characters'); return; }
+      if (password !== confirm) { setError('Passwords do not match'); return; }
+    }
+    setBusy(true);
     try {
-      await login(email.trim(), password);
+      if (mode === 'signup') await signup(name.trim(), email.trim(), password);
+      else await login(email.trim(), password);
       go('/');
     } catch (err: any) {
-      setError(err?.message?.includes('auth/') ? 'Invalid email or password' : (err?.message || 'Could not sign in, please try again'));
+      setError(err?.message?.includes('auth/') ? 'Invalid email or password' : (err?.message || 'Could not continue, please try again'));
     } finally { setBusy(false); }
   }
+
+  async function google() {
+    setError(''); setBusy(true);
+    try { await signInWithGoogle(); go('/'); }
+    catch (err: any) { setError(err?.message || 'Google sign-in is not available yet'); }
+    finally { setBusy(false); }
+  }
+
   function quick(role: 'admin' | 'student') {
+    setMode('signin');
     if (role === 'admin') { setEmail('admin@speakozy.demo'); setPassword('admin123'); }
     else { setEmail('mariem@speakozy.demo'); setPassword('demo123'); }
     setError('');
   }
 
-  return <div className="auth">
-    <div className="auth-hero">
-      <div className="auth-brand"><span className="brand-dot" /> SPEAKOZY</div>
-      <div>
-        <h1 dir="ltr" className="en">Anyone Can Speak English!</h1>
-        <p>Learn English by speaking, not memorizing. Short sessions, clear content, and a plan that follows you step by step.</p>
-      </div>
-      <div className="row" style={{ gap: '2rem', color: '#95a5bd', fontSize: '.85rem' }}>
-        <span>Organized levels</span><span>Lesson-linked quizzes</span><span>Teacher-supervised grading</span>
-      </div>
+  const hero = <>
+    <div className="auth-brand"><span className="brand-dot" /> SPEAKOZY</div>
+    <div>
+      <h1 dir="ltr" className="en">Anyone Can Speak English!</h1>
+      <p>Learn English by speaking, not memorizing. Short sessions, clear content, and a plan that follows you step by step.</p>
     </div>
+    <div className="row auth-points">
+      <span>Organized levels</span><span>Lesson-linked quizzes</span><span>Teacher-supervised grading</span>
+    </div>
+  </>;
+
+  return <div className="auth">
+    <div className="auth-hero">{hero}</div>
     <div className="auth-panel">
       <div className="auth-card">
-        <h2>Welcome back</h2>
-        <p className="muted">Sign in to continue your learning plan.</p>
-        {demo && <div className="note" style={{ margin: '1rem 0' }}>Demo mode: all data is fictional and stored only on your device, with no connection to the production database.</div>}
+        <div className="auth-mobile-hero">{hero}</div>
+        <div className="auth-tabs">
+          <button className={`auth-tab ${mode === 'signin' ? 'active' : ''}`} onClick={() => { setMode('signin'); setError(''); }}>Sign In</button>
+          <button className={`auth-tab ${mode === 'signup' ? 'active' : ''}`} onClick={() => { setMode('signup'); setError(''); }}>Create account</button>
+        </div>
+        <h2>{mode === 'signin' ? 'Welcome back' : 'Join Speakozy'}</h2>
+        <p className="muted">{mode === 'signin' ? 'Sign in to continue your learning plan.' : 'Create your account and start with the first session of any level.'}</p>
+        {demo && <div className="note" style={{ margin: '1rem 0' }}>Demo mode: accounts are stored on this device. Connect the live service for real accounts and Google sign-in.</div>}
         <form onSubmit={submit}>
+          {mode === 'signup' && <Field label="Name"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required autoComplete="name" /></Field>}
           <Field label="Email"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required autoComplete="username" /></Field>
-          <Field label="Password"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required autoComplete="current-password" /></Field>
+          <Field label="Password"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} /></Field>
+          {mode === 'signup' && <Field label="Confirm password"><input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" required autoComplete="new-password" /></Field>}
           {error && <div className="result-bad" style={{ marginBottom: '.8rem' }}>{error}</div>}
-          <Button type="submit" disabled={busy} style={{ width: '100%' }}>{busy ? 'Signing in...' : 'Sign In'}</Button>
+          <Button type="submit" disabled={busy} style={{ width: '100%' }}>{busy ? 'Please wait...' : (mode === 'signin' ? 'Sign In' : 'Create account')}</Button>
         </form>
+        <div className="auth-divider">or</div>
+        <Button variant="ghost" onClick={google} disabled={busy} style={{ width: '100%' }}>Continue with Google</Button>
+        <a className="auth-landing" href={LANDING} target="_blank" rel="noreferrer">Back to Speakozy home</a>
         {demo && <div className="demo-box">
           <div className="muted" style={{ fontSize: '.82rem' }}>Ready demo accounts (click to fill in the details):</div>
           <div className="demo-row">

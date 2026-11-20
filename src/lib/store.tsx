@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { AppData, User } from '../types';
 import { seedData } from './seed';
-import { uid, today, addScoreOnce } from './domain';
+import { uid, today, addScoreOnce, buildStudentAccount } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
 import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete } from './supabase';
 import { englishify } from './translate';
 
-const KEY = 'speakozy-demo-v10';
+const KEY = 'speakozy-demo-v11';
 const CLOUD = isSupabase ? 'supabase' : isFirebase ? 'firebase' : 'demo';
 const COLLECTIONS = ['users','levels','sessions','questions','attempts','progress','tasks','taskCompletions','notifications','scores','savedWords','dictionary','certificates','logs','grammarNotes'];
 
@@ -30,6 +30,8 @@ function saveDemo(data: AppData) {
 type Ctx = {
   user: User | null; ready: boolean; demo: boolean; data: AppData;
   login: (email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   setUser: (u: User | null) => void;
   put: (collectionName: string, value: any) => Promise<void>;
@@ -87,6 +89,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const me = (fresh.users || []).find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
     if (!me) throw new Error('User profile not found');
     setUser(me as User);
+  }
+
+  async function signup(name: string, email: string, password: string) {
+    if (!demo) throw new Error('Sign-up needs the live account service');
+    const d = readDemo();
+    const mail = email.trim().toLowerCase();
+    if (d.users.some((u) => u.email.toLowerCase() === mail)) throw new Error('An account with this email already exists');
+    const first = d.levels.slice().sort((a, b) => a.order - b.order)[0]?.id || 'l1';
+    const account = buildStudentAccount({ name, email: mail, demoPassword: password, levelId: first, maxLevelId: first, subscribed: false });
+    d.users.push(account);
+    saveDemo(d);
+    localStorage.setItem('speakozy-user', account.id);
+    setData(d);
+    setUser(account);
+  }
+
+  async function signInWithGoogle() {
+    if (!demo) throw new Error('Google sign-in needs the live account service');
+    const d = readDemo();
+    const mail = 'google.student@speakozy.demo';
+    let account = d.users.find((u) => u.email.toLowerCase() === mail);
+    if (!account) {
+      const first = d.levels.slice().sort((a, b) => a.order - b.order)[0]?.id || 'l1';
+      account = buildStudentAccount({ name: 'Google Student', email: mail, demoPassword: 'google-demo', levelId: first, maxLevelId: first, subscribed: false });
+      d.users.push(account);
+      saveDemo(d);
+    }
+    localStorage.setItem('speakozy-user', account.id);
+    setData(d);
+    setUser(account);
   }
 
   async function logout() {
@@ -158,5 +190,5 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }
 
-  return <AppCtx.Provider value={{ user, ready, demo, data, login, logout, setUser, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
+  return <AppCtx.Provider value={{ user, ready, demo, data, login, signup, signInWithGoogle, logout, setUser, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
 }

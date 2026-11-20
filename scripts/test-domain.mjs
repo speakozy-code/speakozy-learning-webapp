@@ -1,6 +1,6 @@
 // اختبارات منطق المجال - تعمل مباشرة على ملف TypeScript بفضل type stripping في Node الحديث
 import assert from 'node:assert/strict';
-import { gradeQuestion, sessionStatus, levelProgress, canOpenLevel, totalScore, leaderboard, addScoreOnce, uid } from '../src/lib/domain.ts';
+import { gradeQuestion, sessionStatus, levelProgress, canOpenLevel, sessionOpen, totalScore, leaderboard, addScoreOnce, uid } from '../src/lib/domain.ts';
 
 let pass = 0;
 const t = (name, fn) => { fn(); pass++; console.log('ok -', name); };
@@ -35,6 +35,16 @@ t('فتح المستوى محدود بحد المسؤول', () => {
   const u = { id:'u', name:'', email:'', role:'student', active:true, levelId:'l1', maxLevelId:'l1', createdAt:'' };
   assert.equal(canOpenLevel(u, {id:'l1',order:1}, [{id:'l1',order:1},{id:'l2',order:2}]), true);
   assert.equal(canOpenLevel(u, {id:'l2',order:2}, [{id:'l1',order:1},{id:'l2',order:2}]), false);
+});
+t('unsubscribed students open only the first session of every level', () => {
+  const u = { id: 'u', name: '', email: '', role: 'student', active: true, subscribed: false, levelId: 'l1', maxLevelId: 'l1', createdAt: '' };
+  const levels = [{ id: 'l1', order: 1 }, { id: 'l2', order: 2 }];
+  const first = { id: 's1', levelId: 'l1', order: 1 };
+  const second = { id: 's2', levelId: 'l1', order: 2 };
+  assert.equal(canOpenLevel(u, levels[1], levels), true);
+  assert.equal(sessionOpen(u, first, levels), true);
+  assert.equal(sessionOpen(u, second, levels), false);
+  assert.equal(sessionOpen({ ...u, subscribed: true }, second, levels), true);
 });
 t('النقاط لا تُحتسب مرتين لنفس النشاط', () => {
   const d = { scores:[], settings:{} };

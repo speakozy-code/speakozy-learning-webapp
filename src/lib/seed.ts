@@ -34,10 +34,10 @@ const WEEKLY_TASKS = LEVELS.flatMap((level) => {
 export function seedData(): AppData {
   return {
     users: [
-      { id: 'admin-1', name: 'Academy Manager', email: 'admin@speakozy.demo', role: 'admin', active: true, levelId: 'l1', maxLevelId: 'l7', createdAt: '2026-01-01T00:00:00.000Z', demoPassword: 'admin123' },
-      { id: 'stu-1', name: 'Mariem Ahmed', email: 'mariem@speakozy.demo', plan: 'pro', role: 'student', active: true, levelId: 'l1', maxLevelId: 'l1', createdAt: '2026-02-01T00:00:00.000Z', demoPassword: 'demo123' },
-      { id: 'stu-2', name: 'Yousef Mostafa', email: 'youssef@speakozy.demo', plan: 'growth', role: 'student', active: true, levelId: 'l1', maxLevelId: 'l1', createdAt: '2026-02-04T00:00:00.000Z', demoPassword: 'demo123' },
-      { id: 'stu-3', name: 'Nour Ali', email: 'noor@speakozy.demo', plan: 'starter', role: 'student', active: false, levelId: 'l2', maxLevelId: 'l2', createdAt: '2026-02-08T00:00:00.000Z', demoPassword: 'demo123' },
+      { id: 'admin-1', name: 'Academy Manager', email: 'admin@speakozy.demo', role: 'admin', active: true, subscribed: true, levelId: 'l1', maxLevelId: 'l11', createdAt: '2026-01-01T00:00:00.000Z', demoPassword: 'admin123' },
+      { id: 'stu-1', name: 'Mariem Ahmed', email: 'mariem@speakozy.demo', plan: 'pro', role: 'student', active: true, subscribed: true, levelId: 'l1', maxLevelId: 'l1', createdAt: '2026-02-01T00:00:00.000Z', demoPassword: 'demo123' },
+      { id: 'stu-2', name: 'Yousef Mostafa', email: 'youssef@speakozy.demo', plan: 'growth', role: 'student', active: true, subscribed: true, levelId: 'l1', maxLevelId: 'l1', createdAt: '2026-02-04T00:00:00.000Z', demoPassword: 'demo123' },
+      { id: 'stu-3', name: 'Nour Ali', email: 'noor@speakozy.demo', plan: 'starter', role: 'student', active: false, subscribed: true, levelId: 'l2', maxLevelId: 'l2', createdAt: '2026-02-08T00:00:00.000Z', demoPassword: 'demo123' },
     ],
     levels: LEVELS,
     sessions: SESSIONS,

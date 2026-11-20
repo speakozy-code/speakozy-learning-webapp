@@ -45,6 +45,9 @@ export function allowedLevelCount(user: User) {
 
 // The subscription sets the ceiling; the admin-controlled maxLevelId sets the current cap.
 export function canOpenLevel(user: User, level: { id: string; order: number }, levels: { id: string; order: number }[]) {
+  if (user.role === 'admin') return true;
+  // غير المشترك يشوف أول سيشن من كل مستوى، من غير فتح باقي المستوى.
+  if (user.subscribed === false) return true;
   const planMax = allowedLevelCount(user);
   const adminLevel = levels.find((l) => l.id === user.maxLevelId);
   const adminMax = adminLevel ? adminLevel.order : planMax;
@@ -53,9 +56,12 @@ export function canOpenLevel(user: User, level: { id: string; order: number }, l
 }
 
 // Students see every level and session, but only the admin-approved level is interactive.
-export function sessionOpen(user: User, session: { levelId: string }, levels: { id: string; order: number }[]) {
+export function sessionOpen(user: User, session: { levelId: string; order: number }, levels: { id: string; order: number }[]) {
   const level = levels.find((l) => l.id === session.levelId);
-  return !!level && canOpenLevel(user, level, levels);
+  if (!level || !canOpenLevel(user, level, levels)) return false;
+  if (user.role === 'admin') return true;
+  if (user.subscribed === false) return session.order === 1;
+  return true;
 }
 
 export const wordProgressId = (word: string) => `word:${word.toLowerCase()}`;
@@ -112,7 +118,7 @@ export function needsReview(attempts: Attempt[]) {
 export function buildStudentAccount(input: {
   id?: string; name?: string; email?: string; demoPassword?: string;
   role?: User['role']; active?: boolean; plan?: User['plan'];
-  levelId: string; maxLevelId: string; createdAt?: string; avatar?: string;
+  levelId: string; maxLevelId: string; createdAt?: string; avatar?: string; subscribed?: boolean;
 }): User {
   const name = String(input.name || '').trim();
   const email = String(input.email || '').trim().toLowerCase();
@@ -128,6 +134,7 @@ export function buildStudentAccount(input: {
     role: input.role === 'admin' ? 'admin' : 'student',
     active: input.active !== false,
     plan: input.plan || 'starter',
+    subscribed: input.subscribed ?? false,
     levelId: input.levelId,
     maxLevelId: input.maxLevelId || input.levelId,
     createdAt: input.createdAt || today(),

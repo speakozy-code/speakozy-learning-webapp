@@ -83,6 +83,10 @@ export function Layout({ current, children }: { current: string; children: React
       </div>
       {!admin && <strong className="sticky-points">{points} pts</strong>}
       {bellButton}
+      {!admin && user.subscribed === false && <div className="sub-notice" dir="rtl">
+        <span>أنت غير مشترك بالكورس، تواصل معنا للتفاصيل والاشتراك</span>
+        <a className="btn btn-primary btn-sm" href="https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83%20%D9%81%D9%8A%20%D8%A7%D9%84%D9%83%D9%88%D8%B1%D8%B3" target="_blank" rel="noreferrer">واتساب</a>
+      </div>}
     </div>{children}</main></div>
     {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 75 }} />}
     {mobile}

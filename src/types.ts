@@ -3,7 +3,7 @@ export type Role = 'student' | 'admin';
 export interface User {
   id: string; name: string; email: string; role: Role; active: boolean;
   levelId: string; maxLevelId: string; plan?: 'starter'|'growth'|'pro'; avatar?: string; createdAt: string;
-  demoPassword?: string;
+  demoPassword?: string; subscribed?: boolean;
 }
 
 export interface Section {

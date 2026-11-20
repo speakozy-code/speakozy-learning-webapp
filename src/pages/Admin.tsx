@@ -47,8 +47,8 @@ export function StudentsPage() {
   function openEdit(u?: any) {
     setError('');
     setCreated(null);
-    setEditing(u || { id: uid(), role: 'student', active: true, createdAt: today(), demoPassword: '', levelId: data.levels[0]?.id, maxLevelId: data.levels[0]?.id, plan: 'starter' });
-    setForm(u ? { ...u } : { name: '', email: '', role: 'student', active: true, levelId: data.levels[0]?.id, maxLevelId: data.levels[0]?.id, plan: 'starter', createdAt: today(), demoPassword: '' });
+    setEditing(u || { id: uid(), role: 'student', active: true, subscribed: false, createdAt: today(), demoPassword: '', levelId: data.levels[0]?.id, maxLevelId: data.levels[0]?.id, plan: 'starter' });
+    setForm(u ? { ...u } : { name: '', email: '', role: 'student', active: true, subscribed: false, levelId: data.levels[0]?.id, maxLevelId: data.levels[0]?.id, plan: 'starter', createdAt: today(), demoPassword: '' });
   }
   async function save() {
     try {
@@ -97,6 +97,7 @@ export function StudentsPage() {
       <div className="grid g2">
         <Field label="Role"><select value={form.role || 'student'} onChange={(e) => setForm({ ...form, role: e.target.value })}><option value="student">Student</option><option value="admin">Admin</option></select></Field>
         <Field label="Access"><select value={form.active === false ? '0' : '1'} onChange={(e) => setForm({ ...form, active: e.target.value === '1' })}><option value="1">Active — can sign in</option><option value="0">Disabled — blocked</option></select></Field>
+        <Field label="Course subscription"><select value={form.subscribed === false ? '0' : '1'} onChange={(e) => setForm({ ...form, subscribed: e.target.value === '1' })}><option value="0">Not subscribed — first session of each level only</option><option value="1">Subscribed — full course</option></select></Field>
         <Field label="Current level"><select value={form.levelId || ''} onChange={(e) => setForm({ ...form, levelId: e.target.value })}>{data.levels.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}</select></Field>
         <Field label="Maximum allowed level"><select value={form.maxLevelId || ''} onChange={(e) => setForm({ ...form, maxLevelId: e.target.value })}>{data.levels.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}</select></Field>
         <Field label="Subscription plan (sets level ceiling)"><select value={form.plan || 'starter'} onChange={(e) => setForm({ ...form, plan: e.target.value })}><option value="starter">Starter (3 levels)</option><option value="growth">Growth (7 levels)</option><option value="pro">Pro (all levels)</option></select></Field>
