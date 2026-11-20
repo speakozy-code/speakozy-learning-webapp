@@ -1,17 +1,40 @@
 import { createClient } from '@supabase/supabase-js';
 import { seedData } from './seed';
 
-const url = (import.meta.env.VITE_SUPABASE_URL as string) || '';
-const anon = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '';
+const url = (import.meta.env.VITE_SUPABASE_URL as string) || 'https://jhcaqlhzfavpjqukaamu.supabase.co';
+const anon = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || 'sb_publishable_eOd1KcmZDtyduIFaYB0M7A_Y2bhSohK';
 
 export const isSupabase = Boolean(url && anon);
 export const sb = isSupabase ? createClient(url, anon) : null;
 const DOC_ID = 'academy/main';
+const STUDENT_KEYS = ['progress', 'attempts', 'scores', 'savedWords', 'taskCompletions', 'dictionary'];
 
 export async function sbSignIn(email: string, password: string) {
   if (!sb) throw new Error('supabase-not-configured');
   const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error) throw error;
+}
+
+export async function sbSignUp(name: string, email: string, password: string) {
+  if (!sb) throw new Error('supabase-not-configured');
+  const { data, error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
+  if (error) throw error;
+  const uid = data.user?.id;
+  if (!uid) throw new Error('Confirm your email, then sign in');
+  const { error: profileError } = await sb.rpc('signup_student', { p_name: name, p_email: email, p_uid: uid });
+  if (profileError) throw profileError;
+}
+
+export async function sbSignInWithGoogle() {
+  if (!sb) throw new Error('supabase-not-configured');
+  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+  if (error) throw error;
+}
+
+export async function sbCurrentUserId(): Promise<string | null> {
+  if (!sb) return null;
+  const { data } = await sb.auth.getUser();
+  return data.user?.id || null;
 }
 
 export async function sbSignOut() {
@@ -46,6 +69,16 @@ export async function sbLoadAll(keys: string[]): Promise<Record<string, any[]>> 
 }
 
 export async function sbWrite(collectionName: string, id: string, record: any) {
+  if (STUDENT_KEYS.includes(collectionName)) {
+    const doc = await sbLoadDoc();
+    const list: any[] = Array.isArray(doc[collectionName]) ? doc[collectionName] : [];
+    const idx = list.findIndex((x) => x && x.id === id);
+    if (idx >= 0) list[idx] = record; else list.push(record);
+    doc[collectionName] = list;
+    const { error } = await sb.rpc('save_student_state', { p_doc_id: DOC_ID, p_data: doc });
+    if (error) throw error;
+    return;
+  }
   const doc = await sbLoadDoc();
   const list: any[] = Array.isArray(doc[collectionName]) ? doc[collectionName] : [];
   const idx = list.findIndex((x) => x && x.id === id);
@@ -57,5 +90,10 @@ export async function sbWrite(collectionName: string, id: string, record: any) {
 export async function sbDelete(collectionName: string, id: string) {
   const doc = await sbLoadDoc();
   doc[collectionName] = (doc[collectionName] || []).filter((x: any) => x && x.id !== id);
+  if (STUDENT_KEYS.includes(collectionName)) {
+    const { error } = await sb.rpc('save_student_state', { p_doc_id: DOC_ID, p_data: doc });
+    if (error) throw error;
+    return;
+  }
   await sbSaveDoc(doc);
 }

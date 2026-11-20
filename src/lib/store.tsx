@@ -3,7 +3,7 @@ import type { AppData, User } from '../types';
 import { seedData } from './seed';
 import { uid, today, addScoreOnce, buildStudentAccount } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
-import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete } from './supabase';
+import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbSignInWithGoogle, sbCurrentUserId } from './supabase';
 import { englishify } from './translate';
 
 const KEY = 'speakozy-demo-v11';
@@ -68,6 +68,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         await refresh();
+        if (CLOUD === 'supabase') {
+          const authId = await sbCurrentUserId();
+          const loaded = await sbLoadAll(['users']);
+          const found = (loaded.users || []).find((u: any) => u.id === `auth-${authId}` || u.authId === authId);
+          if (found) setUser(found as User);
+        }
       }
       setReady(true);
     })();
@@ -86,13 +92,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (CLOUD === 'supabase') await sbSignIn(email, password); else await fbSignIn(email, password);
     await refresh();
     const fresh = CLOUD === 'supabase' ? await sbLoadAll(['users']) : await fbLoadAll(['users']);
-    const me = (fresh.users || []).find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+    const authId = CLOUD === 'supabase' ? await sbCurrentUserId() : null;
+    const me = (fresh.users || []).find((u: any) => u.email?.toLowerCase() === email.toLowerCase() || u.id === `auth-${authId}`);
     if (!me) throw new Error('User profile not found');
     setUser(me as User);
   }
 
   async function signup(name: string, email: string, password: string) {
-    if (!demo) throw new Error('Sign-up needs the live account service');
+    if (!demo) {
+      await sbSignUp(name.trim(), email.trim(), password);
+      await refresh();
+      const loaded = await sbLoadAll(['users']);
+      const authId = await sbCurrentUserId();
+      const account = (loaded.users || []).find((u: any) => u.id === `auth-${authId}` || u.authId === authId);
+      if (account) setUser(account as User);
+      return;
+    }
     const d = readDemo();
     const mail = email.trim().toLowerCase();
     if (d.users.some((u) => u.email.toLowerCase() === mail)) throw new Error('An account with this email already exists');
@@ -106,7 +121,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signInWithGoogle() {
-    if (!demo) throw new Error('Google sign-in needs the live account service');
+    if (!demo) { await sbSignInWithGoogle(); return; }
     const d = readDemo();
     const mail = 'google.student@speakozy.demo';
     let account = d.users.find((u) => u.email.toLowerCase() === mail);
