@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { DRIVE_CURRICULUM as C } from '../src/lib/driveCurriculum.ts';
 import { overviewOutline, sourceTranscript, letsTalk } from '../src/lib/lessonBrief.ts';
 import { youglishWidgetQuery } from '../src/lib/youglish.ts';
-import { fromApi, fromWiktionary } from '../src/lib/dictionaryProvider.ts';
+import { fromApi, fromWiktionary, parseWiktionaryExtras } from '../src/lib/dictionaryProvider.ts';
 import { wordQuizItems, sessionQuizItems } from '../src/lib/sessionQuizzes.ts';
 import { buildStudentAccount } from '../src/lib/domain.ts';
 
@@ -54,6 +54,13 @@ t('Wiktionary fallback maps definitions and strips markup', () => {
   assert.ok(e.definitions[0].includes('phenomenon'));
   assert.ok(!e.definitions[0].includes('<a'));
   assert.equal(e.source, 'global');
+});
+
+t('Wiktionary page extras yield transcript and synonyms', () => {
+  const html = '<span class="IPA nowrap">/ˈhæpi/</span> Synonyms:</span> <a title="cheerful">cheerful</a>, <a title="glad">glad</a>';
+  const x = parseWiktionaryExtras(html);
+  assert.equal(x.phonetic, '/ˈhæpi/');
+  assert.deepEqual(x.synonyms, ['cheerful', 'glad']);
 });
 
 t('session quiz is nine English questions on words and grammar', () => {
