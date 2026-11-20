@@ -1,64 +1,66 @@
 // Lesson presentation: brief overview, in-page YouGlish, generated quizzes, student accounts.
 import assert from 'node:assert/strict';
 import { DRIVE_CURRICULUM as C } from '../src/lib/driveCurriculum.ts';
-import { lessonBrief, sourceTranscript } from '../src/lib/lessonBrief.ts';
-import { youglishEmbedUrl } from '../src/lib/youglish.ts';
-import { wordQuizItems, grammarQuizItems } from '../src/lib/sessionQuizzes.ts';
+import { overviewOutline, sourceTranscript, letsTalk } from '../src/lib/lessonBrief.ts';
+import { youglishWidgetQuery } from '../src/lib/youglish.ts';
+import { wordQuizItems, sessionQuizItems } from '../src/lib/sessionQuizzes.ts';
 import { buildStudentAccount } from '../src/lib/domain.ts';
 
 let pass = 0;
 const t = (name, fn) => { fn(); pass++; console.log('ok -', name); };
 
-t('brief never dumps slide transcript as the overview', () => {
+t('overview is titles plus a short summary, never a slide dump', () => {
   for (const s of C.sessions) {
-    const blocks = lessonBrief(s);
-    assert.ok(blocks.length >= 1, `${s.id} has brief blocks`);
-    const blob = blocks.flatMap((b) => b.items).join('\n');
-    assert.ok(!/Slide\s+\d+:/i.test(blob), `${s.id} leaked slide markers`);
-    assert.ok(blob.length < 2500, `${s.id} brief too long (${blob.length})`);
-    for (const b of blocks) {
-      assert.ok(b.title && b.items.length, `${s.id} empty block ${b.kind}`);
-      assert.ok(b.items.every((x) => x.length < 280), `${s.id} item too long`);
-    }
+    const o = overviewOutline(s);
+    assert.ok(o.title);
+    assert.deepEqual(o.headings, ['Objectives', 'Words', 'Grammar', 'Practice']);
+    assert.ok(o.summary.length > 20 && o.summary.length < 420, `${s.id} summary ${o.summary.length}`);
+    assert.ok(!/Slide\s+\d+:/i.test(o.summary), `${s.id} leaked slides`);
   }
-});
-
-t('brief prefers warmup, objectives, phrases or summary over raw material', () => {
-  const kinds = new Set(lessonBrief(C.sessions[0]).map((b) => b.kind));
-  assert.ok([...kinds].some((k) => ['warmup', 'objectives', 'phrases', 'summary'].includes(k)));
   const src = sourceTranscript(C.sessions[0]);
-  assert.ok(src.length > 200);
   assert.ok(/Slide\s+1:/i.test(src));
 });
 
-t('YouGlish URL is an in-page embed, not an external-only link', () => {
-  assert.equal(youglishEmbedUrl('hello', 'uk'), 'https://youglish.com/pronounce/hello/english/uk');
-  assert.ok(!youglishEmbedUrl('hit the road', 'us').includes(' '));
-  assert.match(youglishEmbedUrl('AI', 'aus'), /\/pronounce\/AI\/english\/aus$/);
+t('YouGlish widget query stays on the same page player', () => {
+  const q = youglishWidgetQuery('hello', 'uk');
+  assert.equal(q.word, 'hello');
+  assert.equal(q.lang, 'english');
+  assert.equal(q.accent, 'uk');
 });
 
-t('word quizzes use session words and keep the answer in the options', () => {
+t('word quizzes are English fill-in MCQ, never Arabic meanings', () => {
   const s = C.sessions[0];
   const words = C.dictionary.filter((w) => (w.sessionIds || []).includes(s.id));
   const qs = wordQuizItems(words, s.id);
   assert.ok(qs.length >= 3, `got ${qs.length}`);
   for (const q of qs) {
     assert.equal(q.scope, 'word');
-    assert.ok(q.prompt);
-    assert.ok(q.correct);
-    if (q.options.length) assert.ok(q.options.includes(q.correct), q.prompt);
+    assert.equal(q.type, 'mcq');
+    assert.ok(q.prompt.includes('____'));
+    assert.ok(q.options.length >= 2);
+    assert.ok(q.options.includes(q.correct));
+    assert.ok(!/[\u0600-\u06FF]/.test(q.prompt + q.options.join(' ') + q.correct), q.prompt);
   }
 });
 
-t('grammar quizzes are generated from the lesson slides', () => {
-  const qs = grammarQuizItems([
-    { title: 'Past Simple', rule: 'We use the past simple for finished actions.', examples: ['I visited my grandparents last weekend.', 'She checked her email twice yesterday.'] },
-  ], 'l1-s1', []);
-  assert.ok(qs.length >= 1, 'grammar quiz');
+t('session quiz is nine English questions on words and grammar', () => {
+  const s = C.sessions[2];
+  const words = C.dictionary.filter((w) => (w.sessionIds || []).includes(s.id));
+  const qs = sessionQuizItems(words, [{ title: 'Past Simple', rule: 'finished actions', examples: ['I visited my grandparents last weekend.'] }], s.id);
+  assert.equal(qs.length, 9);
+  assert.ok(qs.filter((q) => q.scope === 'word').length >= 4);
+  assert.ok(qs.filter((q) => q.scope === 'grammar').length >= 2);
   for (const q of qs) {
-    assert.equal(q.scope, 'grammar');
-    if (q.options.length) assert.ok(q.options.includes(String(q.correct)));
+    assert.equal(q.type, 'mcq');
+    assert.ok(q.options.includes(String(q.correct)));
+    assert.ok(!/[\u0600-\u06FF]/.test(q.prompt + q.options.join('')));
   }
+});
+
+t('lets talk extracts speaking prompts from the session file', () => {
+  const s = C.sessions.find((x) => /l4-s1/.test(x.id));
+  const talk = letsTalk(s);
+  assert.ok(talk.length >= 1, 'lets talk');
 });
 
 t('admin can mint a student login with password and permissions', () => {

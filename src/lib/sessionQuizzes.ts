@@ -48,37 +48,29 @@ function uniqueOptions(correct: string, extras: string[], n = 4) {
 
 export function wordQuizItems(words: WordLike[], sessionId: string): QuizItem[] {
   const list = (words || []).filter((w) => w && w.word);
+  const bank = list.map((w) => w.word);
   const items: QuizItem[] = [];
-  list.slice(0, 10).forEach((w, i) => {
-    const others = list.filter((x) => x.word !== w.word);
-    const ar = (w.arabic || w.meaning || '').trim();
-    if (ar && others.length >= 2) {
-      const distractors = pick(others, 3, w.word.length + i).map((x) => x.arabic || x.meaning || x.word);
-      const options = uniqueOptions(ar, distractors);
-      if (options.length >= 2) {
-        items.push({
-          id: `wq-${sessionId}-${w.word.toLowerCase()}-ar`,
-          scope: 'word',
-          type: 'mcq',
-          prompt: `What does “${w.word}” mean?`,
-          options,
-          correct: ar,
-          points: 10,
-        });
-      }
-    }
+  list.forEach((w, i) => {
     const example = (w.examples || []).find((ex) => new RegExp(`\\b${esc(w.word)}\\b`, 'i').test(ex || ''));
-    if (example) {
-      items.push({
-        id: `wq-${sessionId}-${w.word.toLowerCase()}-fill`,
-        scope: 'word',
-        type: 'fill',
-        prompt: example.replace(new RegExp(`\\b${esc(w.word)}\\b`, 'i'), '____'),
-        options: [],
-        correct: w.word,
-        points: 10,
-      });
-    }
+    const prompt = example
+      ? example.replace(new RegExp(`\\b${esc(w.word)}\\b`, 'i'), '____')
+      : `Complete the sentence: In this lesson we use ____.`;
+    const distractors = pick(
+      bank.filter((x) => x.toLowerCase() !== w.word.toLowerCase()).concat(['book', 'play', 'go', 'have', 'need']),
+      3,
+      w.word.length + i,
+    );
+    const options = uniqueOptions(w.word, distractors);
+    if (options.length < 2) return;
+    items.push({
+      id: `wq-${sessionId}-${w.word.toLowerCase()}-fill`,
+      scope: 'word',
+      type: 'mcq',
+      prompt,
+      options,
+      correct: w.word,
+      points: 10,
+    });
   });
   return items.slice(0, 8);
 }
@@ -127,4 +119,24 @@ export function grammarQuizItems(slides: GrammarSlide[], sessionId: string, exis
     }
   }
   return items.slice(0, 5);
+}
+
+export function sessionQuizItems(words: WordLike[], slides: GrammarSlide[], sessionId: string): QuizItem[] {
+  const wordQs = wordQuizItems(words, sessionId);
+  const grammarQs = grammarQuizItems(slides, sessionId, wordQs.map((q) => q.prompt)).filter((q) => q.type === 'mcq');
+  const out: QuizItem[] = [...wordQs.slice(0, 6)];
+  let gi = 0;
+  while (out.filter((q) => q.scope === 'grammar').length < 3 && grammarQs.length && out.length < 9) {
+    const base = grammarQs[gi % grammarQs.length];
+    out.push({ ...base, id: `${base.id}-g${out.length}` });
+    gi++;
+  }
+  let wi = 0;
+  while (out.length < 9 && wordQs.length) {
+    const base = wordQs[wi % wordQs.length];
+    out.push({ ...base, id: `${base.id}-x${out.length}` });
+    wi++;
+    if (wi > 12) break;
+  }
+  return out.slice(0, 9);
 }

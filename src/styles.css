@@ -274,7 +274,7 @@ body { font-family: var(--font-arabic); }
 
 /* Grammar slides */
 .slides-card{overflow:hidden}
-.slide-stage{margin-top:1rem;background:radial-gradient(circle at 85% 8%,rgba(18,206,144,.14),transparent 45%),linear-gradient(140deg,#0d1a2e,#13223a);border:1px solid var(--line);border-radius:16px;padding:1.6rem;min-height:250px;animation:slideIn .28s ease}
+.slide-stage{margin-top:1rem;background:radial-gradient(circle at 85% 8%,rgba(18,206,144,.14),transparent 45%),linear-gradient(140deg,#0d1a2e,#13223a);border:1px solid var(--line);border-radius:16px;padding:1.6rem;height:420px;min-height:420px;overflow:auto;animation:slideIn .28s ease}
 @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .slide-kicker{font-size:.72rem;letter-spacing:1.2px;color:var(--green);font-weight:800}
 .slide-stage h2{font-size:1.6rem;margin:.5rem 0 .9rem;color:#fff}
@@ -362,7 +362,12 @@ body { font-family: var(--font-arabic); }
 .yg-dock-head{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;padding:.7rem 1rem;border-bottom:1px solid var(--line)}
 .yg-dock-title{display:flex;align-items:center;gap:.45rem;color:#fff}
 .yg-dock-accents{display:flex;gap:.25rem;margin-inline-start:auto}
-.yg-frame{width:100%;height:min(380px,52vh);border:0;background:#000}
+.yg-frame{width:100%;height:min(380px,52vh);border:0;background:#000;min-height:240px}
+.brief-summary{line-height:1.8;margin:.4rem 0 0}
+.dict-suggest{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.65rem}
+.dict-suggest-item{border:1px solid var(--line);background:#12223a;color:var(--ink);border-radius:999px;padding:.28rem .7rem;cursor:pointer;font-weight:700;font-size:.82rem}
+.dict-suggest-item:hover{border-color:var(--green);color:var(--green)}
+.to-top{position:fixed;bottom:5.2rem;right:1rem;z-index:85;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--navy);color:var(--green);font-size:1.1rem;cursor:pointer;box-shadow:var(--shadow)}
 
 @media(max-width:600px){
   .yg-frame{height:260px}

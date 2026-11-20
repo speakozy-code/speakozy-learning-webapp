@@ -124,3 +124,53 @@ export function lessonBrief(s: SessionLike): BriefBlock[] {
   }
   return blocks;
 }
+
+export interface OverviewOutline {
+  title: string;
+  topic: string;
+  headings: string[];
+  summary: string;
+}
+
+function lessonName(s: SessionLike) {
+  return String(s.title || '')
+    .replace(/^\d+\.\s*/, '')
+    .replace(/^SESSION\s+\d+\s*[|—-]\s*/i, '')
+    .trim() || 'This lesson';
+}
+
+export function overviewOutline(s: SessionLike): OverviewOutline {
+  const title = lessonName(s);
+  const grammar = (section(s, /grammar/i)?.title || 'Grammar').replace(/^Grammar\s*[—-]\s*/i, '').trim();
+  const wordCount = splitBits(section(s, /vocab/i)?.body || '').length;
+  const summary = `This lesson is “${title}”. You will learn the new words${wordCount ? ` (${Math.min(wordCount, 20)} items)` : ''}, study ${clip(grammar, 70) || 'the grammar point'}, practise speaking, then write a short summary of what you understood.`;
+  return {
+    title,
+    topic: s.topic || '',
+    headings: ['Objectives', 'Words', 'Grammar', 'Practice'],
+    summary: clip(summary, 380),
+  };
+}
+
+export function letsTalk(s: SessionLike): string[] {
+  const slides = slideChunks(material(s));
+  const out: string[] = [];
+  for (let i = 0; i < slides.length; i++) {
+    if (!/let'?s talk|open discussion|discuss these questions|speaking practi/i.test(slides[i])) continue;
+    const bits = [...splitBits(slides[i]), ...(slides[i + 1] ? splitBits(slides[i + 1]) : [])];
+    for (const b of bits) {
+      if (/let'?s talk|open discussion|give detailed|partner/i.test(b)) continue;
+      if (/[?؟]$/.test(b) || /^(discuss|talk|tell|describe|what|how|why|do you|when you)/i.test(b)) out.push(b);
+    }
+  }
+  return unique(out, 8);
+}
+
+export function voicePrompts(s: SessionLike): string[] {
+  const talk = letsTalk(s);
+  const fallback = [
+    `Talk about ${s.topic || lessonName(s)} using five new words from this lesson.`,
+    `Tell a short true story connected to ${lessonName(s)}.`,
+  ];
+  return unique([...talk, ...fallback], 2);
+}

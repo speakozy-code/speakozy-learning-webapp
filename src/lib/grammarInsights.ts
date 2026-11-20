@@ -24,6 +24,22 @@ export const INSIGHTS: Record<string, Insight> = {
     detail: 'الحاضر البسيط بيوصف حاجات بتحصل دايمًا أو عادة أو حقيقة. مع he وshe وit بنضيف s للفعل. بنستخدمه كمان مع الأفعال اللي ما بتتحركش زي like وknow وwant.',
     extra: ['She works in a bank.', 'We drink coffee every morning.', 'Water boils at 100 degrees.'],
   },
+  'present perfect': {
+    detail: 'الحاضر التام بيتكلم عن حاجة حصلت في الماضي ولسه ليها أثر دلوقتي، أو حاجة حصلت في وقت مش محدد. بنكوّنه من have أو has مع التصريف الثالث. كلمات زي already وyet وever وnever وjust بتظهر معاه كتير.',
+    extra: ['I have finished my homework.', 'She has never been to London.', 'Have you ever tried sushi?'],
+  },
+  'past perfect': {
+    detail: 'الماضي التام بيوصف حدث حصل قبل حدث تاني في الماضي. بنكوّنه من had مع التصريف الثالث. استخدمه لما تحكي قصة فيها ترتيب واضح: حاجة حصلت الأول، وبعدين حاجة تانية.',
+    extra: ['I had left before she arrived.', 'They had already eaten when we called.', 'He had never seen snow until that winter.'],
+  },
+  'future': {
+    detail: 'المستقبل في الكلام اليومي غالبا will للقرار السريع أو الوعد، وgoing to للخطة اللي مترتبة من قبل. الاتنين بيتبعهم الفعل في المصدر من غير to.',
+    extra: ['I will help you with that.', 'We are going to travel next month.', 'It will rain later.'],
+  },
+  'present perfect vs. past simple': {
+    detail: 'الماضي البسيط لحدث خلص في وقت معروف زي yesterday أو last year. الحاضر التام لحدث مش مربوط بوقت محدد أو لسه مستمر في نتيجته. لو في تاريخ واضح استخدم past simple.',
+    extra: ['I saw him yesterday.', 'I have seen that film.', 'She lived in Cairo in 2019.'],
+  },
   'present continuous': {
     detail: 'الحاضر المستمر بيوصف حاجة بتحصل دلوقتي أو حولين الوقت الحالي. بنكوّنه من am أو is أو are مع الفعل و-ing. استخدمه كمان لخطط قريبة زي I am meeting him tomorrow.',
     extra: ['I am learning English right now.', 'They are having lunch at the moment.', 'We are moving house next week.'],

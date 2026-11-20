@@ -4,9 +4,9 @@ import { Card, Button, Badge, Progress, Stat, SectionTitle, Empty, Tabs, Field, 
 import { sessionStatus, levelProgress, engagementProgress, canOpenLevel, sessionOpen, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, uid, today, allowedLevelCount, PLANS } from '../lib/domain';
 import { go } from '../App';
 import { lookupWord, allCached, type LookupEntry } from '../lib/dictionaryProvider';
-import { grammarSlides, exercises, homework } from '../lib/lessonContent';
-import { lessonBrief, sourceTranscript } from '../lib/lessonBrief';
-import { wordQuizItems, grammarQuizItems } from '../lib/sessionQuizzes';
+import { grammarSlides } from '../lib/lessonContent';
+import { overviewOutline, sourceTranscript, letsTalk, voicePrompts } from '../lib/lessonBrief';
+import { wordQuizItems, grammarQuizItems, sessionQuizItems } from '../lib/sessionQuizzes';
 import { YOUGLISH_ACCENTS } from '../lib/youglish';
 import { YouGlishDock } from '../components/YouGlishDock';
 import { Play, Volume2, Star, Check, BookOpen } from 'lucide-react';
@@ -86,7 +86,7 @@ export function StudentDashboard() {
     </div>
 
     <Card>
-      <SectionTitle title="Speakozy Leaderboard" action={<span className="muted" style={{ fontSize: '.8rem' }}>Top scorers</span>} />
+      <SectionTitle title="Champs" action={<span className="muted" style={{ fontSize: '.8rem' }}>Top scorers</span>} />
       {leaderboard(data).length ? <div className="row" style={{ alignItems: 'stretch', flexWrap: 'nowrap', overflowX: 'auto' }}>
         {leaderboard(data).slice(0, 6).map((b, i) => <div key={b.id} className="section-card" style={{ minWidth: 140 }}>
           <div className="node-num">{i + 1}</div><strong>{b.name}</strong><div className="muted">{b.points} pts</div>
@@ -176,6 +176,11 @@ export function SessionPage({ sessionId }: any) {
   const [sourceOpen, setSourceOpen] = useState(false);
   useEffect(() => { setSlideIdx(0); setExerciseResult(null); setGrammarResult(null); setGrammarAnswers({}); setWordAnswers({}); setWordResult(null); setYg(null); setSourceOpen(false); }, [sessionId]);
   useEffect(() => {
+    const main = document.querySelector('.main');
+    if (main) main.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [tab, sessionId]);
+  useEffect(() => {
     if (tab !== 'vocabulary') return;
     let alive = true;
     (async () => {
@@ -207,36 +212,24 @@ export function SessionPage({ sessionId }: any) {
   const customNotes = (data.grammarNotes || []).filter((n) => n.sessionId === s.id).sort((a, b) => a.order - b.order)
     .map((n) => ({ title: n.title, rule: n.rule, examples: n.examples, detail: n.detail || '' }));
   const slides = [...grammarSlides(s), ...customNotes];
-  const exerciseList = exercises(s);
-  const hw = homework(s);
-  const brief = lessonBrief(s);
+  const outline = overviewOutline(s);
+  const talk = letsTalk(s);
+  const voices = voicePrompts(s);
   const transcript = sourceTranscript(s);
   const generatedWordQs = wordQuizItems(words, s.id).filter((q) => !qs.some((x) => x.prompt === q.prompt));
-  const wordQs = [...qs.filter((q) => q.scope === 'word'), ...generatedWordQs];
-  const generatedGrammarQs = grammarQuizItems(slides, s.id, grammarQs.map((q) => q.prompt));
-  const grammarAll = [...grammarQs, ...generatedGrammarQs];
+  const wordQs = generatedWordQs;
+  const generatedGrammarQs = grammarQuizItems(slides, s.id, grammarQs.map((q) => q.prompt)).filter((q) => q.type === 'mcq');
+  const grammarAll = generatedGrammarQs.length ? generatedGrammarQs : grammarQs;
+  const quizNine = sessionQuizItems(words, slides, s.id);
+  const allWordsStudied = words.length > 0 && words.every((w) => wordDone(w.word));
+  const writingLines = writing.split(/\n/).map((x) => x.trim()).filter(Boolean).length;
   const tabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'vocabulary', label: `Vocabulary${words.length ? ` (${words.length})` : ''}` },
     { id: 'grammar', label: 'Grammar' },
     { id: 'practice', label: 'Practice' },
-    { id: 'quiz', label: `Quiz${qs.length ? ` (${qs.length})` : ''}` },
+    { id: 'quiz', label: 'Quiz (9)' },
   ];
-  async function submitExercises() {
-    if (locked || !exerciseList.length) return;
-    let auto = 0, max = 0, pending = 0;
-    for (const ex of exerciseList) {
-      const ans = (exerciseAnswers[ex.id] || '').trim();
-      const graded = ex.answer ? ans.toLowerCase() === ex.answer.toLowerCase() : null;
-      max += 10;
-      if (graded === null) pending++;
-      else if (graded) auto += 10;
-      await put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: `exercise:${s!.id}:${ex.id}`, answer: ans, autoScore: graded === null ? 0 : (graded ? 10 : 0), maxScore: 10, status: graded === null ? 'pending' : (graded ? 'approved' : 'rejected'), createdAt: today() });
-    }
-    await grantScore(user!.id, 'exercise', auto, `exercises-${s!.id}-${user!.id}`);
-    await log('exercise-check', `${s!.title} · ${auto}/${max}`);
-    setExerciseResult({ auto, max, pending });
-  }
   async function mark(sectionId: string) {
     if (locked || done.includes(sectionId)) return;
     await put('progress', { studentId: user!.id, sessionId: s!.id, sectionId, completedAt: today() });
@@ -343,8 +336,8 @@ export function SessionPage({ sessionId }: any) {
     </Card>}
     <div className="lesson-tabs">{tabs.map((t) => <button key={t.id} className={`tab ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>{t.label}</button>)}</div>
     {tab === 'quiz' ? <Card>
-      <div className="between"><div><h3>Session quiz</h3><small className="muted">{qs.length} questions · Final passing is approved by the admin</small></div>
-        <Button onClick={() => go(`/quiz/${s.id}`)} disabled={!qs.length || locked}>{qs.length ? 'Start quiz' : 'No questions yet'}</Button></div>
+      <div className="between"><div><h3>Session quiz</h3><small className="muted">9 questions on words and grammar · fill in the blank</small></div>
+        <Button onClick={() => go(`/quiz/${s.id}`)} disabled={!quizNine.length || locked}>{quizNine.length ? 'Start quiz' : 'No questions yet'}</Button></div>
     </Card> : <>
       {tab === 'vocabulary' && (words.length > 0 ? <div className="stack">
         <div className="vocab-grid">{words.map((w, n) => {
@@ -379,7 +372,8 @@ export function SessionPage({ sessionId }: any) {
           </button>
         </article>;
       })}</div>
-        {wordQs.length > 0 && <Card className="grammar-training">
+        {!allWordsStudied && words.length > 0 && <div className="note">Mark every word as studied to open the word quiz.</div>}
+        {allWordsStudied && wordQs.length > 0 && <Card className="grammar-training">
           <div className="between"><div><h3>Word quiz</h3><small className="muted">Check the new words from this session.</small></div><Badge tone="green">{wordQs.length} questions</Badge></div>
           <div className="stack" style={{ marginTop: '.8rem' }}>{wordQs.map((q, i) => <div key={q.id} className="exercise-item">
             <div className="between"><strong>{i + 1}. {q.prompt}</strong>{wordResult && <Badge tone={wordResult.marks[q.id] ? 'green' : 'red'}>{wordResult.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
@@ -420,66 +414,46 @@ export function SessionPage({ sessionId }: any) {
         </Card>}
       </>}
       {tab === 'practice' && <div className="stack">
-        {hw && <Card className="activity-card">
-          <SectionTitle title="Homework" action={<Badge tone="blue">Task</Badge>} />
-          <h3>{hw.title}</h3>
-          {hw.brief && <p className="muted">{hw.brief}</p>}
-          {hw.requirements.length > 0 && <div className="req-list">{hw.requirements.map((r, i) => <div key={i} className="req-item"><span className="req-check">☐</span><span>{r}</span></div>)}</div>}
-        </Card>}
-        {exerciseList.length > 0 && <Card className="activity-card">
-          <div className="between"><div><h3>Exercises</h3><small className="muted">Each question is answered on its own.</small></div><Badge tone="blue">{exerciseList.length} questions</Badge></div>
-          <div className="stack" style={{ marginTop: '.8rem' }}>{exerciseList.map((ex, i) => {
-            const correct = exerciseResult && ex.answer && (exerciseAnswers[ex.id] || '').trim().toLowerCase() === ex.answer.toLowerCase();
-            const wrong = exerciseResult && ex.answer && !correct;
-            return <div key={ex.id} className={`exercise-item ${correct ? 'is-correct' : ''} ${wrong ? 'is-wrong' : ''}`}>
-              <div className="between"><strong>{i + 1}. {ex.prompt}</strong>{ex.kind === 'fill' && <Badge>Fill in</Badge>}</div>
-              <input value={exerciseAnswers[ex.id] || ''} onChange={(e) => setExerciseAnswers((a) => ({ ...a, [ex.id]: e.target.value }))} placeholder={ex.kind === 'fill' ? 'Type the missing words…' : 'Write your answer…'} disabled={locked} dir="ltr" />
-              {exerciseResult && ex.answer && <small className={correct ? 'green' : ''}>{correct ? 'Correct ✓' : `Answer: ${ex.answer}`}</small>}
-            </div>;
-          })}</div>
-          {exerciseResult && <div className={exerciseResult.pending ? 'note' : 'result-good'} style={{ marginTop: '.8rem' }}>
-            Score: {exerciseResult.auto} / {exerciseResult.max}{exerciseResult.pending ? ` · ${exerciseResult.pending} written answers sent for review.` : ''}
-          </div>}
-          <Button style={{ marginTop: '.8rem' }} onClick={submitExercises} disabled={locked || !exerciseList.some((ex) => (exerciseAnswers[ex.id] || '').trim())}>Check exercises</Button>
-        </Card>}
-        <div className="grid g2">
-          <Card><SectionTitle title="Speaking" />
-            <p className="muted">Answer out loud: talk about {s.topic} and use words from this session. Record your voice or type what you said.</p>
-            <textarea value={speaking} onChange={(e) => setSpeaking(e.target.value)} placeholder="Say it in English…" disabled={locked} />
-            <div className="row" style={{ marginTop: '.6rem' }}><Button size="sm" variant="ghost" onClick={speakPrompt} disabled={locked}>🎤 Speak</Button><Button size="sm" onClick={() => savePractice('speaking', speaking, 1)} disabled={locked || !speaking.trim()}>Save answer</Button></div>
-          </Card>
-          <Card><SectionTitle title="Writing" />
-            <p className="muted">Write a short answer about {s.topic}. Use the new words and grammar.</p>
-            <textarea value={writing} onChange={(e) => setWriting(e.target.value)} placeholder="Write in English…" disabled={locked} />
-            <Button size="sm" style={{ marginTop: '.6rem' }} onClick={() => savePractice('writing', writing, 1)} disabled={locked || !writing.trim()}>Save answer</Button>
-          </Card>
-          <Card style={{ gridColumn: '1 / -1' }}><SectionTitle title="Listening" />
-            {s.videoUrl ? <iframe title="Listening video" src={s.videoUrl.replace('watch?v=', 'embed/')} style={{ width: '100%', aspectRatio: '16 / 9', border: 0 }} allowFullScreen /> : <div className="note">No listening video has been added to this session yet.{user.role === 'admin' ? ' Add a YouTube link below.' : ''}</div>}
-            {user.role === 'admin' && <div className="row" style={{ marginTop: '.6rem' }}><input value={videoDraft} onChange={(e) => setVideoDraft(e.target.value)} placeholder="https://www.youtube.com/watch?v=…" /><Button size="sm" onClick={async () => { if (!videoDraft.trim()) return; await put('sessions', { ...s, videoUrl: videoDraft.trim() }); setVideoDraft(''); }}>Save video</Button></div>}
-            <p className="muted" style={{ marginTop: '.7rem' }}>After watching, summarise what you understood:</p>
-            <textarea value={listening} onChange={(e) => setListening(e.target.value)} placeholder="Your summary in English…" disabled={locked} />
-            <Button size="sm" style={{ marginTop: '.6rem' }} onClick={() => savePractice('listening', listening, 1)} disabled={locked || !listening.trim()}>Save summary</Button>
-          </Card>
-        </div>
+        <Card className="activity-card">
+          <SectionTitle title="Let's talk" action={<Badge tone="blue">{talk.length || voices.length}</Badge>} />
+          {(talk.length ? talk : ['Talk about this lesson using the new words.']).map((q, i) => <div key={i} className="req-item" style={{ marginTop: '.5rem' }}><span className="req-check">{i + 1}</span><span dir="ltr" className="en">{q}</span></div>)}
+        </Card>
+        <Card className="activity-card">
+          <SectionTitle title="Voice notes" action={<Badge>WhatsApp</Badge>} />
+          <p className="muted">Answer these two questions as voice notes on WhatsApp.</p>
+          {voices.slice(0, 2).map((q, i) => <div key={i} className="section-card" style={{ marginTop: '.7rem' }}>
+            <strong>{i + 1}. <span className="en" dir="ltr">{q}</span></strong>
+            <div className="row" style={{ marginTop: '.6rem' }}>
+              <a className="btn btn-primary btn-sm" href={`https://wa.me/201091060951?text=${encodeURIComponent('Speakozy voice note — ' + q)}`}>Send voice note</a>
+            </div>
+          </div>)}
+        </Card>
+        <Card>
+          <SectionTitle title="Writing" />
+          <p className="muted">Summarise what you understood from this lesson in at least 6 lines.</p>
+          <textarea value={writing} onChange={(e) => setWriting(e.target.value)} placeholder={'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6'} disabled={locked} />
+          <div className="row" style={{ marginTop: '.6rem' }}>
+            <span className="muted">{writingLines} / 6 lines</span>
+            <Button size="sm" onClick={() => savePractice('writing', writing, 1)} disabled={locked || writingLines < 6}>Save summary</Button>
+          </div>
+        </Card>
       </div>}
       {tab === 'overview' && <div className="stack">
+        <Card className="brief-card">
+          <div className="brief-kicker">Lesson</div>
+          <h2>{outline.title}</h2>
+          {outline.topic && <p className="muted">{outline.topic}</p>}
+        </Card>
         <div className="brief-path">
-          <button className="brief-jump" onClick={() => setTab('vocabulary')}><BookOpen size={16} /> Words ({words.length})</button>
-          <button className="brief-jump" onClick={() => setTab('grammar')}><Check size={16} /> Grammar ({slides.length})</button>
-          <button className="brief-jump" onClick={() => setTab('practice')}>Practice</button>
-          <button className="brief-jump" onClick={() => setTab('quiz')}>Quiz</button>
+          {outline.headings.map((h) => {
+            const tabId = h === 'Words' ? 'vocabulary' : h === 'Grammar' ? 'grammar' : h === 'Practice' ? 'practice' : 'overview';
+            return <button key={h} className="brief-jump" onClick={() => setTab(tabId)}>{h}</button>;
+          })}
         </div>
-        {brief.map((block) => (
-          <article key={block.id} className={`brief-card kind-${block.kind}`}>
-            <div className="brief-kicker">{block.kind}</div>
-            <h3>{block.title}</h3>
-            <ul className="brief-list">{block.items.map((item, i) => <li key={i} dir="auto">{item}</li>)}</ul>
-          </article>
-        ))}
-        {transcript && <details className="brief-source" open={sourceOpen} onToggle={(e) => setSourceOpen((e.target as HTMLDetailsElement).open)}>
-          <summary>Full slide transcript from the session file</summary>
-          <pre className="brief-transcript en" dir="ltr">{transcript}</pre>
-        </details>}
+        <Card className="brief-card kind-summary">
+          <div className="brief-kicker">Summary</div>
+          <p className="brief-summary en" dir="ltr">{outline.summary}</p>
+        </Card>
       </div>}
     </>}
     {yg && <YouGlishDock word={yg.word} accent={yg.accent} onAccent={(accent) => setYg({ word: yg.word, accent })} onClose={() => setYg(null)} />}
@@ -491,7 +465,8 @@ export function QuizPage({ sessionId }: any) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<any>(null);
   const s = data.sessions.find((x) => x.id === sessionId);
-  const qs = data.sessions.find((x) => x.id === sessionId) ? data.questions.filter((q) => q.sessionId === sessionId) : [];
+  const words = data.dictionary.filter((w) => (w.sessionIds || []).includes(sessionId));
+  const qs = s ? sessionQuizItems(words, grammarSlides(s), s.id) : [];
   if (!user) return null;
   if (!s) return <Empty title="Session not found" />;
   if (!qs.length) return <Empty title="There are no questions for this session" hint="Check the roadmap." />;
@@ -500,7 +475,7 @@ export function QuizPage({ sessionId }: any) {
     let auto = 0, max = 0, pending = 0;
     for (const q of qs) {
       const ans = answers[q.id] || '';
-      const g = gradeQuestion(q, ans);
+      const g = gradeQuestion(q as any, ans);
       max += q.points; auto += g.score;
       const status = g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending';
       if (!g.auto) pending++;
@@ -522,12 +497,10 @@ export function QuizPage({ sessionId }: any) {
 
   return <div className="stack">
     <div className="row"><button className="icon-btn" onClick={() => go(`/session/${s.id}`)}>← Session</button></div>
-    <Card><h1>Quiz: {s.title}</h1><p className="muted">Answer the questions. Written answers are saved for review.</p></Card>
+    <Card><h1>Quiz: {s.title}</h1><p className="muted">9 questions. Complete each sentence with the right word.</p></Card>
     {qs.map((q, i) => <Card key={q.id}>
       <div className="row between"><strong>{i + 1}. {q.prompt}</strong><Badge>{q.points} points</Badge></div>
-      {(q.type === 'mcq' || q.type === 'truefalse') && <div style={{ marginTop: '.8rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${answers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={answers[q.id] === o} onChange={() => setAnswers((a) => ({ ...a, [q.id]: o }))} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>}
-      {(q.type === 'fill' || q.type === 'short') && <div style={{ marginTop: '.8rem' }}><textarea value={answers[q.id] || ''} onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))} placeholder={q.type === 'short' ? 'Write your answer in English...' : 'Fill in the blank...'} /></div>}
-      {(q.type === 'match' || q.type === 'order') && <div style={{ marginTop: '.8rem' }}><Field label="Enter the answers in order, separated by |"><input value={answers[q.id] || ''} onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))} placeholder={q.options.join(' | ')} /></Field></div>}
+      <div style={{ marginTop: '.8rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${answers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={answers[q.id] === o} onChange={() => setAnswers((a) => ({ ...a, [q.id]: o }))} style={{ width: 'auto' }} /> <span className="en" dir="ltr">{o}</span></label>)}</div>
     </Card>)}
     <Card><div className="between"><span className="muted">Written answers are saved for review.</span><Button onClick={submit}>Submit answers</Button></div></Card>
   </div>;
@@ -563,6 +536,9 @@ export function DictionaryPage() {
   }).slice(0, 120);
   const savedResults = saved.filter((d) => !q || (d.word + d.meaning).toLowerCase().includes(q.toLowerCase()));
   const types = ['all', ...Array.from(new Set(all.map((d) => d.type)))];
+  const suggestions = q.trim().length >= 1
+    ? all.filter((d) => d.word.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 8)
+    : [];
   const wordOfDay = all[(new Date().getDate() * 7) % all.length];
   const reviewList = saved.filter((w) => w.review);
   const reviewCard = reviewList[reviewIdx % Math.max(1, reviewList.length)];
@@ -625,6 +601,7 @@ export function DictionaryPage() {
 
     <Card className="search-hero">
       <div className="row"><span style={{ fontSize: '1.4rem' }}>🔎</span><input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) showWord(q); }} placeholder="Type any word... e.g. serendipity" aria-label="Search the dictionary" /></div>
+      {suggestions.length > 0 && <div className="dict-suggest">{suggestions.map((d) => <button key={d.id} type="button" className="dict-suggest-item en" dir="ltr" onClick={() => { setQ(d.word); showWord(d.word); }}>{d.word}</button>)}</div>}
       <div className="row" style={{ marginTop: '.7rem', justifyContent: 'space-between' }}>
         <div className="row">{types.map((t) => <button key={t} className={`tab ${type === t ? 'active' : ''}`} onClick={() => setType(t)}>{t === 'all' ? 'All' : t}</button>)}</div>
         <div className="row"><Button size="sm" variant="ghost" onClick={() => setManual({ word: q.trim(), meaning: '', type: 'noun', examples: '' })}>+ Add word</Button><Button size="sm" onClick={() => q.trim() && showWord(q)} disabled={!q.trim() || looking}>{looking ? 'Searching...' : 'Search globally'}</Button></div>
@@ -777,7 +754,7 @@ export function LeaderboardPage() {
   const board = leaderboard(data);
   const mine = board.findIndex((b) => b.id === user.id) + 1;
   return <div className="stack">
-    <div><h1>Speakozy leaderboard</h1><p className="muted">Ranked by score. Names are abbreviated per the privacy setting, and no private data is shown.</p></div>
+    <div><h1>Champs</h1><p className="muted">Ranked by score. Names are abbreviated per the privacy setting, and no private data is shown.</p></div>
     <Tabs tabs={[{ id: 'weekly', label: 'Weekly' }, { id: 'monthly', label: 'Monthly' }, { id: 'total', label: 'All time' }]} active={period} onChange={setPeriod} />
     {!data.settings.leaderboard.enabled ? <Card><Empty icon="🔒" title="The leaderboard is currently disabled" hint="The admin decided to hide it temporarily." /></Card> : <Card>
       {board.length ? <div className="stack">{board.map((b, i) => <div key={b.id} className={`row between section-card ${b.id === user.id ? 'done' : ''}`}>

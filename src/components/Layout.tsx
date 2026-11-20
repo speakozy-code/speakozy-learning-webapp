@@ -74,6 +74,7 @@ export function Layout({ current, children }: { current: string; children: React
     <div className="shell">{side}<main className="main"><div className="content-bar"><span className="muted">{admin ? 'Admin Dashboard' : 'Student Space'}</span>{bellButton}</div>{children}</main></div>
     {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 75 }} />}
     {mobile}
+    <button className="to-top" onClick={() => { const main = document.querySelector('.main'); if (main) main.scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="Back to top">↑</button>
     <Modal open={bell} title="Notifications" onClose={() => setBell(false)}>
       {notes.length ? <div className="stack">{notes.map((n) => <div key={n.id} className="section-card">
         <div className="row between"><strong>{n.title}</strong>{!n.read && <Badge tone="green">New</Badge>}</div>
