@@ -8,14 +8,28 @@ export type LookupEntry = DictionaryEntry & {
   synonyms?: string[];
 };
 
-const API = (import.meta.env.VITE_DICTIONARY_API as string) || 'https://api.dictionaryapi.dev/api/v2/entries/en';
-const CACHE_KEY = 'speakozy-word-cache-v1';
+const ENV = (import.meta as any).env || {};
+const API = (ENV.VITE_DICTIONARY_API as string) || 'https://api.dictionaryapi.dev/api/v2/entries/en';
+const WIKTIONARY = 'https://en.wiktionary.org/api/rest_v1/page/definition/';
+const TRANSLATE = 'https://translate.googleapis.com/translate_a/single';
+const CACHE_KEY = 'speakozy-word-cache-v2';
 
 function cache(): Record<string, LookupEntry> {
   try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); } catch { return {}; }
 }
 function saveCache(c: Record<string, LookupEntry>) {
   try { localStorage.setItem(CACHE_KEY, JSON.stringify(c)); } catch {}
+}
+
+function stripHtml(s: string) {
+  return String(s || '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 export function fromApi(raw: any): LookupEntry {
@@ -48,6 +62,35 @@ export function fromApi(raw: any): LookupEntry {
   };
 }
 
+/** Fallback provider. dictionaryapi.dev can stall in some browsers; Wiktionary answers. */
+export function fromWiktionary(raw: any, word: string): LookupEntry {
+  const groups = raw?.en || [];
+  const defs: string[] = [];
+  let type = '';
+  groups.forEach((g: any) => {
+    if (!type && g.partOfSpeech) type = String(g.partOfSpeech).toLowerCase();
+    (g.definitions || []).forEach((d: any) => {
+      const text = stripHtml(d?.definition || '');
+      if (text) defs.push(text);
+    });
+  });
+  const firstDef = defs[0] || 'تعريف غير متوفر من المصدر';
+  return {
+    id: `online-${word}`,
+    word,
+    meaning: firstDef,
+    type: type || 'word',
+    examples: [],
+    arabic: '',
+    phonetic: '',
+    audioUrl: '',
+    definitions: defs.slice(0, 5),
+    synonyms: [],
+    source: 'global',
+    sessionIds: [],
+  };
+}
+
 export function cached(word: string): LookupEntry | undefined {
   return cache()[word.toLowerCase().trim()];
 }
@@ -57,14 +100,44 @@ export function allCached(): LookupEntry[] {
   return Object.values(cache());
 }
 
-
 export function remember(entry: LookupEntry) {
   const c = cache();
   c[entry.word.toLowerCase()] = entry;
   saveCache(c);
 }
 
-// أي كلمة عالميًا: محلي أولًا للسرعة، ثم المصدر العالمي القابل للتبديل، ثم إدخال يدوي.
+async function fetchJson(url: string, ms: number): Promise<any> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function arabicMeaning(word: string): Promise<string> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const url = `${TRANSLATE}?client=gtx&sl=en&tl=ar&dt=t&q=${encodeURIComponent(word)}`;
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      if (!res.ok) return '';
+      const data = await res.json();
+      const parts = data?.[0] || [];
+      return stripHtml(parts.map((p: any) => p?.[0] || '').join(' '));
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch {
+    return '';
+  }
+}
+
+// محلي أولًا للسرعة، ثم المصدر الأساسي، ثم ويكشنري، ثم ترجمة المعنى، ثم إدخال يدوي.
 export async function lookupWord(word: string, local: DictionaryEntry[]): Promise<LookupEntry | undefined> {
   const w = word.trim().toLowerCase();
   if (!w) return undefined;
@@ -72,18 +145,22 @@ export async function lookupWord(word: string, local: DictionaryEntry[]): Promis
   if (localHit) return { ...localHit, source: 'local' };
   const hit = cached(w);
   if (hit) return hit;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 7000);
+
+  let entry: LookupEntry | undefined;
   try {
-    const res = await fetch(`${API}/${encodeURIComponent(w)}`, { signal: controller.signal });
-    if (!res.ok) return undefined;
-    const data = await res.json();
-    const entry = fromApi(Array.isArray(data) ? data[0] : data);
-    remember(entry);
-    return entry;
-  } catch {
-    return undefined;
-  } finally {
-    clearTimeout(timer);
+    const data = await fetchJson(`${API}/${encodeURIComponent(w)}`, 5000);
+    const raw = Array.isArray(data) ? data[0] : data;
+    if (raw?.meanings) entry = fromApi(raw);
+  } catch {}
+
+  if (!entry) {
+    try {
+      const data = await fetchJson(`${WIKTIONARY}${encodeURIComponent(w)}`, 8000);
+      if (data?.en?.length) entry = fromWiktionary(data, word.trim());
+    } catch {}
   }
+  if (!entry) return undefined;
+  if (!entry.arabic) entry.arabic = await arabicMeaning(word.trim());
+  remember(entry);
+  return entry;
 }

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { DRIVE_CURRICULUM as C } from '../src/lib/driveCurriculum.ts';
 import { overviewOutline, sourceTranscript, letsTalk } from '../src/lib/lessonBrief.ts';
 import { youglishWidgetQuery } from '../src/lib/youglish.ts';
+import { fromApi, fromWiktionary } from '../src/lib/dictionaryProvider.ts';
 import { wordQuizItems, sessionQuizItems } from '../src/lib/sessionQuizzes.ts';
 import { buildStudentAccount } from '../src/lib/domain.ts';
 
@@ -43,6 +44,16 @@ t('word quizzes are English fill-in MCQ, never Arabic meanings', () => {
     assert.ok(q.options.includes(q.correct));
     assert.ok(!/[\u0600-\u06FF]/.test(q.prompt + q.options.join(' ') + q.correct), q.prompt);
   }
+});
+
+t('Wiktionary fallback maps definitions and strips markup', () => {
+  const raw = { en: [{ partOfSpeech: 'Noun', definitions: [{ definition: 'The <a rel="mw:WikiLink" href="/wiki/x">phenomenon</a> of luck.' }] }] };
+  const e = fromWiktionary(raw, 'serendipity');
+  assert.equal(e.word, 'serendipity');
+  assert.equal(e.type, 'noun');
+  assert.ok(e.definitions[0].includes('phenomenon'));
+  assert.ok(!e.definitions[0].includes('<a'));
+  assert.equal(e.source, 'global');
 });
 
 t('session quiz is nine English questions on words and grammar', () => {
