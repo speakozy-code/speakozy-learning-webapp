@@ -57,7 +57,7 @@ t('Wiktionary fallback maps definitions and strips markup', () => {
 });
 
 t('Wiktionary page extras yield transcript and synonyms', () => {
-  const html = '<span class="IPA nowrap">/ˈhæpi/</span> Synonyms:</span> <a title="cheerful">cheerful</a>, <a title="glad">glad</a>';
+  const html = '<span class="IPA nowrap">/ˈhæpi/</span> Synonyms:</span> <a title="cheerful">cheerful</a>, <a title="glad">glad</a> Antonyms:</span> <a title="sad">sad</a>';
   const x = parseWiktionaryExtras(html);
   assert.equal(x.phonetic, '/ˈhæpi/');
   assert.deepEqual(x.synonyms, ['cheerful', 'glad']);

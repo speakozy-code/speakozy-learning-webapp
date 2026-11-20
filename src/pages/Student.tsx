@@ -12,6 +12,7 @@ import { YouGlishDock } from '../components/YouGlishDock';
 import { Play, Volume2, Star, Check, BookOpen } from 'lucide-react';
 
 const statusTone: Record<string, string> = { locked: 'muted', available: 'blue', progress: 'amber', done: 'blue', review: 'amber', approved: 'green' };
+const phon = (p?: string) => (p ? (/^\//.test(p) ? p : `/${p}/`) : '');
 
 // Resolve lesson PDFs by stable session id so stale demo localStorage still shows them.
 const MATERIAL_PDF: Record<string, string> = {
@@ -638,7 +639,7 @@ export function DictionaryPage() {
       </div>}
       {globalHit && <div className="global-hit">
         <div className="row between"><div><small className="muted">Global dictionary</small>
-          <div className="row"><strong className="en" style={{ fontSize: '1.1rem' }}>{globalHit.word}</strong><Badge tone="blue">{globalHit.type}</Badge>{globalHit.phonetic && <span className="en muted" dir="ltr">/{globalHit.phonetic}/</span>}</div>
+          <div className="row"><strong className="en" style={{ fontSize: '1.1rem' }}>{globalHit.word}</strong><Badge tone="blue">{globalHit.type}</Badge>{globalHit.phonetic && <span className="en muted" dir="ltr">{phon(globalHit.phonetic)}</span>}</div>
           <div className="en" dir="ltr">{globalHit.meaning}</div>
           {!!(globalHit.synonyms || []).length && <div className="row" style={{ marginTop: '.4rem' }}>{globalHit.synonyms!.slice(0, 6).map((x) => <span key={x} className="word-chip en">{x}</span>)}</div>}
         </div>
@@ -695,13 +696,13 @@ export function DictionaryPage() {
     <Modal open={!!detail} title="Word card" onClose={() => setDetail(null)}>
       {detail && <div className="stack">
         <div className="between"><div><h2 dir="ltr" className="en" style={{ fontSize: '1.9rem' }}>{detail.word}</h2>
-          <div className="row"><Badge tone="green">{detail.type}</Badge>{detail.phonetic && <span className="muted" dir="ltr">{detail.phonetic}</span>}<Badge tone={detail.source === 'global' ? 'blue' : 'muted'}>{detail.source === 'global' ? 'Global dictionary' : detail.source === 'manual' ? 'Manual entry' : 'From the curriculum'}</Badge></div></div>
+          <div className="row"><Badge tone="green">{detail.type}</Badge>{detail.phonetic && <span className="muted" dir="ltr">{phon(detail.phonetic)}</span>}<Badge tone={detail.source === 'global' ? 'blue' : 'muted'}>{detail.source === 'global' ? 'Global dictionary' : detail.source === 'manual' ? 'Manual entry' : 'From the curriculum'}</Badge></div></div>
           <Button variant="ghost" onClick={() => pronounce(detail)}>🔊 Listen to pronunciation</Button></div>
         <div className="section-card"><h3>Meaning</h3><p className="en" dir="ltr">{detail.meaning}</p>
           {detail.arabic && <p dir="rtl">{detail.arabic}</p>}
           {detail.definitions && <div className="stack" style={{ marginTop: '.5rem' }}>{detail.definitions.map((d, i) => <div key={i} className="muted en" dir="ltr">• {d}</div>)}</div>}
         </div>
-        {detail.phonetic && <div className="section-card"><h3>Transcript</h3><p className="en" dir="ltr">/{detail.phonetic}/</p></div>}
+        {detail.phonetic && <div className="section-card"><h3>Transcript</h3><p className="en" dir="ltr">{phon(detail.phonetic)}</p></div>}
         <div className="section-card"><h3>Hear it in use</h3>
           <div className="youglish-btns">{YOUGLISH_ACCENTS.map((a) => <button key={a.code} type="button" className="yg-btn en" onClick={() => setYg({ word: detail.word, accent: a.code })}>{a.label}</button>)}</div>
         </div>

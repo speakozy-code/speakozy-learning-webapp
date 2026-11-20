@@ -13,7 +13,7 @@ const API = (ENV.VITE_DICTIONARY_API as string) || 'https://api.dictionaryapi.de
 const WIKTIONARY = 'https://en.wiktionary.org/api/rest_v1/page/definition/';
 const WIKTIONARY_HTML = 'https://en.wiktionary.org/api/rest_v1/page/html/';
 const TRANSLATE = 'https://translate.googleapis.com/translate_a/single';
-const CACHE_KEY = 'speakozy-word-cache-v3';
+const CACHE_KEY = 'speakozy-word-cache-v4';
 
 function cache(): Record<string, LookupEntry> {
   try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); } catch { return {}; }
@@ -100,7 +100,9 @@ export function parseWiktionaryExtras(html: string) {
   if (ipa) out.phonetic = stripHtml(ipa[1]).slice(0, 60);
   const start = html.search(/synonyms\s*:/i);
   if (start >= 0) {
-    const chunk = html.slice(start, start + 2500);
+    const chunkAll = html.slice(start, start + 2500);
+    const stop = chunkAll.search(/\b(antonyms|related terms|derived terms|collocations)\s*:/i);
+    const chunk = stop > 0 ? chunkAll.slice(0, stop) : chunkAll;
     const links = chunk.match(/<a[^>]*>([^<]+)<\/a>/gi) || [];
     const seen = new Set<string>();
     for (const link of links) {
