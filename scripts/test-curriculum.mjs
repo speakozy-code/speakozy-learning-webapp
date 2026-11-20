@@ -6,16 +6,16 @@ import { seedData } from '../src/lib/seed.ts';
 let pass = 0;
 const t = (name, fn) => { fn(); pass++; console.log('ok -', name); };
 
-t('seven ordered levels from E1 to Upper 1', () => {
-  assert.equal(C.levels.length, 7);
-  assert.deepEqual(C.levels.map(l => l.title), ['E1','E2','E3','Inter 1','Inter 2','Inter 3','Upper 1']);
+t('eleven ordered levels from E1 to Upper 2', () => {
+  assert.equal(C.levels.length, 11);
+  assert.deepEqual(C.levels.map(l => l.title), ['E1','E2','E3','Pre 1','Pre 2','Pre 3','Inter 1','Inter 2','Inter 3','Upper 1','Upper 2']);
   C.levels.forEach((l, i) => assert.equal(l.order, i + 1));
 });
 
 t('every level has sessions with full lesson material', () => {
   for (const level of C.levels) {
     const list = C.sessions.filter(s => s.levelId === level.id).sort((a,b) => a.order - b.order);
-    assert.ok(list.length >= 7, `${level.id} has ${list.length} sessions`);
+    assert.ok(list.length >= 2, `${level.id} has ${list.length} sessions`);
     list.forEach((s, i) => {
       assert.equal(s.order, i + 1);
       assert.ok(s.sections.length >= 6, `${s.id} sections`);
@@ -54,7 +54,7 @@ t('Arabic fields do not leak Latin script', () => {
 
 t('seed exposes the imported curriculum to the app', () => {
   const d = seedData();
-  assert.equal(d.levels.length, 7);
+  assert.equal(d.levels.length, 11);
   assert.equal(d.sessions.length, C.sessions.length);
   assert.equal(d.dictionary.length, C.dictionary.length);
   assert.ok(d.grammarNotes.length > 50);

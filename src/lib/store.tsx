@@ -6,7 +6,7 @@ import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from '.
 import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete } from './supabase';
 import { englishify } from './translate';
 
-const KEY = 'speakozy-demo-v9';
+const KEY = 'speakozy-demo-v10';
 const CLOUD = isSupabase ? 'supabase' : isFirebase ? 'firebase' : 'demo';
 const COLLECTIONS = ['users','levels','sessions','questions','attempts','progress','tasks','taskCompletions','notifications','scores','savedWords','dictionary','certificates','logs','grammarNotes'];
 

@@ -22,6 +22,13 @@ const MATERIAL_PDF: Record<string, string> = {
   'l5-s5': './materials/5_Personality.pdf',
   'l5-s6': './materials/6%20-%20Work.pdf',
   'l5-s7': './materials/7-%20Shopping.pdf',
+  'l9-s1': './materials/1%20-%20Leisure%20Time.pdf',
+  'l9-s2': './materials/2%20-%20Love.pdf',
+  'l9-s3': './materials/3%20-%20Education%20and%20University.pdf',
+  'l9-s4': './materials/4%20-%20Marriage.pdf',
+  'l9-s5': './materials/5_Personality.pdf',
+  'l9-s6': './materials/6%20-%20Work.pdf',
+  'l9-s7': './materials/7-%20Shopping.pdf',
 };
 function materialPdf(s: any): string {
   return s?.pdfUrl || MATERIAL_PDF[s?.id] || (s?.id === 'l7-s8' ? './travel-b1-handout.pdf' : '');
