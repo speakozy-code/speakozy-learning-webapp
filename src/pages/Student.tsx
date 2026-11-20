@@ -1,0 +1,844 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { useApp } from '../lib/store';
+import { Card, Button, Badge, Progress, Stat, SectionTitle, Empty, Tabs, Field, Modal, fmtDate, fmtDay, isLate } from '../components/UI';
+import { sessionStatus, levelProgress, engagementProgress, canOpenLevel, sessionOpen, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, uid, today, allowedLevelCount, PLANS } from '../lib/domain';
+import { go } from '../App';
+import { lookupWord, allCached, type LookupEntry } from '../lib/dictionaryProvider';
+import { grammarSlides, exercises, homework, overviewSections } from '../lib/lessonContent';
+
+const statusTone: Record<string, string> = { locked: 'muted', available: 'blue', progress: 'amber', done: 'blue', review: 'amber', approved: 'green' };
+
+// Resolve lesson PDFs by stable session id so stale demo localStorage still shows them.
+const MATERIAL_PDF: Record<string, string> = {
+  'l5-s1': './materials/1%20-%20Leisure%20Time.pdf',
+  'l5-s2': './materials/2%20-%20Love.pdf',
+  'l5-s3': './materials/3%20-%20Education%20and%20University.pdf',
+  'l5-s4': './materials/4%20-%20Marriage.pdf',
+  'l5-s5': './materials/5_Personality.pdf',
+  'l5-s6': './materials/6%20-%20Work.pdf',
+  'l5-s7': './materials/7-%20Shopping.pdf',
+};
+function materialPdf(s: any): string {
+  return s?.pdfUrl || MATERIAL_PDF[s?.id] || (s?.id === 'l7-s8' ? './travel-b1-handout.pdf' : '');
+}
+
+export function StudentDashboard() {
+  const { user, data } = useApp();
+  if (!user) return null;
+  const level = data.levels.find((l) => l.id === user.levelId) || data.levels[0];
+  const sessions = data.sessions.filter((s) => s.levelId === user.levelId).sort((a, b) => a.order - b.order);
+  const next = sessions.find((s) => ['available', 'progress', 'done', 'review'].includes(sessionStatus(data, s, user.id).key));
+  const myTasks = data.tasks.filter((t) => t.active && (t.targetType === 'all' || (t.targetType === 'student' && t.targetId === user.id)));
+  const doneTaskIds = data.taskCompletions.filter((c) => c.studentId === user.id).map((c) => c.taskId);
+  const late = myTasks.filter((t) => !doneTaskIds.includes(t.id) && isLate(t.dueAt));
+  const notes = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3);
+  const approved = data.attempts.filter((a) => a.studentId === user.id && a.status === 'approved').length;
+  const pending = data.attempts.filter((a) => a.studentId === user.id && a.status === 'pending').length;
+  const pct = level ? engagementProgress(data, level.id, user.id) : 0;
+
+  return <div className="stack">
+    <Card style={{ background: 'linear-gradient(135deg,#0b1220,#16243c)', color: '#fff', border: 0 }}>
+      <div className="between">
+        <div><div className="muted" style={{ color: '#9fb0c9' }}>Hi {user.name} 👋</div><h1 style={{ marginTop: '.35rem' }}>Ready to pick up where you left off?</h1>
+          <div className="row" style={{ marginTop: '.8rem' }}>
+            <Badge tone="green">{level?.title || 'No level'}</Badge>
+            <Badge tone="blue">Plan: {PLANS[user.plan || 'starter']?.label || 'Starter'}</Badge>
+            <span style={{ color: '#b8c4d6', fontSize: '.85rem' }}>Levels available: {allowedLevelCount(user)} of {data.levels.length}</span>
+          </div>
+        </div>
+        <Button onClick={() => go(next ? `/session/${next.id}` : '/roadmap')}>{next ? 'Continue studying' : 'Open roadmap'}</Button>
+      </div>
+    </Card>
+
+    <div className="grid g4">
+      <Stat label="Level progress" value={`${pct}%`} sub={level?.title} tone="green" />
+      <Stat label="Total points" value={totalScore(data, user.id)} sub="From all sources" />
+      <Stat label="Approved quizzes" value={approved} sub={pending ? `and ${pending} awaiting review` : 'Nothing pending'} />
+      <Stat label="Late tasks" value={late.length} sub={late.length ? 'Review them today' : 'Everything is on track'} tone={late.length ? 'danger' : ''} />
+    </div>
+
+    <Card>
+      <div className="between"><div><h3>Your progress in {level?.title || 'the level'}</h3><small className="muted">{sessions.filter((s) => sessionStatus(data, s, user.id).key === 'approved').length} of {sessions.length} approved sessions</small></div></div>
+      <div style={{ marginTop: '.8rem' }}><Progress value={pct} /></div>
+    </Card>
+
+    <div className="grid g2">
+      <Card>
+        <SectionTitle title="Upcoming session" action={<button className="icon-btn" onClick={() => go('/roadmap')}>View all ←</button>} />
+        {next ? <div className="stack">
+          <div className="row between"><strong>{next.title}</strong><Badge tone={statusTone[sessionStatus(data, next, user.id).key]}>{sessionStatus(data, next, user.id).label}</Badge></div>
+          <small className="muted">{next.topic} · {fmtDay(next.dueAt)}</small>
+          <Button variant="ghost" onClick={() => go(`/session/${next.id}`)}>Open session</Button>
+        </div> : <Empty title="No sessions available right now" hint="They'll appear here once your admin opens a new session for you." />}
+      </Card>
+      <Card>
+        <SectionTitle title="Latest notifications" action={<button className="icon-btn" onClick={() => go('/notifications')}>All ←</button>} />
+        {notes.length ? <div className="stack">{notes.map((n) => <div key={n.id} className="row between" style={{ alignItems: 'flex-start' }}>
+          <div><strong style={{ fontSize: '.9rem' }}>{n.title}</strong><div className="muted" style={{ fontSize: '.82rem' }}>{n.body}</div></div>
+          {!n.read && <span className="badge badge-green">New</span>}
+        </div>)}</div> : <Empty title="No notifications" />}
+      </Card>
+    </div>
+
+    <Card>
+      <SectionTitle title="Speakozy Leaderboard" action={<span className="muted" style={{ fontSize: '.8rem' }}>Top scorers</span>} />
+      {leaderboard(data).length ? <div className="row" style={{ alignItems: 'stretch', flexWrap: 'nowrap', overflowX: 'auto' }}>
+        {leaderboard(data).slice(0, 6).map((b, i) => <div key={b.id} className="section-card" style={{ minWidth: 140 }}>
+          <div className="node-num">{i + 1}</div><strong>{b.name}</strong><div className="muted">{b.points} pts</div>
+          {b.id === user.id && <Badge tone="green">You</Badge>}
+        </div>)}
+      </div> : <Empty title="No ranked students yet" />}
+    </Card>
+
+    {late.length > 0 && <Card className="danger-zone">
+      <SectionTitle title="Late tasks" />
+      <div className="stack">{late.map((t) => <div key={t.id} className="row between"><span>{t.title}</span><small className="muted">{fmtDate(t.dueAt)}</small></div>)}</div>
+      <Button variant="ghost" size="sm" onClick={() => go('/tasks')} style={{ marginTop: '.8rem' }}>Review tasks ←</Button>
+    </Card>}
+  </div>;
+}
+
+function maxOrderSafe(allLevels: any[], user: any) {
+  const planMax = allowedLevelCount(user);
+  const adminOrder = allLevels.find((l) => l.id === user.maxLevelId)?.order || planMax;
+  return Math.min(planMax, adminOrder);
+}
+
+export function Roadmap() {
+  const { user, data } = useApp();
+  const levels = [...data.levels].sort((a, b) => a.order - b.order);
+  if (!user) return null;
+  const currentLevel = data.levels.find((l) => l.id === user.levelId) || levels[0];
+  const levelSessions = data.sessions.filter((s) => s.levelId === currentLevel?.id).sort((a, b) => a.order - b.order);
+  return <div className="stack">
+    <div><h1>LEVEL ROADMAP</h1><p className="muted">Two views in one place: your sessions first, then the full level path. Both are for reading — study from the dashboard or materials.</p></div>
+    <Card className="roadmap-card">
+      <SectionTitle title={`Sessions · ${currentLevel?.title || '—'}`} action={<Badge tone="blue">{levelSessions.length} sessions</Badge>} />
+      <div className="roadmap-map session-map">
+        {levelSessions.map((s, i) => {
+          const st = sessionStatus(data, s, user.id);
+          const open = sessionOpen(user, s, data.levels);
+          return <div key={s.id} className={`rm-level ${open ? 'is-open' : 'is-locked'} ${i % 2 ? 'rm-right' : 'rm-left'}`}>
+            <div className="rm-marker">{open ? i + 1 : '🔒'}</div>
+            <div className="rm-body">
+              <div className="between"><strong>{s.title}</strong><Badge tone={statusTone[st.key]}>{st.key === 'locked' ? 'Not started' : st.label}</Badge></div>
+              <p className="muted" style={{ margin: '.3rem 0' }}>{s.topic} · {fmtDay(s.dueAt)}</p>
+              <div className="muted" style={{ fontSize: '.8rem' }}>{data.dictionary.filter((w) => (w.sessionIds || []).includes(s.id)).length} words · {s.sections.length} parts</div>
+            </div>
+          </div>;
+        })}
+      </div>
+    </Card>
+    <Card className="roadmap-card">
+      <SectionTitle title="Levels" action={<Badge tone="blue">{levels.length} levels</Badge>} />
+      <div className="roadmap-map">
+        {levels.map((l, i) => {
+          const sessions = data.sessions.filter((s) => s.levelId === l.id).sort((a, b) => a.order - b.order);
+          const open = canOpenLevel(user, l, data.levels);
+          const pct = engagementProgress(data, l.id, user.id);
+          const approved = sessions.filter((s) => sessionStatus(data, s, user.id).key === 'approved').length;
+          return <div key={l.id} className={`rm-level ${open ? 'is-open' : 'is-locked'} ${i % 2 ? 'rm-right' : 'rm-left'}`}>
+            <div className="rm-marker">{open ? i + 1 : '🔒'}</div>
+            <div className="rm-body">
+              <div className="between"><strong>{l.title}</strong><Badge tone={open ? 'green' : 'muted'}>{open ? 'Open' : 'Locked'}</Badge></div>
+              <p className="muted" style={{ margin: '.3rem 0' }}>{l.description}</p>
+              <div className="rm-dots">{sessions.map((s) => { const st = sessionStatus(data, s, user.id).key; return <span key={s.id} className={`rm-dot ${st === 'approved' ? 'done' : st === 'progress' || st === 'review' || st === 'done' ? 'active' : ''}`} title={s.title} />; })}</div>
+              <div className="muted" style={{ fontSize: '.8rem' }}>{approved} of {sessions.length} sessions approved · {pct}% complete</div>
+            </div>
+          </div>;
+        })}
+      </div>
+    </Card>
+  </div>;
+}
+
+export function SessionPage({ sessionId }: any) {
+  const { user, data, put, grantScore, log } = useApp();
+  const [tab, setTab] = useState('overview');
+  const [defs, setDefs] = useState<Record<string, string>>({});
+  const [grammarAnswers, setGrammarAnswers] = useState<Record<string, string>>({});
+  const [grammarResult, setGrammarResult] = useState<{ marks: Record<string, boolean>; score: number; max: number } | null>(null);
+  const [exerciseAnswers, setExerciseAnswers] = useState<Record<string, string>>({});
+  const [exerciseResult, setExerciseResult] = useState<any>(null);
+  const [slideIdx, setSlideIdx] = useState(0);
+  const [speaking, setSpeaking] = useState('');
+  const [writing, setWriting] = useState('');
+  const [listening, setListening] = useState('');
+  const [videoDraft, setVideoDraft] = useState('');
+  useEffect(() => { setSlideIdx(0); setExerciseResult(null); setGrammarResult(null); setGrammarAnswers({}); }, [sessionId]);
+  useEffect(() => {
+    if (tab !== 'vocabulary') return;
+    let alive = true;
+    (async () => {
+      const list = data.dictionary.filter((w: any) => (w.sessionIds || []).includes(sessionId));
+      for (const w of list) {
+        if (defs[w.word]) continue;
+        try {
+          const hit = await lookupWord(w.word, data.dictionary);
+          if (!alive) return;
+          const en = hit?.definitions?.[0] || (hit?.meaning && /^[A-Za-z]/.test(hit.meaning) ? hit.meaning : '');
+          if (en) setDefs((d) => ({ ...d, [w.word]: en }));
+        } catch {}
+      }
+    })();
+    return () => { alive = false; };
+  }, [tab, sessionId]);
+  const s = data.sessions.find((x: any) => x.id === sessionId);
+  if (!user) return null;
+  if (!s) return <Empty title="Session not found" hint="It may have been removed or the link is wrong." />;
+  const locked = !sessionOpen(user, s, data.levels);
+  const done = data.progress.filter((p) => p.studentId === user.id && p.sessionId === s.id).map((p) => p.sectionId);
+  const qs = data.questions.filter((q) => q.sessionId === s.id);
+  const grammarQs = qs.filter((q) => q.scope === 'grammar');
+  const st = sessionStatus(data, s, user.id);
+  const words = data.dictionary.filter((w) => (w.sessionIds || []).includes(s.id));
+  const wordDone = (w: string) => done.includes(wordProgressId(w));
+  const totalParts = s.sections.length + words.length;
+  const pct = totalParts ? Math.round(done.filter((d) => d.startsWith(`${s.id}-`) || d.startsWith('word:')).length / totalParts * 100) : 0;
+  const customNotes = (data.grammarNotes || []).filter((n) => n.sessionId === s.id).sort((a, b) => a.order - b.order)
+    .map((n) => ({ title: n.title, rule: n.rule, examples: n.examples, detail: n.detail || '' }));
+  const slides = [...grammarSlides(s), ...customNotes];
+  const exerciseList = exercises(s);
+  const hw = homework(s);
+  const overview = overviewSections(s);
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'vocabulary', label: `Vocabulary${words.length ? ` (${words.length})` : ''}` },
+    { id: 'grammar', label: 'Grammar' },
+    { id: 'practice', label: 'Practice' },
+    { id: 'quiz', label: `Quiz${qs.length ? ` (${qs.length})` : ''}` },
+  ];
+  async function submitExercises() {
+    if (locked || !exerciseList.length) return;
+    let auto = 0, max = 0, pending = 0;
+    for (const ex of exerciseList) {
+      const ans = (exerciseAnswers[ex.id] || '').trim();
+      const graded = ex.answer ? ans.toLowerCase() === ex.answer.toLowerCase() : null;
+      max += 10;
+      if (graded === null) pending++;
+      else if (graded) auto += 10;
+      await put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: `exercise:${s!.id}:${ex.id}`, answer: ans, autoScore: graded === null ? 0 : (graded ? 10 : 0), maxScore: 10, status: graded === null ? 'pending' : (graded ? 'approved' : 'rejected'), createdAt: today() });
+    }
+    await grantScore(user!.id, 'exercise', auto, `exercises-${s!.id}-${user!.id}`);
+    await log('exercise-check', `${s!.title} · ${auto}/${max}`);
+    setExerciseResult({ auto, max, pending });
+  }
+  async function mark(sectionId: string) {
+    if (locked || done.includes(sectionId)) return;
+    await put('progress', { studentId: user!.id, sessionId: s!.id, sectionId, completedAt: today() });
+    await grantScore(user!.id, 'study', data.settings.scoreRules.study, `section-${sectionId}`);
+    await log('study-section', `${s!.title} / ${sectionId}`);
+  }
+  async function markWord(w: string) {
+    if (locked || wordDone(w)) return;
+    await put('progress', { studentId: user!.id, sessionId: s!.id, sectionId: wordProgressId(w), completedAt: today() });
+    await grantScore(user!.id, 'word', data.settings.scoreRules.wordQuiz || 5, `word-${s!.id}-${w.toLowerCase()}`);
+  }
+  function pronounce(w: any) {
+    const word = typeof w === 'string' ? w : w.word;
+    if (w && w.audioUrl) {
+      const audio = new Audio(w.audioUrl);
+      audio.play().catch(() => speak(word));
+      return;
+    }
+    speak(word);
+  }
+  function speak(word: string) {
+    try { const u = new SpeechSynthesisUtterance(word); u.lang = 'en-US'; u.rate = 0.85; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {}
+  }
+  const youglishUrl = (word: string, accent: string) =>
+    `https://youglish.com/pronounce/${encodeURIComponent(word)}/english/${accent}`;
+  const ACCENTS = [['us', 'US'], ['uk', 'UK'], ['aus', 'AUS'], ['can', 'CAN']];
+  function savedWord(w: string) { return data.savedWords.some((x) => x.studentId === user!.id && x.word.toLowerCase() === w.toLowerCase()); }
+  async function toggleSave(w: any) {
+    if (locked) return;
+    if (savedWord(w.word)) {
+      const found = data.savedWords.find((x) => x.studentId === user!.id && x.word.toLowerCase() === w.word.toLowerCase());
+      if (found) await put('savedWords', { ...found, review: !found.review });
+    } else {
+      await put('savedWords', { studentId: user!.id, word: w.word, meaning: w.meaning, review: false, createdAt: today(), nextReview: today() });
+    }
+  }
+  async function submitGrammar() {
+    if (locked || !grammarQs.length) return;
+    let score = 0, max = 0;
+    const marks: Record<string, boolean> = {};
+    for (const q of grammarQs) {
+      const g = gradeQuestion(q, grammarAnswers[q.id] || '');
+      marks[q.id] = g.score > 0;
+      score += g.score; max += q.points;
+      await put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: practiceId('grammar', s!.id, Number(q.id.split('-').pop()) || 1), answer: grammarAnswers[q.id] || '', autoScore: g.score, maxScore: q.points, status: g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending', createdAt: today() });
+    }
+    await grantScore(user!.id, 'grammar', data.settings.scoreRules.grammarQuiz || 10, `grammar-${s!.id}-${user!.id}`);
+    await log('grammar-quiz', `${s!.title} · ${score}/${max}`);
+    setGrammarResult({ marks, score, max });
+  }
+  async function savePractice(kind: string, text: string, n: number) {
+    if (locked || !text.trim()) return;
+    const id = practiceId(kind, s!.id, n);
+    const wordsUsed = text.trim().split(/\s+/).length;
+    await put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: id, answer: text, autoScore: Math.min(20, Math.max(5, wordsUsed * 2)), maxScore: 20, status: 'pending', createdAt: today() });
+    await grantScore(user!.id, 'exercise', 5, `practice-${id}-${user!.id}`);
+    await log(`${kind}-saved`, s!.title);
+    if (kind === 'speaking') setSpeaking('');
+    if (kind === 'writing') setWriting('');
+    if (kind === 'listening') setListening('');
+  }
+  function speakPrompt() {
+    const Rec: any = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    if (!Rec) { setSpeaking((x) => x || `I can talk about ${s!.topic}. `); return; }
+    const r = new Rec(); r.lang = 'en-US'; r.interimResults = false;
+    r.onresult = (e: any) => setSpeaking((x) => (x ? x + ' ' : '') + e.results[0][0].transcript);
+    try { r.start(); } catch {}
+  }
+
+  return <div className="stack">
+    <div className="row"><button className="icon-btn" onClick={() => go('/roadmap')}>← Roadmap</button></div>
+    <Card className="between">
+      <div><div className="muted">Session {s.order} · {data.levels.find((l) => l.id === s.levelId)?.title}</div><h1>{s.title}</h1><p className="muted">{s.topic} · {fmtDate(s.dueAt)}</p></div>
+      <Badge tone={locked ? 'muted' : statusTone[st.key]}>{locked ? '🔒 Locked' : st.label}</Badge>
+    </Card>
+    {locked && <div className="note">🔒 You can read everything in this session, but it is locked for your account. Ask your admin to unlock the level to study and save progress.</div>}
+    <Card className="study-progress">
+      <div className="between"><span className="muted">Session progress · {done.filter((d) => d.startsWith(`${s.id}-`) || d.startsWith('word:')).length} of {totalParts} parts done</span><strong>{pct}%</strong></div>
+      <div className="progress-track"><span style={{ width: `${pct}%` }} /></div>
+    </Card>
+    {materialPdf(s) && <Card>
+      <SectionTitle title="Presentation summary for review" />
+      <p className="muted">A PDF copy of all presentation slides, for viewing and review after the session.</p>
+      <a className="btn btn-ghost btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer">Open PDF ↗</a>
+    </Card>}
+    {s.driveUrl && <Card>
+      <SectionTitle title="Additional resource to watch" />
+      <p className="muted">Viewing only. If it doesn't open, the file permissions may be wrong — the written content here is complete.</p>
+      <a className="btn btn-ghost btn-sm" href={s.driveUrl} target="_blank" rel="noreferrer">Open file ↗</a>
+    </Card>}
+    <div className="lesson-tabs">{tabs.map((t) => <button key={t.id} className={`tab ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>{t.label}</button>)}</div>
+    {tab === 'quiz' ? <Card>
+      <div className="between"><div><h3>Session quiz</h3><small className="muted">{qs.length} questions · Final passing is approved by the admin</small></div>
+        <Button onClick={() => go(`/quiz/${s.id}`)} disabled={!qs.length || locked}>{qs.length ? 'Start quiz' : 'No questions yet'}</Button></div>
+    </Card> : <>
+      {tab === 'vocabulary' && (words.length > 0 ? <div className="vocab-grid">{words.map((w, n) => {
+        const def = defs[w.word] || w.definitions?.[0] || '';
+        const example = (w.examples || [])[0] || '';
+        const known = wordDone(w.word);
+        return <article key={w.id} className={`vocab-card ${known ? 'is-done' : ''}`}>
+          <div className="vocab-top">
+            <span className="vocab-index">{String(n + 1).padStart(2, '0')}</span>
+            <Badge tone="blue">{w.type || 'word'}</Badge>
+            <span className="vocab-tools">
+              <button className="icon-btn" title="Play native pronunciation" onClick={() => pronounce(w)}>🔊</button>
+              <button className="icon-btn" title={savedWord(w.word) ? 'Remove from my words' : 'Save word'} onClick={() => toggleSave(w)} disabled={locked}>{savedWord(w.word) ? '★' : '☆'}</button>
+            </span>
+          </div>
+          <div className="vocab-word en" dir="ltr">{w.word}</div>
+          {w.phonetic && <div className="vocab-phonetic en" dir="ltr">/{w.phonetic}/</div>}
+          <div className="vocab-meaning" dir="rtl">{w.arabic || w.meaning}</div>
+          {def && <div className="vocab-def en" dir="ltr">{def}</div>}
+          {example && <div className="vocab-example en" dir="ltr">“{example}”</div>}
+          <div className="youglish-row">
+            <span className="youglish-label">Pronunciation in use</span>
+            <span className="youglish-btns">
+              {ACCENTS.map(([code, label]) => <a key={code} className="yg-btn en"
+                href={youglishUrl(w.word, code)} target="_blank" rel="noreferrer"
+                title={`Hear “${w.word}” in ${label} English on YouGlish`}>{label} ↗</a>)}
+            </span>
+          </div>
+          <button className={`btn vocab-known ${known ? 'btn-ghost' : 'btn-primary'}`} onClick={() => markWord(w.word)} disabled={locked || known}>
+            {known ? '✓ Studied' : 'I know this word'}
+          </button>
+        </article>;
+      })}</div> : <Empty title="No words in this session" hint="Words will appear here once they are added to the dictionary." />)}
+      {tab === 'grammar' && <>
+        {slides.length ? <Card className="slides-card">
+          <div className="between"><div><h3>Grammar slides</h3><small className="muted">One idea at a time — use the arrows to move through the lesson.</small></div><Badge tone="blue">{slideIdx + 1} / {slides.length}</Badge></div>
+          <div className="slide-stage" key={`${s.id}-${slideIdx}`}>
+            <div className="slide-kicker">GRAMMAR · {slideIdx + 1}</div>
+            <h2>{slides[slideIdx].title}</h2>
+            {slides[slideIdx].rule && <p className="slide-rule" dir="auto">{slides[slideIdx].rule}</p>}
+            {slides[slideIdx].detail && <p className="slide-detail" dir="rtl">{slides[slideIdx].detail}</p>}
+            {slides[slideIdx].examples.length > 0 && <div className="slide-examples">
+              <div className="slide-examples-label">Examples</div>
+              {slides[slideIdx].examples.map((ex, i) => <div key={i} className="slide-example en" dir="ltr">{ex}</div>)}
+            </div>}
+          </div>
+          <div className="slides-nav">
+            <Button variant="ghost" size="sm" onClick={() => setSlideIdx((i) => Math.max(0, i - 1))} disabled={slideIdx === 0}>← Previous</Button>
+            <div className="slide-dots">{slides.map((_, i) => <button key={i} className={`slide-dot ${i === slideIdx ? 'active' : ''}`} onClick={() => setSlideIdx(i)} aria-label={`Slide ${i + 1}`} />)}</div>
+            <Button size="sm" onClick={() => setSlideIdx((i) => Math.min(slides.length - 1, i + 1))} disabled={slideIdx === slides.length - 1}>Next →</Button>
+          </div>
+        </Card> : <Empty title="No grammar slides yet" hint="The grammar notes for this session will appear here as slides." />}
+        {grammarQs.length > 0 && <Card className="grammar-training">
+          <div className="between"><div><h3>Grammar training</h3><small className="muted">Practice comes after the slides.</small></div><Badge tone="green">{grammarQs.length} questions</Badge></div>
+          <div className="stack" style={{ marginTop: '.8rem' }}>{grammarQs.map((q, i) => <div key={q.id} className="exercise-item">
+            <div className="between"><strong>{i + 1}. {q.prompt}</strong>{grammarResult && <Badge tone={grammarResult.marks[q.id] ? 'green' : 'red'}>{grammarResult.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
+            <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${grammarAnswers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={grammarAnswers[q.id] === o} onChange={() => setGrammarAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
+          </div>)}</div>
+          <Button style={{ marginTop: '.8rem' }} onClick={submitGrammar} disabled={locked || !grammarQs.every((q) => grammarAnswers[q.id])}>Check grammar answers</Button>
+          {grammarResult && <div className="result-good" style={{ marginTop: '.6rem' }}>Grammar score: {grammarResult.score} / {grammarResult.max}</div>}
+        </Card>}
+      </>}
+      {tab === 'practice' && <div className="stack">
+        {hw && <Card className="activity-card">
+          <SectionTitle title="Homework" action={<Badge tone="blue">Task</Badge>} />
+          <h3>{hw.title}</h3>
+          {hw.brief && <p className="muted">{hw.brief}</p>}
+          {hw.requirements.length > 0 && <div className="req-list">{hw.requirements.map((r, i) => <div key={i} className="req-item"><span className="req-check">☐</span><span>{r}</span></div>)}</div>}
+        </Card>}
+        {exerciseList.length > 0 && <Card className="activity-card">
+          <div className="between"><div><h3>Exercises</h3><small className="muted">Each question is answered on its own.</small></div><Badge tone="blue">{exerciseList.length} questions</Badge></div>
+          <div className="stack" style={{ marginTop: '.8rem' }}>{exerciseList.map((ex, i) => {
+            const correct = exerciseResult && ex.answer && (exerciseAnswers[ex.id] || '').trim().toLowerCase() === ex.answer.toLowerCase();
+            const wrong = exerciseResult && ex.answer && !correct;
+            return <div key={ex.id} className={`exercise-item ${correct ? 'is-correct' : ''} ${wrong ? 'is-wrong' : ''}`}>
+              <div className="between"><strong>{i + 1}. {ex.prompt}</strong>{ex.kind === 'fill' && <Badge>Fill in</Badge>}</div>
+              <input value={exerciseAnswers[ex.id] || ''} onChange={(e) => setExerciseAnswers((a) => ({ ...a, [ex.id]: e.target.value }))} placeholder={ex.kind === 'fill' ? 'Type the missing words…' : 'Write your answer…'} disabled={locked} dir="ltr" />
+              {exerciseResult && ex.answer && <small className={correct ? 'green' : ''}>{correct ? 'Correct ✓' : `Answer: ${ex.answer}`}</small>}
+            </div>;
+          })}</div>
+          {exerciseResult && <div className={exerciseResult.pending ? 'note' : 'result-good'} style={{ marginTop: '.8rem' }}>
+            Score: {exerciseResult.auto} / {exerciseResult.max}{exerciseResult.pending ? ` · ${exerciseResult.pending} written answers sent for review.` : ''}
+          </div>}
+          <Button style={{ marginTop: '.8rem' }} onClick={submitExercises} disabled={locked || !exerciseList.some((ex) => (exerciseAnswers[ex.id] || '').trim())}>Check exercises</Button>
+        </Card>}
+        <div className="grid g2">
+          <Card><SectionTitle title="Speaking" />
+            <p className="muted">Answer out loud: talk about {s.topic} and use words from this session. Record your voice or type what you said.</p>
+            <textarea value={speaking} onChange={(e) => setSpeaking(e.target.value)} placeholder="Say it in English…" disabled={locked} />
+            <div className="row" style={{ marginTop: '.6rem' }}><Button size="sm" variant="ghost" onClick={speakPrompt} disabled={locked}>🎤 Speak</Button><Button size="sm" onClick={() => savePractice('speaking', speaking, 1)} disabled={locked || !speaking.trim()}>Save answer</Button></div>
+          </Card>
+          <Card><SectionTitle title="Writing" />
+            <p className="muted">Write a short answer about {s.topic}. Use the new words and grammar.</p>
+            <textarea value={writing} onChange={(e) => setWriting(e.target.value)} placeholder="Write in English…" disabled={locked} />
+            <Button size="sm" style={{ marginTop: '.6rem' }} onClick={() => savePractice('writing', writing, 1)} disabled={locked || !writing.trim()}>Save answer</Button>
+          </Card>
+          <Card style={{ gridColumn: '1 / -1' }}><SectionTitle title="Listening" />
+            {s.videoUrl ? <iframe title="Listening video" src={s.videoUrl.replace('watch?v=', 'embed/')} style={{ width: '100%', aspectRatio: '16 / 9', border: 0 }} allowFullScreen /> : <div className="note">No listening video has been added to this session yet.{user.role === 'admin' ? ' Add a YouTube link below.' : ''}</div>}
+            {user.role === 'admin' && <div className="row" style={{ marginTop: '.6rem' }}><input value={videoDraft} onChange={(e) => setVideoDraft(e.target.value)} placeholder="https://www.youtube.com/watch?v=…" /><Button size="sm" onClick={async () => { if (!videoDraft.trim()) return; await put('sessions', { ...s, videoUrl: videoDraft.trim() }); setVideoDraft(''); }}>Save video</Button></div>}
+            <p className="muted" style={{ marginTop: '.7rem' }}>After watching, summarise what you understood:</p>
+            <textarea value={listening} onChange={(e) => setListening(e.target.value)} placeholder="Your summary in English…" disabled={locked} />
+            <Button size="sm" style={{ marginTop: '.6rem' }} onClick={() => savePractice('listening', listening, 1)} disabled={locked || !listening.trim()}>Save summary</Button>
+          </Card>
+        </div>
+      </div>}
+      {tab === 'overview' && (overview.length ? <div className="grid g2">{overview.map((sec) => {
+        const isDone = done.includes(sec.id);
+        return <div key={sec.id} className={`section-card ${isDone ? 'done' : ''}`}>
+          <div className="section-head"><h3>{sec.title}</h3>{isDone ? <Badge tone="green">Studied</Badge> : <Button size="sm" variant="ghost" onClick={() => mark(sec.id)} disabled={locked}>Mark as studied</Button>}</div>
+          <div className="section-body" dir="auto">{sec.body}</div>
+        </div>;
+      })}</div> : <Empty title="No overview content in this session" hint="Check the other tabs for words, grammar and practice." />)}
+    </>}
+  </div>;
+}
+
+export function QuizPage({ sessionId }: any) {
+  const { user, data, put, grantScore, log } = useApp();
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [result, setResult] = useState<any>(null);
+  const s = data.sessions.find((x) => x.id === sessionId);
+  const qs = data.sessions.find((x) => x.id === sessionId) ? data.questions.filter((q) => q.sessionId === sessionId) : [];
+  if (!user) return null;
+  if (!s) return <Empty title="Session not found" />;
+  if (!qs.length) return <Empty title="There are no questions for this session" hint="Check the roadmap." />;
+
+  async function submit() {
+    let auto = 0, max = 0, pending = 0;
+    for (const q of qs) {
+      const ans = answers[q.id] || '';
+      const g = gradeQuestion(q, ans);
+      max += q.points; auto += g.score;
+      const status = g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending';
+      if (!g.auto) pending++;
+      await put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: q.id, answer: ans, autoScore: g.score, maxScore: q.points, status, createdAt: today() });
+      if (g.auto && g.score > 0) await grantScore(user!.id, 'quiz', g.score, `answer-${q.id}-${user!.id}`);
+    }
+    await log('quiz-submit', s!.title);
+    setResult({ auto, max, pending });
+  }
+
+  if (result) return <Card className="stack">
+    <h2>Quiz complete</h2>
+    <div className={result.pending ? 'note' : 'result-good'}>
+      <strong>Automated score: {result.auto} out of {result.max}</strong>
+      {result.pending > 0 && <div>There are {result.pending} written answers to be reviewed by the admin. Final approval isn't immediate.</div>}
+    </div>
+    <div className="row"><Button onClick={() => go(`/session/${s.id}`)}>Back to session</Button><Button variant="ghost" onClick={() => go('/roadmap')}>Roadmap</Button></div>
+  </Card>;
+
+  return <div className="stack">
+    <div className="row"><button className="icon-btn" onClick={() => go(`/session/${s.id}`)}>← Session</button></div>
+    <Card><h1>Quiz: {s.title}</h1><p className="muted">Answer the questions. Written answers are saved for review.</p></Card>
+    {qs.map((q, i) => <Card key={q.id}>
+      <div className="row between"><strong>{i + 1}. {q.prompt}</strong><Badge>{q.points} points</Badge></div>
+      {(q.type === 'mcq' || q.type === 'truefalse') && <div style={{ marginTop: '.8rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${answers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={answers[q.id] === o} onChange={() => setAnswers((a) => ({ ...a, [q.id]: o }))} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>}
+      {(q.type === 'fill' || q.type === 'short') && <div style={{ marginTop: '.8rem' }}><textarea value={answers[q.id] || ''} onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))} placeholder={q.type === 'short' ? 'Write your answer in English...' : 'Fill in the blank...'} /></div>}
+      {(q.type === 'match' || q.type === 'order') && <div style={{ marginTop: '.8rem' }}><Field label="Enter the answers in order, separated by |"><input value={answers[q.id] || ''} onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))} placeholder={q.options.join(' | ')} /></Field></div>}
+    </Card>)}
+    <Card><div className="between"><span className="muted">Written answers are saved for review.</span><Button onClick={submit}>Submit answers</Button></div></Card>
+  </div>;
+}
+
+export function DictionaryPage() {
+  const { user, data, put, remove, demo } = useApp();
+  const [q, setQ] = useState('');
+  const [type, setType] = useState('all');
+  const [tab, setTab] = useState('search');
+  const [detail, setDetail] = useState<LookupEntry | null>(null);
+  const [looking, setLooking] = useState(false);
+  const [manual, setManual] = useState<any>(null);
+  const [showMeaning, setShowMeaning] = useState(false);
+  const [reviewIdx, setReviewIdx] = useState(0);
+  const [globalHit, setGlobalHit] = useState<LookupEntry | null>(null);
+  const [globalTick, setGlobalTick] = useState(0);
+  if (!user) return null;
+
+  const all = data.dictionary;
+  const saved = data.savedWords.filter((w) => w.studentId === user.id);
+  const globalEntries = allCached();
+  const matches = (d: any) => {
+    const matchesType = type === 'all' || d.type === type;
+    const hay = (d.word + ' ' + d.meaning + ' ' + d.arabic + ' ' + (d.examples || []).join(' ')).toLowerCase();
+    return matchesType && (!q || hay.includes(q.trim().toLowerCase()));
+  };
+  const seen = new Set<string>();
+  const localResults = [...all, ...globalEntries].filter((d: any) => {
+    const key = d.word.toLowerCase();
+    if (seen.has(key) || !matches(d)) return false;
+    seen.add(key); return true;
+  }).slice(0, 120);
+  const savedResults = saved.filter((d) => !q || (d.word + d.meaning).toLowerCase().includes(q.toLowerCase()));
+  const types = ['all', ...Array.from(new Set(all.map((d) => d.type)))];
+  const wordOfDay = all[(new Date().getDate() * 7) % all.length];
+  const reviewList = saved.filter((w) => w.review);
+  const reviewCard = reviewList[reviewIdx % Math.max(1, reviewList.length)];
+
+  useEffect(() => {
+    let alive = true;
+    const term = q.trim();
+    setGlobalHit(null);
+    if (term.length < 2) return;
+    const timer = setTimeout(async () => {
+      const entry = await lookupWord(term, all);
+      if (alive && entry && entry.source !== 'local') setGlobalHit(entry);
+    }, 700);
+    return () => { alive = false; clearTimeout(timer); };
+  }, [q, globalTick]);
+
+  function isSaved(word: string) { return saved.some((w) => w.word.toLowerCase() === word.toLowerCase()); }
+
+  async function showWord(word: string) {
+    setDetail(null); setLooking(true);
+    const entry = await lookupWord(word, all);
+    setLooking(false);
+    if (entry) setDetail(entry);
+    else setManual({ word, meaning: '', type: 'noun', examples: '' });
+  }
+  async function toggle(word: LookupEntry | any) {
+    if (isSaved(word.word)) {
+      const found = saved.find((w) => w.word.toLowerCase() === word.word.toLowerCase());
+      if (found) await remove('savedWords', found.id);
+    } else {
+      await put('savedWords', { studentId: user!.id, word: word.word, meaning: word.meaning, review: false, createdAt: today(), nextReview: today() });
+    }
+  }
+  async function markReview(w: any, known: boolean) {
+    const next = new Date(Date.now() + (known ? 3 : 1) * 86400000).toISOString();
+    await put('savedWords', { ...w, review: !known, nextReview: next });
+    setReviewIdx((i) => i + 1); setShowMeaning(false);
+  }
+  function pronounce(entry: any) {
+    if (entry.audioUrl) { new Audio(entry.audioUrl).play().catch(() => speak(entry.word)); return; }
+    speak(entry.word);
+  }
+  function speak(word: string) {
+    try { const u = new SpeechSynthesisUtterance(word); u.lang = 'en-US'; u.rate = 0.85; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {}
+  }
+  async function saveManual() {
+    const entry: any = {
+      id: `manual-${manual.word.toLowerCase().replace(/\s+/g, '-')}`,
+      word: manual.word.trim(), meaning: manual.meaning.trim(), type: manual.type,
+      examples: manual.examples.split('\n').filter((x: string) => x.trim()),
+      arabic: manual.meaning.trim(), source: 'manual', sessionIds: [], addedBy: user!.id,
+    };
+    await put('dictionary', entry);
+    await put('savedWords', { studentId: user!.id, word: entry.word, meaning: entry.meaning, review: false, createdAt: today(), nextReview: today() });
+    setManual(null); setDetail(null); setGlobalTick((t) => t + 1);
+  }
+
+  return <div className="stack">
+    <div><h1>Dictionary</h1><p className="muted">The dictionary is global: search {all.length} ready-made words, or type any English word and we'll fetch its definition from the global source automatically. You can save any word.</p></div>
+
+    <Card className="search-hero">
+      <div className="row"><span style={{ fontSize: '1.4rem' }}>🔎</span><input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) showWord(q); }} placeholder="Type any word... e.g. serendipity" aria-label="Search the dictionary" /></div>
+      <div className="row" style={{ marginTop: '.7rem', justifyContent: 'space-between' }}>
+        <div className="row">{types.map((t) => <button key={t} className={`tab ${type === t ? 'active' : ''}`} onClick={() => setType(t)}>{t === 'all' ? 'All' : t}</button>)}</div>
+        <div className="row"><Button size="sm" variant="ghost" onClick={() => setManual({ word: q.trim(), meaning: '', type: 'noun', examples: '' })}>+ Add word</Button><Button size="sm" onClick={() => q.trim() && showWord(q)} disabled={!q.trim() || looking}>{looking ? 'Searching...' : 'Search globally'}</Button></div>
+      </div>
+      {q.trim() && !looking && <div className="muted" style={{ marginTop: '.5rem', fontSize: '.82rem' }}>
+        Local results: {localResults.length} · <button className="icon-btn" onClick={() => showWord(q)}>Search globally for "{q}" ←</button>
+      </div>}
+      {globalHit && <div className="global-hit">
+        <div className="row between"><div><small className="muted">Automatic global result</small>
+          <div className="row"><strong className="en" style={{ fontSize: '1.1rem' }}>{globalHit.word}</strong><Badge tone="blue">Global</Badge><span className="muted">{globalHit.type}</span></div>
+          <div>{globalHit.meaning}</div></div>
+          <div className="row"><Button size="sm" variant="ghost" onClick={() => pronounce(globalHit)}>🔊</Button><Button size="sm" onClick={() => setDetail(globalHit)}>Open card</Button></div>
+        </div>
+      </div>}
+    </Card>
+
+    {wordOfDay && <Card className="word-day">
+      <div className="between"><div><div className="muted">Word of the day</div><h2 dir="ltr" className="en" style={{ fontSize: '1.7rem' }}>{wordOfDay.word}</h2><div>{wordOfDay.meaning} · {wordOfDay.type}</div></div>
+        <div className="row"><Button variant="ghost" onClick={() => speak(wordOfDay.word)}>🔊</Button><Button onClick={() => showWord(wordOfDay.word)}>Open card</Button></div>
+      </div>
+    </Card>}
+
+    <Tabs tabs={[{ id: 'search', label: 'Search' }, { id: 'saved', label: `My words (${saved.length})` }, { id: 'review', label: `Review (${reviewList.length})` }]} active={tab} onChange={setTab} />
+
+    {tab === 'search' && <div className="grid g2">
+      <Card>
+        <SectionTitle title={q ? `Results (${localResults.length})` : `All words (${localResults.length})`} />
+        {localResults.length ? <div className="stack">{localResults.map((d) => <div key={d.id} className="word-row">
+          <button className="icon-btn" onClick={() => setDetail({ ...d, source: d.source || 'local' })}><strong className="en">{d.word}</strong></button>
+          <span className="muted" dir="rtl">{d.meaning}</span>
+          <div className="row"><Badge>{d.type}</Badge><button className="icon-btn" onClick={() => pronounce(d)}>🔊</button><Button size="sm" variant={isSaved(d.word) ? 'ghost' : 'primary'} onClick={() => toggle(d)}>{isSaved(d.word) ? '✓' : 'Save'}</Button></div>
+        </div>)}</div> : <Empty icon="🔍" title="No local results" hint="We'll try the global source automatically, or you can add the word yourself." />}
+      </Card>
+      <Card><SectionTitle title="Notes" />
+        <div className="note">Search includes the word, meaning, explanation, and examples. If a word isn't found, the global source will fetch its definition, and if you're offline you can add it manually.</div>
+        <div className="stack" style={{ marginTop: '1rem' }}>{saved.slice(0, 6).map((w) => <div key={w.id} className="row between"><strong className="en">{w.word}</strong><span className="muted" dir="rtl">{w.meaning}</span></div>)}</div>
+      </Card>
+    </div>}
+
+    {tab === 'saved' && <Card>
+      <SectionTitle title={`Saved words (${savedResults.length})`} />
+      {savedResults.length ? <div className="stack">{savedResults.map((w) => <div key={w.id} className="word-row">
+        <div><strong className="en">{w.word}</strong><div className="muted" dir="rtl">{w.meaning}</div></div>
+        <div className="row"><Button size="sm" variant="ghost" onClick={() => markReview(w, w.review)}>{w.review ? 'Reviewed' : 'Needs review'}</Button><Button size="sm" variant="danger" onClick={() => remove('savedWords', w.id)}>Delete</Button></div>
+      </div>)}</div> : <Empty title="You haven't saved any words yet" hint="Save any word from search or from sessions." />}
+    </Card>}
+
+    {tab === 'review' && <Card>
+      <SectionTitle title="Quick review" />
+      {reviewList.length ? <div className="flashcard">
+        <div className="muted">Word to review ({reviewIdx % reviewList.length + 1} of {reviewList.length})</div>
+        <h2 dir="ltr" className="en">{reviewCard?.word}</h2>
+        {showMeaning ? <div className="result-good" dir="rtl">{reviewCard?.meaning}</div> : <Button variant="ghost" onClick={() => setShowMeaning(true)}>Show meaning</Button>}
+        {showMeaning && <div className="row" style={{ marginTop: '1rem' }}><Button onClick={() => markReview(reviewCard, true)}>I knew it ✓</Button><Button variant="danger" onClick={() => markReview(reviewCard, false)}>Needs more practice</Button></div>}
+      </div> : <Empty icon="🎴" title="All words are well saved" hint="The &quot;Needs more practice&quot; mark will make the word appear here." />}
+    </Card>}
+
+    <Modal open={!!detail} title="Word card" onClose={() => setDetail(null)}>
+      {detail && <div className="stack">
+        <div className="between"><div><h2 dir="ltr" className="en" style={{ fontSize: '1.9rem' }}>{detail.word}</h2>
+          <div className="row"><Badge tone="green">{detail.type}</Badge>{detail.phonetic && <span className="muted" dir="ltr">{detail.phonetic}</span>}<Badge tone={detail.source === 'global' ? 'blue' : 'muted'}>{detail.source === 'global' ? 'Global dictionary' : detail.source === 'manual' ? 'Manual entry' : 'From the curriculum'}</Badge></div></div>
+          <Button variant="ghost" onClick={() => pronounce(detail)}>🔊 Listen to pronunciation</Button></div>
+        <div className="section-card"><h3>Meaning</h3><p dir="rtl">{detail.meaning}</p>
+          {detail.definitions && <div className="stack" style={{ marginTop: '.5rem' }}>{detail.definitions.map((d, i) => <div key={i} className="muted">• {d}</div>)}</div>}
+        </div>
+        {detail.synonyms && detail.synonyms.length > 0 && <div className="section-card"><h3>Synonyms</h3><div className="row">{detail.synonyms.map((x) => <span key={x} className="word-chip en">{x}</span>)}</div></div>}
+        <div className="section-card"><h3>Examples</h3>{detail.examples.length ? detail.examples.map((ex, i) => <div key={i} className="en" dir="ltr" style={{ textAlign: 'left', lineHeight: 1.9 }}>{ex}</div>) : <p className="muted">No examples available.</p>}</div>
+        {(detail.sessionIds || []).length > 0 && <div className="section-card"><h3>Appears in sessions</h3>{detail.sessionIds!.map((sid) => { const sess = data.sessions.find((x) => x.id === sid); return sess ? <div key={sid}><button className="icon-btn" onClick={() => { setDetail(null); go(`/session/${sid}`); }}>{sess.title} ←</button></div> : null; })}</div>}
+        <Button onClick={() => toggle(detail)}>{isSaved(detail.word) ? 'Remove from saved' : 'Add to my words'}</Button>
+      </div>}
+    </Modal>
+
+    <Modal open={!!manual} title="Add a word yourself" onClose={() => setManual(null)}>
+      <Field label="Word"><input dir="ltr" value={manual?.word || ''} onChange={(e) => setManual({ ...manual, word: e.target.value })} /></Field>
+      <Field label="Meaning in Arabic"><input value={manual?.meaning || ''} onChange={(e) => setManual({ ...manual, meaning: e.target.value })} /></Field>
+      <Field label="Type"><select value={manual?.type || 'noun'} onChange={(e) => setManual({ ...manual, type: e.target.value })}>{['noun','verb','adjective','adverb','phrase','preposition'].map((x) => <option key={x}>{x}</option>)}</select></Field>
+      <Field label="Examples (one per line)"><textarea dir="ltr" value={manual?.examples || ''} onChange={(e) => setManual({ ...manual, examples: e.target.value })} /></Field>
+      <Button onClick={saveManual} disabled={!manual?.word?.trim() || !manual?.meaning?.trim()}>Save word</Button>
+    </Modal>
+  </div>;
+}
+
+export function TasksPage() {
+  const { user, data, put, grantScore, log } = useApp();
+  const [tab, setTab] = useState('due');
+  if (!user) return null;
+  const mine = data.tasks.filter((t) => t.active && (t.targetType === 'all' || (t.targetType === 'student' && t.targetId === user.id) || (t.targetType === 'level' && t.targetId === user.levelId)));
+  const doneIds = data.taskCompletions.filter((c) => c.studentId === user.id).map((c) => c.taskId);
+  const weekDone = (t: any) => t.kind === 'weekly' && (t.sessionIds || []).length > 0 && (t.sessionIds || []).every((id: string) => {
+    const sess = data.sessions.find((x) => x.id === id);
+    return !!sess && sessionStatus(data, sess, user.id).key === 'approved';
+  });
+  const isDone = (t: any) => doneIds.includes(t.id) || weekDone(t);
+  const groups = {
+    due: mine.filter((t) => !isDone(t) && !isLate(t.dueAt)),
+    late: mine.filter((t) => !isDone(t) && isLate(t.dueAt)),
+    done: mine.filter((t) => isDone(t)),
+  };
+  async function complete(id: string) {
+    await put('taskCompletions', { taskId: id, studentId: user!.id, completedAt: today() });
+    await grantScore(user!.id, 'exercise', data.settings.scoreRules.exercise, `task-${id}`);
+    await log('task-complete', id);
+  }
+  return <div className="stack">
+    <div><h1>My tasks</h1><p className="muted">Today's and past tasks. Completion is recorded with its date and time.</p></div>
+    <div className="grid g3">
+      <Stat label="Due today" value={groups.due.length} tone="green" />
+      <Stat label="Late" value={groups.late.length} tone={groups.late.length ? 'danger' : ''} />
+      <Stat label="Completed" value={groups.done.length} />
+    </div>
+    <Tabs tabs={[{ id: 'due', label: 'Due' }, { id: 'late', label: 'Late' }, { id: 'done', label: 'Completed' }]} active={tab} onChange={setTab} />
+    <Card>{groups[tab as keyof typeof groups].length ? <div className="stack">
+      {groups[tab as keyof typeof groups].map((t) => <div key={t.id} className="row between section-card">
+        <div><strong>{t.title}</strong><div className="muted">{fmtDate(t.dueAt)} · {t.kind}</div>
+          {t.kind === 'weekly' && <div className="week-sessions">{(t.sessionIds || []).map((id) => {
+            const sess = data.sessions.find((x) => x.id === id);
+            if (!sess) return null;
+            const st = sessionStatus(data, sess, user.id);
+            return <div key={id} className="week-session"><span>{sess.title}</span><Badge tone={st.key === 'approved' ? 'green' : 'muted'}>{st.key === 'approved' ? 'Approved' : st.label}</Badge></div>;
+          })}</div>}
+        </div>
+        {tab !== 'done' && t.kind !== 'weekly' && <Button size="sm" onClick={() => complete(t.id)}>Done</Button>}
+        {t.kind === 'weekly' && (weekDone(t) ? <Badge tone="green">Completed</Badge> : <small className="muted">Finish {(t.sessionIds || []).length > 1 ? 'both sessions' : 'this session'}</small>)}
+        {tab === 'done' && t.kind !== 'weekly' && <Badge tone="green">Completed</Badge>}
+      </div>)}
+    </div> : <Empty title="No tasks here" />}</Card>
+  </div>;
+}
+
+export function NotificationsPage() {
+  const { user, data, put } = useApp();
+  if (!user) return null;
+  const list = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return <div className="stack">
+    <div><h1>Notifications</h1><p className="muted">Notifications on the site are always available. Device notifications need your permission.</p></div>
+    <Card>{list.length ? <div className="stack">{list.map((n) => <div key={n.id} className={`section-card ${!n.read ? 'done' : ''}`}>
+      <div className="row between"><strong>{n.title}</strong>{!n.read && <Badge tone="green">New</Badge>}</div>
+      <p className="muted" style={{ margin: '.4rem 0' }}>{n.body}</p>
+      <div className="row"><small className="muted">{fmtDate(n.createdAt)}</small>
+        <Button size="sm" variant="ghost" onClick={() => { if (!n.read) put('notifications', { ...n, read: true }); if (n.href) go(n.href.replace('#', '')); }}>Open</Button>
+      </div>
+    </div>)}</div> : <Empty title="No notifications" />}</Card>
+  </div>;
+}
+
+export function LeaderboardPage() {
+  const { user, data } = useApp();
+  const [period, setPeriod] = useState('weekly');
+  if (!user) return null;
+  const board = leaderboard(data);
+  const mine = board.findIndex((b) => b.id === user.id) + 1;
+  return <div className="stack">
+    <div><h1>Speakozy leaderboard</h1><p className="muted">Ranked by score. Names are abbreviated per the privacy setting, and no private data is shown.</p></div>
+    <Tabs tabs={[{ id: 'weekly', label: 'Weekly' }, { id: 'monthly', label: 'Monthly' }, { id: 'total', label: 'All time' }]} active={period} onChange={setPeriod} />
+    {!data.settings.leaderboard.enabled ? <Card><Empty icon="🔒" title="The leaderboard is currently disabled" hint="The admin decided to hide it temporarily." /></Card> : <Card>
+      {board.length ? <div className="stack">{board.map((b, i) => <div key={b.id} className={`row between section-card ${b.id === user.id ? 'done' : ''}`}>
+        <div className="row"><span className="node-num">{i + 1}</span><strong>{b.name}</strong>{b.id === user.id && <Badge tone="green">You</Badge>}</div>
+        <strong className="green">{b.points} points</strong>
+      </div>)}</div> : <Empty title="No participants yet" />}
+    </Card>}
+    {mine > 0 && <div className="note">Your current rank: #{mine}. Changes from the previous period will appear when comparison history is available.</div>}
+  </div>;
+}
+
+export function ProfilePage() {
+  const { user, data, resetDemo, demo } = useApp();
+  if (!user) return null;
+  const level = data.levels.find((l) => l.id === user.levelId);
+  const certs = data.certificates.filter((c) => c.studentId === user.id && c.status === 'active');
+  const recent = data.scores.filter((s) => s.studentId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 8);
+  return <div className="stack">
+    <div><h1>My profile</h1></div>
+    <Card className="row" style={{ gap: '1rem' }}><span className="avatar" style={{ width: 56, height: 56, fontSize: '1.3rem' }}>{user.name.charAt(0)}</span>
+      <div><h2>{user.name}</h2><div className="muted">{user.email}</div><div className="row" style={{ marginTop: '.4rem' }}><Badge tone="green">{level?.title || '—'}</Badge><Badge>Max: {data.levels.find((l) => l.id === user.maxLevelId)?.title || '—'}</Badge></div></div>
+    </Card>
+    <div className="grid g3"><Stat label="Total points" value={totalScore(data, user.id)} tone="green" /><Stat label="Certificates" value={certs.length} /><Stat label="Saved words" value={data.savedWords.filter((w) => w.studentId === user.id).length} /></div>
+    <Card><SectionTitle title="Score history" />
+      {recent.length ? <div className="stack">{recent.map((s) => <div key={s.id} className="row between"><span>{s.source}</span><span className="row"><strong>+{s.points}</strong><small className="muted">{fmtDate(s.createdAt)}</small></span></div>)}</div> : <Empty title="No points yet" />}
+    </Card>
+    {demo && <Card className="danger-zone"><SectionTitle title="Demo data" />
+      <p className="muted">If you're using an old version of the data, reset to load the full new curriculum.</p>
+      <Button variant="danger" onClick={() => { resetDemo(); go('/'); }}>Reset demo data</Button>
+    </Card>}
+    <Card><SectionTitle title="My certificates" />
+      {certs.length ? certs.map((c) => <div key={c.id} className="row between"><span>{c.levelIds.join(', ')}</span><Badge tone="green">{c.number}</Badge></div>) : <Empty title="No certificate yet" hint="A certificate is issued after the admin approves level completion." />}
+    </Card>
+  </div>;
+}
+
+
+export function MaterialsPage() {
+  const { user, data } = useApp();
+  const levels = [...data.levels].sort((a, b) => a.order - b.order);
+  const [selected, setSelected] = useState('');
+  if (!user) return null;
+  const admin = user.role === 'admin';
+  const current = data.levels.find((l) => l.id === user.levelId) || levels[0];
+  const levelId = selected || user.levelId || levels[0]?.id;
+  const level = data.levels.find((l) => l.id === levelId) || current;
+  const sessions = data.sessions.filter((s) => s.levelId === level?.id).sort((a, b) => a.order - b.order);
+  const locked = level ? (!admin && !canOpenLevel(user, level, data.levels)) : false;
+  return <div className="stack">
+    <div><h1>MATERIALS</h1><p className="muted">Choose a level from the list. Your current level loads automatically; other levels stay locked until your admin opens them.</p></div>
+    <Card>
+      <Field label="Level"><select value={levelId} onChange={(e) => setSelected(e.target.value)}>
+        {levels.map((l) => {
+          const open = admin || canOpenLevel(user, l, data.levels);
+          return <option key={l.id} value={l.id} disabled={!open}>{l.title}{open ? '' : ' 🔒'}</option>;
+        })}
+      </select></Field>
+      {level && <div className="row" style={{ marginTop: '.2rem' }}><Badge tone={locked ? 'muted' : 'green'}>{locked ? '🔒 Locked' : 'Available'}</Badge><Badge tone="blue">{sessions.length} lessons</Badge></div>}
+    </Card>
+    {locked && <div className="note">🔒 This level is locked for your account. Your admin controls which level you can study.</div>}
+    {level && sessions.length ? <div className="grid g2">{sessions.map((s) => {
+      const source = s.sections.find((x) => x.title === 'Lesson material (text)') || overviewSections(s)[0];
+      const sessionLocked = locked || (!admin && !sessionOpen(user, s, data.levels));
+      return <Card key={s.id}>
+        <SectionTitle title={s.title} action={<Badge>{s.order}</Badge>} />
+        <p className="muted" style={{ marginBottom: '.7rem' }}>{s.topic}</p>
+        {source && <div className="section-card" style={{ maxHeight: 120, overflow: 'hidden', marginBottom: '.7rem' }}>
+          <div className="section-body" style={{ fontSize: '.8rem' }}>{source.body.slice(0, 360)}…</div>
+        </div>}
+        <div className="row"><Badge tone={sessionLocked ? 'muted' : 'green'}>{sessionLocked ? '🔒 Locked' : `${s.sections.length} sections`}</Badge>
+          {materialPdf(s) && <a className="btn btn-ghost btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>PDF ↗</a>}
+          <Button size="sm" disabled={sessionLocked} onClick={() => go(`/session/${s.id}`)}>{sessionLocked ? 'Preview locked' : 'Open lesson'}</Button></div>
+      </Card>;
+    })}</div> : <Empty icon="📂" title="No materials in this level" hint="Materials appear here once lessons are added." />}
+  </div>;
+}
+
+export function LevelExamPage({ levelId }: any) {
+  const { user, data, put, grantScore, log } = useApp();
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [result, setResult] = useState<any>(null);
+  if (!user) return null;
+  const level = data.levels.find((l) => l.id === levelId);
+  const qs = data.questions.filter((q) => q.levelId === levelId);
+  const locked = level ? !canOpenLevel(user, level, data.levels) : false;
+
+  async function submit() {
+    let auto = 0, max = 0, pending = 0;
+    for (const q of qs) {
+      const ans = answers[q.id] || '';
+      const g = gradeQuestion(q, ans);
+      auto += g.score; max += q.points;
+      if (!g.auto) pending++;
+      await put('attempts', { id: uid(), studentId: user!.id, sessionId: '', questionId: `exam:${levelId}:${q.id}`, answer: ans, autoScore: g.score, maxScore: q.points, status: g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending', createdAt: today() });
+    }
+    await grantScore(user!.id, 'levelQuiz', auto, `exam-${levelId}-${user!.id}`);
+    await log('level-exam', `${level?.title || levelId} · ${auto}/${max}`);
+    setResult({ auto, max, pending });
+  }
+
+  if (result) return <Card className="stack">
+    <h2>Level test complete</h2>
+    <div className={result.pending ? 'note' : 'result-good'}><strong>Score: {result.auto} out of {result.max}</strong>{result.pending > 0 && <div>{result.pending} written answers are waiting for admin review.</div>}</div>
+    <div className="row"><Button onClick={() => go('/roadmap')}>Back to roadmap</Button></div>
+  </Card>;
+
+  return <div className="stack">
+    <div className="row"><button className="icon-btn" onClick={() => go('/roadmap')}>← Roadmap</button></div>
+    <Card><h1>Level test: {level?.title || levelId}</h1><p className="muted">Multiple choice and writing questions from all {data.sessions.filter((s) => s.levelId === levelId).length} sessions. Written answers need admin approval.</p></Card>
+    {locked && <div className="note">🔒 This level is locked. Ask your admin to unlock it before taking the test.</div>}
+    {qs.map((q, i) => <Card key={q.id}>
+      <div className="row between"><strong>{i + 1}. {q.prompt}</strong><Badge>{q.points} pts</Badge></div>
+      {(q.type === 'mcq' || q.type === 'truefalse') && <div style={{ marginTop: '.7rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${answers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={answers[q.id] === o} onChange={() => setAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>}
+      {(q.type === 'short' || q.type === 'fill') && <textarea style={{ marginTop: '.7rem' }} value={answers[q.id] || ''} onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))} placeholder="Write your answer in English…" disabled={locked} />}
+    </Card>)}
+    <Card><div className="between"><span className="muted">{qs.length} questions</span><Button onClick={submit} disabled={locked || !qs.length}>Submit test</Button></div></Card>
+  </div>;
+}

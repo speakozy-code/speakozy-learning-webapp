@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signed() { return request.auth != null; }
+    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function isAdmin() { return signed() && me().role == 'admin'; }
+    function mine(uid) { return signed() && request.auth.uid == uid; }
+
+    match /users/{uid} {
+      allow read: if mine(uid) || isAdmin();
+      allow create, update: if isAdmin();
+      allow delete: if false;
+    }
+    match /levels/{id} { allow read: if signed(); allow write: if isAdmin(); }
+    match /sessions/{id} { allow read: if signed(); allow write: if isAdmin(); }
+    match /questions/{id} { allow read: if signed(); allow write: if isAdmin(); }
+    match /dictionary/{id} { allow read: if signed(); allow create: if signed(); allow update, delete: if isAdmin() || (signed() && resource.data.addedBy == request.auth.uid); }
+
+    match /progress/{id} { allow read: if isAdmin() || (signed() && resource.data.studentId == request.auth.uid); allow create, update: if signed() && request.resource.data.studentId == request.auth.uid; allow delete: if false; }
+    match /attempts/{id} { allow read: if isAdmin() || (signed() && resource.data.studentId == request.auth.uid); allow create: if signed() && request.resource.data.studentId == request.auth.uid; allow update: if isAdmin(); allow delete: if false; }
+    match /savedWords/{id} { allow read, create, update, delete: if signed() && resource.data.studentId == request.auth.uid; }
+    match /taskCompletions/{id} { allow read: if signed() && resource.data.studentId == request.auth.uid; allow create: if signed() && request.resource.data.studentId == request.auth.uid; allow update, delete: if false; }
+    match /notifications/{id} { allow read: if signed() && (resource.data.targetId == request.auth.uid || resource.data.targetId == 'all' || isAdmin()); allow create, update: if isAdmin(); allow delete: if false; }
+    match /scores/{id} { allow read: if isAdmin() || (signed() && resource.data.studentId == request.auth.uid); allow create: if isAdmin(); allow update, delete: if false; }
+    match /tasks/{id} { allow read: if signed(); allow write: if isAdmin(); }
+    match /certificates/{id} { allow read: if isAdmin() || (signed() && resource.data.studentId == request.auth.uid); allow write: if isAdmin(); }
+    match /logs/{id} { allow read, write: if isAdmin(); }
+    match /settings/{id} { allow read: if signed(); allow write: if isAdmin(); }
+
+    // لوحة مبسّطة للعرض العام: الاسم المعروض والنقاط فقط، من غير أي بيانات خاصة.
+    match /leaderboard/{uid} {
+      allow read: if signed();
+      allow write: if false;
+    }
+  }
+}
