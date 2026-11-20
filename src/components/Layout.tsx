@@ -7,6 +7,7 @@ import {
 import { useApp } from '../lib/store';
 import { go } from '../App';
 import { Modal, Button, Badge, fmtDate } from './UI';
+import { engagementProgress, totalScore } from '../lib/domain';
 
 const studentNav = [
   { path: '/', label: 'Home', ic: Home },
@@ -22,6 +23,7 @@ const adminNav = [
   { path: '/admin/curriculum', label: 'Levels & Sessions', ic: Layers },
   { path: '/admin/content', label: 'Content', ic: FileText },
   { path: '/admin/grammar', label: 'Grammar Studio', ic: PenLine },
+  { path: '/admin/words', label: 'Words', ic: BookOpen },
   { path: '/admin/quizzes', label: 'Quizzes', ic: ClipboardList },
   { path: '/admin/reviews', label: 'Review Results', ic: Inbox },
   { path: '/admin/operations', label: 'Tasks & Notifications', ic: ListChecks },
@@ -38,6 +40,9 @@ export function Layout({ current, children }: { current: string; children: React
   const nav = admin ? adminNav : studentNav;
   const notes = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const unread = notes.filter((n) => !n.read).length;
+  const level = data.levels.find((l) => l.id === user.levelId) || data.levels[0];
+  const pct = !admin && level ? engagementProgress(data, level.id, user.id) : 0;
+  const points = admin ? 0 : totalScore(data, user.id);
   const active = (p: string) => p === '/' ? current === '/' : current.startsWith(p);
 
   const bellButton = <button className="icon-btn bell" onClick={() => setBell(true)} aria-label="Notifications" title="Notifications">
@@ -71,7 +76,14 @@ export function Layout({ current, children }: { current: string; children: React
       <div className="auth-brand" style={{ color: 'var(--ink)' }}><span className="brand-dot" /> SPEAKOZY</div>
       <span className="avatar">{user.name.charAt(0)}</span>
     </div>
-    <div className="shell">{side}<main className="main"><div className="content-bar"><span className="muted">{admin ? 'Admin Dashboard' : 'Student Space'}</span>{bellButton}</div>{children}</main></div>
+    <div className="shell">{side}<main className="main" id="app-main"><div className="content-bar">
+      <div className="sticky-progress">
+        {!admin && <><span className="muted">{level?.title || 'Level'}</span><div className="progress-track sticky-track"><span style={{ width: `${pct}%` }} /></div><strong>{pct}%</strong></>}
+        {admin && <span className="muted">Admin Dashboard</span>}
+      </div>
+      {!admin && <strong className="sticky-points">{points} pts</strong>}
+      {bellButton}
+    </div>{children}</main></div>
     {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 75 }} />}
     {mobile}
     <button className="to-top" onClick={() => { const main = document.querySelector('.main'); if (main) main.scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="Back to top">↑</button>

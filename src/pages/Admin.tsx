@@ -3,6 +3,7 @@ import { useApp } from '../lib/store';
 import { Card, Button, Badge, Stat, SectionTitle, Empty, Tabs, Field, Modal, Table, fmtDate, fmtDay, isLate } from '../components/UI';
 import { uid, today, totalScore, levelProgress, needsReview, buildStudentAccount } from '../lib/domain';
 import { grammarSlides } from '../lib/lessonContent';
+import { go } from '../App';
 
 export function AdminDashboard() {
   const { data } = useApp();
@@ -10,7 +11,13 @@ export function AdminDashboard() {
   const pending = needsReview(data.attempts);
   const late = data.tasks.filter((t) => t.active && isLate(t.dueAt)).length;
   return <div className="stack">
-    <div><h1>Dashboard</h1><p className="muted">A quick overview of the academy.</p></div>
+    <div><h1>Dashboard</h1><p className="muted">Edit quizzes, words, grammar slides and lesson content from here.</p></div>
+    <div className="grid g4">
+      <Card><h3>Quizzes</h3><p className="muted">Add or edit any question.</p><Button size="sm" onClick={() => go('/admin/quizzes')}>Open quizzes</Button></Card>
+      <Card><h3>Words</h3><p className="muted">Add or edit dictionary entries.</p><Button size="sm" onClick={() => go('/admin/words')}>Open words</Button></Card>
+      <Card><h3>Grammar</h3><p className="muted">Write slides and grammar questions.</p><Button size="sm" onClick={() => go('/admin/grammar')}>Open grammar</Button></Card>
+      <Card><h3>Lessons</h3><p className="muted">Edit session text.</p><Button size="sm" onClick={() => go('/admin/content')}>Open content</Button></Card>
+    </div>
     <div className="grid g4">
       <Stat label="Active students" value={students.filter((u) => u.active).length} tone="green" />
       <Stat label="Disabled students" value={students.filter((u) => !u.active).length} />
@@ -419,6 +426,53 @@ export function GrammarStudioPage() {
       <Field label="Options (separate with |)"><input value={question?.options || ''} onChange={(e) => setQuestion({ ...question, options: e.target.value })} /></Field>
       <Field label="Correct answer"><input value={question?.correct || ''} onChange={(e) => setQuestion({ ...question, correct: e.target.value })} /></Field>
       <Button onClick={saveQuestion}>Save question</Button>
+    </Modal>
+  </div>;
+}
+
+export function AdminWordsPage() {
+  const { data, put, remove, log } = useApp();
+  const [q, setQ] = useState('');
+  const [edit, setEdit] = useState<any>(null);
+  const list = data.dictionary.filter((w) => !q || (w.word + ' ' + (w.meaning || '')).toLowerCase().includes(q.toLowerCase())).slice(0, 200);
+  async function save() {
+    if (!edit?.word?.trim()) return;
+    const rec = {
+      id: edit.id || uid(),
+      word: edit.word.trim(),
+      meaning: edit.meaning || '',
+      type: edit.type || 'word',
+      examples: String(edit.examplesText || (edit.examples || []).join('\n')).split('\n').map((x: string) => x.trim()).filter(Boolean),
+      arabic: edit.arabic || '',
+      phonetic: edit.phonetic || '',
+      audioUrl: edit.audioUrl || '',
+      synonyms: String(edit.synonymsText || (edit.synonyms || []).join(',')).split(/[,|]/).map((x: string) => x.trim()).filter(Boolean),
+      sessionIds: edit.sessionIds || [],
+      source: edit.source || 'manual',
+    };
+    await put('dictionary', rec);
+    await log('save-word', rec.word);
+    setEdit(null);
+  }
+  return <div className="stack">
+    <div className="between"><div><h1>Words</h1><p className="muted">Add or edit any dictionary word. Changes appear for students.</p></div>
+      <Button onClick={() => setEdit({ id: '', word: '', meaning: '', type: 'noun', examplesText: '', arabic: '', phonetic: '', synonymsText: '' })}>+ Word</Button></div>
+    <Card><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search words..." /></Card>
+    <Card><Table head={['Word', 'Type', 'Meaning', '']}>
+      {list.map((w) => <tr key={w.id}><td className="en" dir="ltr">{w.word}</td><td>{w.type}</td><td>{(w.meaning || w.arabic || '').slice(0, 60)}</td>
+        <td><div className="row"><Button size="sm" variant="ghost" onClick={() => setEdit({ ...w, examplesText: (w.examples || []).join('\n'), synonymsText: (w.synonyms || []).join(', ') })}>Edit</Button><Button size="sm" variant="danger" onClick={() => remove('dictionary', w.id)}>Delete</Button></div></td></tr>)}
+    </Table></Card>
+    <Modal open={!!edit} title="Word" onClose={() => setEdit(null)}>
+      <div className="grid g2">
+        <Field label="Word"><input dir="ltr" value={edit?.word || ''} onChange={(e) => setEdit({ ...edit, word: e.target.value })} /></Field>
+        <Field label="Type"><input value={edit?.type || ''} onChange={(e) => setEdit({ ...edit, type: e.target.value })} /></Field>
+      </div>
+      <Field label="Meaning (English)"><textarea value={edit?.meaning || ''} onChange={(e) => setEdit({ ...edit, meaning: e.target.value })} /></Field>
+      <Field label="Arabic meaning"><input value={edit?.arabic || ''} onChange={(e) => setEdit({ ...edit, arabic: e.target.value })} /></Field>
+      <Field label="Transcript / phonetic"><input dir="ltr" value={edit?.phonetic || ''} onChange={(e) => setEdit({ ...edit, phonetic: e.target.value })} /></Field>
+      <Field label="Synonyms (comma separated)"><input dir="ltr" value={edit?.synonymsText || ''} onChange={(e) => setEdit({ ...edit, synonymsText: e.target.value })} /></Field>
+      <Field label="Examples (one per line)"><textarea dir="ltr" value={edit?.examplesText || ''} onChange={(e) => setEdit({ ...edit, examplesText: e.target.value })} /></Field>
+      <Button onClick={save}>Save word</Button>
     </Modal>
   </div>;
 }

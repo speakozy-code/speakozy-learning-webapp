@@ -128,7 +128,9 @@ export function lessonBrief(s: SessionLike): BriefBlock[] {
 export interface OverviewOutline {
   title: string;
   topic: string;
-  headings: string[];
+  objectives: string[];
+  wordsAbout: string;
+  grammarAbout: string;
   summary: string;
 }
 
@@ -141,15 +143,21 @@ function lessonName(s: SessionLike) {
 
 export function overviewOutline(s: SessionLike): OverviewOutline {
   const title = lessonName(s);
-  const grammar = (section(s, /grammar/i)?.title || 'Grammar').replace(/^Grammar\s*[—-]\s*/i, '').trim();
-  const wordCount = splitBits(section(s, /vocab/i)?.body || '').length;
-  const summary = `This lesson is “${title}”. You will learn the new words${wordCount ? ` (${Math.min(wordCount, 20)} items)` : ''}, study ${clip(grammar, 70) || 'the grammar point'}, practise speaking, then write a short summary of what you understood.`;
-  return {
-    title,
-    topic: s.topic || '',
-    headings: ['Objectives', 'Words', 'Grammar', 'Practice'],
-    summary: clip(summary, 380),
-  };
+  const slides = slideChunks(material(s));
+  const grammarTitle = (section(s, /grammar/i)?.title || '').replace(/^Grammar\s*[—-]\s*/i, '').trim();
+  const grammarBody = clip(splitBits(section(s, /grammar/i)?.body || '').find((x) => /past|present|future|perfect|simple|continuous|tense|modal| compar/i.test(x)) || grammarTitle, 80);
+  const grammar = grammarBody || grammarTitle || 'the grammar of this lesson';
+  const topic = s.topic || title;
+  const objSlide = objectivesFromSlides(slides);
+  const objNamed = splitBits(section(s, /objectives|warm-?up/i)?.body || '').filter((x) => x.length > 12 && x !== s.title);
+  const objectives = unique([...objSlide, ...objNamed], 6);
+  if (!objectives.length) {
+    objectives.push(`Learn the topic “${title}”.`, 'Use the new words in speaking.', `Practise ${grammar}.`);
+  }
+  const wordsAbout = `You will learn words about ${clip(topic, 80)}.`;
+  const grammarAbout = `You will learn grammar: ${clip(grammar, 90)}.`;
+  const summary = clip(`In this lesson you study “${title}”. Objectives: ${objectives.slice(0, 3).join('; ')}. ${wordsAbout} ${grammarAbout}`, 380);
+  return { title, topic, objectives, wordsAbout, grammarAbout, summary };
 }
 
 export function letsTalk(s: SessionLike): string[] {

@@ -4,7 +4,7 @@ import { Loading, Toast, useToast } from './components/UI';
 import Login from './pages/Login';
 import { Layout } from './components/Layout';
 import { StudentDashboard, Roadmap, SessionPage, QuizPage, LevelExamPage, DictionaryPage, TasksPage, NotificationsPage, LeaderboardPage, ProfilePage, MaterialsPage } from './pages/Student';
-import { AdminDashboard, StudentsPage, CurriculumPage, ContentPage, GrammarStudioPage, QuizzesPage, ReviewsPage, OperationsPage, AdminSettingsPage, CertificatesPage } from './pages/Admin';
+import { AdminDashboard, StudentsPage, CurriculumPage, ContentPage, GrammarStudioPage, QuizzesPage, ReviewsPage, OperationsPage, AdminSettingsPage, CertificatesPage, AdminWordsPage } from './pages/Admin';
 
 class ErrorBoundary extends React.Component<any, { error: any }> {
   state = { error: null as any };
@@ -23,6 +23,10 @@ export function useRoute() {
     window.addEventListener('hashchange', h);
     return () => window.removeEventListener('hashchange', h);
   }, []);
+  useEffect(() => {
+    const main = document.getElementById('app-main');
+    if (main) main.scrollTo(0, 0);
+  }, [route]);
   return route.replace(/^#/, '').split('?')[0];
 }
 
@@ -46,6 +50,7 @@ export default function App() {
         case 'curriculum': page = <CurriculumPage />; break;
         case 'content': page = <ContentPage />; break;
         case 'grammar': page = <GrammarStudioPage />; break;
+        case 'words': page = <AdminWordsPage />; break;
         case 'quizzes': page = <QuizzesPage />; break;
         case 'reviews': page = <ReviewsPage />; break;
         case 'operations': page = <OperationsPage />; break;

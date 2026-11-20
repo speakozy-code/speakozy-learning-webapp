@@ -55,6 +55,16 @@ export function StudentDashboard() {
       </div>
     </Card>
 
+    <Card>
+      <SectionTitle title="Speakozy Champs" action={<span className="muted" style={{ fontSize: '.8rem' }}>Top scorers</span>} />
+      {leaderboard(data).length ? <div className="row" style={{ alignItems: 'stretch', flexWrap: 'nowrap', overflowX: 'auto' }}>
+        {leaderboard(data).slice(0, 6).map((b, i) => <div key={b.id} className="section-card" style={{ minWidth: 140 }}>
+          <div className="node-num">{i + 1}</div><strong>{b.name}</strong><div className="muted">{b.points} pts</div>
+          {b.id === user.id && <Badge tone="green">You</Badge>}
+        </div>)}
+      </div> : <Empty title="No ranked students yet" />}
+    </Card>
+
     <div className="grid g4">
       <Stat label="Level progress" value={`${pct}%`} sub={level?.title} tone="green" />
       <Stat label="Total points" value={totalScore(data, user.id)} sub="From all sources" />
@@ -84,16 +94,6 @@ export function StudentDashboard() {
         </div>)}</div> : <Empty title="No notifications" />}
       </Card>
     </div>
-
-    <Card>
-      <SectionTitle title="Champs" action={<span className="muted" style={{ fontSize: '.8rem' }}>Top scorers</span>} />
-      {leaderboard(data).length ? <div className="row" style={{ alignItems: 'stretch', flexWrap: 'nowrap', overflowX: 'auto' }}>
-        {leaderboard(data).slice(0, 6).map((b, i) => <div key={b.id} className="section-card" style={{ minWidth: 140 }}>
-          <div className="node-num">{i + 1}</div><strong>{b.name}</strong><div className="muted">{b.points} pts</div>
-          {b.id === user.id && <Badge tone="green">You</Badge>}
-        </div>)}
-      </div> : <Empty title="No ranked students yet" />}
-    </Card>
 
     {late.length > 0 && <Card className="danger-zone">
       <SectionTitle title="Late tasks" />
@@ -176,9 +176,9 @@ export function SessionPage({ sessionId }: any) {
   const [sourceOpen, setSourceOpen] = useState(false);
   useEffect(() => { setSlideIdx(0); setExerciseResult(null); setGrammarResult(null); setGrammarAnswers({}); setWordAnswers({}); setWordResult(null); setYg(null); setSourceOpen(false); }, [sessionId]);
   useEffect(() => {
-    const main = document.querySelector('.main');
-    if (main) main.scrollTo({ top: 0, behavior: 'smooth' });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const main = document.getElementById('app-main') || document.querySelector('.main');
+    if (main) main.scrollTo({ top: 0, behavior: 'auto' });
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }, [tab, sessionId]);
   useEffect(() => {
     if (tab !== 'vocabulary') return;
@@ -444,12 +444,23 @@ export function SessionPage({ sessionId }: any) {
           <h2>{outline.title}</h2>
           {outline.topic && <p className="muted">{outline.topic}</p>}
         </Card>
-        <div className="brief-path">
-          {outline.headings.map((h) => {
-            const tabId = h === 'Words' ? 'vocabulary' : h === 'Grammar' ? 'grammar' : h === 'Practice' ? 'practice' : 'overview';
-            return <button key={h} className="brief-jump" onClick={() => setTab(tabId)}>{h}</button>;
-          })}
-        </div>
+        <article className="brief-card">
+          <div className="brief-kicker">Objectives</div>
+          <h3>Objectives</h3>
+          <ul className="brief-list">{outline.objectives.map((item, i) => <li key={i} className="en" dir="ltr">{item}</li>)}</ul>
+        </article>
+        <article className="brief-card">
+          <div className="brief-kicker">Words</div>
+          <h3>Words</h3>
+          <p className="brief-summary en" dir="ltr">{outline.wordsAbout}</p>
+          <button className="brief-jump" style={{ marginTop: '.7rem' }} onClick={() => setTab('vocabulary')}>Open words</button>
+        </article>
+        <article className="brief-card">
+          <div className="brief-kicker">Grammar</div>
+          <h3>Grammar</h3>
+          <p className="brief-summary en" dir="ltr">{outline.grammarAbout}</p>
+          <button className="brief-jump" style={{ marginTop: '.7rem' }} onClick={() => setTab('grammar')}>Open grammar</button>
+        </article>
         <Card className="brief-card kind-summary">
           <div className="brief-kicker">Summary</div>
           <p className="brief-summary en" dir="ltr">{outline.summary}</p>
@@ -518,6 +529,7 @@ export function DictionaryPage() {
   const [reviewIdx, setReviewIdx] = useState(0);
   const [globalHit, setGlobalHit] = useState<LookupEntry | null>(null);
   const [globalTick, setGlobalTick] = useState(0);
+  const [yg, setYg] = useState<{ word: string; accent: string } | null>(null);
   if (!user) return null;
 
   const all = data.dictionary;
@@ -561,7 +573,7 @@ export function DictionaryPage() {
     setDetail(null); setLooking(true);
     const entry = await lookupWord(word, all);
     setLooking(false);
-    if (entry) setDetail(entry);
+    if (entry) { setDetail(entry); setGlobalHit(entry.source === 'global' ? entry : null); }
     else setManual({ word, meaning: '', type: 'noun', examples: '' });
   }
   async function toggle(word: LookupEntry | any) {
@@ -569,6 +581,14 @@ export function DictionaryPage() {
       const found = saved.find((w) => w.word.toLowerCase() === word.word.toLowerCase());
       if (found) await remove('savedWords', found.id);
     } else {
+      await put('dictionary', {
+        id: word.id || `saved-${word.word.toLowerCase()}`,
+        word: word.word, meaning: word.meaning, type: word.type || 'word',
+        examples: word.examples || [], arabic: word.arabic || '',
+        phonetic: word.phonetic, audioUrl: word.audioUrl, definitions: word.definitions,
+        synonyms: word.synonyms, source: word.source || 'global', sessionIds: word.sessionIds || [],
+        addedBy: user!.id,
+      });
       await put('savedWords', { studentId: user!.id, word: word.word, meaning: word.meaning, review: false, createdAt: today(), nextReview: today() });
     }
   }
@@ -610,10 +630,16 @@ export function DictionaryPage() {
         Local results: {localResults.length} · <button className="icon-btn" onClick={() => showWord(q)}>Search globally for "{q}" ←</button>
       </div>}
       {globalHit && <div className="global-hit">
-        <div className="row between"><div><small className="muted">Automatic global result</small>
-          <div className="row"><strong className="en" style={{ fontSize: '1.1rem' }}>{globalHit.word}</strong><Badge tone="blue">Global</Badge><span className="muted">{globalHit.type}</span></div>
-          <div>{globalHit.meaning}</div></div>
-          <div className="row"><Button size="sm" variant="ghost" onClick={() => pronounce(globalHit)}>🔊</Button><Button size="sm" onClick={() => setDetail(globalHit)}>Open card</Button></div>
+        <div className="row between"><div><small className="muted">Global dictionary</small>
+          <div className="row"><strong className="en" style={{ fontSize: '1.1rem' }}>{globalHit.word}</strong><Badge tone="blue">{globalHit.type}</Badge>{globalHit.phonetic && <span className="en muted" dir="ltr">/{globalHit.phonetic}/</span>}</div>
+          <div className="en" dir="ltr">{globalHit.meaning}</div>
+          {!!(globalHit.synonyms || []).length && <div className="row" style={{ marginTop: '.4rem' }}>{globalHit.synonyms!.slice(0, 6).map((x) => <span key={x} className="word-chip en">{x}</span>)}</div>}
+        </div>
+          <div className="row">
+            <Button size="sm" variant="ghost" onClick={() => pronounce(globalHit)}>Listen</Button>
+            <Button size="sm" variant="ghost" onClick={() => setYg({ word: globalHit.word, accent: 'us' })}>YouGlish</Button>
+            <Button size="sm" onClick={() => toggle(globalHit)}>{isSaved(globalHit.word) ? 'Saved' : 'Add to my words'}</Button>
+          </div>
         </div>
       </div>}
     </Card>
@@ -664,8 +690,13 @@ export function DictionaryPage() {
         <div className="between"><div><h2 dir="ltr" className="en" style={{ fontSize: '1.9rem' }}>{detail.word}</h2>
           <div className="row"><Badge tone="green">{detail.type}</Badge>{detail.phonetic && <span className="muted" dir="ltr">{detail.phonetic}</span>}<Badge tone={detail.source === 'global' ? 'blue' : 'muted'}>{detail.source === 'global' ? 'Global dictionary' : detail.source === 'manual' ? 'Manual entry' : 'From the curriculum'}</Badge></div></div>
           <Button variant="ghost" onClick={() => pronounce(detail)}>🔊 Listen to pronunciation</Button></div>
-        <div className="section-card"><h3>Meaning</h3><p dir="rtl">{detail.meaning}</p>
-          {detail.definitions && <div className="stack" style={{ marginTop: '.5rem' }}>{detail.definitions.map((d, i) => <div key={i} className="muted">• {d}</div>)}</div>}
+        <div className="section-card"><h3>Meaning</h3><p className="en" dir="ltr">{detail.meaning}</p>
+          {detail.arabic && <p dir="rtl">{detail.arabic}</p>}
+          {detail.definitions && <div className="stack" style={{ marginTop: '.5rem' }}>{detail.definitions.map((d, i) => <div key={i} className="muted en" dir="ltr">• {d}</div>)}</div>}
+        </div>
+        {detail.phonetic && <div className="section-card"><h3>Transcript</h3><p className="en" dir="ltr">/{detail.phonetic}/</p></div>}
+        <div className="section-card"><h3>Hear it in use</h3>
+          <div className="youglish-btns">{YOUGLISH_ACCENTS.map((a) => <button key={a.code} type="button" className="yg-btn en" onClick={() => setYg({ word: detail.word, accent: a.code })}>{a.label}</button>)}</div>
         </div>
         {detail.synonyms && detail.synonyms.length > 0 && <div className="section-card"><h3>Synonyms</h3><div className="row">{detail.synonyms.map((x) => <span key={x} className="word-chip en">{x}</span>)}</div></div>}
         <div className="section-card"><h3>Examples</h3>{detail.examples.length ? detail.examples.map((ex, i) => <div key={i} className="en" dir="ltr" style={{ textAlign: 'left', lineHeight: 1.9 }}>{ex}</div>) : <p className="muted">No examples available.</p>}</div>
@@ -673,6 +704,7 @@ export function DictionaryPage() {
         <Button onClick={() => toggle(detail)}>{isSaved(detail.word) ? 'Remove from saved' : 'Add to my words'}</Button>
       </div>}
     </Modal>
+    {yg && <YouGlishDock word={yg.word} accent={yg.accent} onAccent={(accent) => setYg({ word: yg.word, accent })} onClose={() => setYg(null)} />}
 
     <Modal open={!!manual} title="Add a word yourself" onClose={() => setManual(null)}>
       <Field label="Word"><input dir="ltr" value={manual?.word || ''} onChange={(e) => setManual({ ...manual, word: e.target.value })} /></Field>
@@ -754,7 +786,7 @@ export function LeaderboardPage() {
   const board = leaderboard(data);
   const mine = board.findIndex((b) => b.id === user.id) + 1;
   return <div className="stack">
-    <div><h1>Champs</h1><p className="muted">Ranked by score. Names are abbreviated per the privacy setting, and no private data is shown.</p></div>
+    <div><h1>Speakozy Champs</h1><p className="muted">Ranked by score. Names are abbreviated per the privacy setting, and no private data is shown.</p></div>
     <Tabs tabs={[{ id: 'weekly', label: 'Weekly' }, { id: 'monthly', label: 'Monthly' }, { id: 'total', label: 'All time' }]} active={period} onChange={setPeriod} />
     {!data.settings.leaderboard.enabled ? <Card><Empty icon="🔒" title="The leaderboard is currently disabled" hint="The admin decided to hide it temporarily." /></Card> : <Card>
       {board.length ? <div className="stack">{board.map((b, i) => <div key={b.id} className={`row between section-card ${b.id === user.id ? 'done' : ''}`}>

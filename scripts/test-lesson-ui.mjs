@@ -9,13 +9,15 @@ import { buildStudentAccount } from '../src/lib/domain.ts';
 let pass = 0;
 const t = (name, fn) => { fn(); pass++; console.log('ok -', name); };
 
-t('overview is titles plus a short summary, never a slide dump', () => {
+t('overview has lesson titles plus full objectives, words and grammar lines', () => {
   for (const s of C.sessions) {
     const o = overviewOutline(s);
     assert.ok(o.title);
-    assert.deepEqual(o.headings, ['Objectives', 'Words', 'Grammar', 'Practice']);
+    assert.ok(o.objectives.length >= 1, `${s.id} objectives`);
+    assert.match(o.wordsAbout, /you will learn words/i);
+    assert.match(o.grammarAbout, /you will learn grammar/i);
     assert.ok(o.summary.length > 20 && o.summary.length < 420, `${s.id} summary ${o.summary.length}`);
-    assert.ok(!/Slide\s+\d+:/i.test(o.summary), `${s.id} leaked slides`);
+    assert.ok(!/Slide\s+\d+:/i.test([o.summary, o.wordsAbout, o.grammarAbout, ...o.objectives].join(' ')), `${s.id} leaked slides`);
   }
   const src = sourceTranscript(C.sessions[0]);
   assert.ok(/Slide\s+1:/i.test(src));

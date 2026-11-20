@@ -38,7 +38,7 @@ export function fromApi(raw: any): LookupEntry {
     meaning: firstDef,
     type: meanings[0]?.partOfSpeech || 'word',
     examples: examples.slice(0, 3),
-    arabic: `قاموس عالمي مفتوح · ${firstDef}`,
+    arabic: '',
     phonetic: raw.phonetic || ph?.text || '',
     audioUrl: ph?.audio || '',
     definitions: defs.slice(0, 5),
