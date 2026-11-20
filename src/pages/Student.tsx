@@ -4,7 +4,12 @@ import { Card, Button, Badge, Progress, Stat, SectionTitle, Empty, Tabs, Field, 
 import { sessionStatus, levelProgress, engagementProgress, canOpenLevel, sessionOpen, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, uid, today, allowedLevelCount, PLANS } from '../lib/domain';
 import { go } from '../App';
 import { lookupWord, allCached, type LookupEntry } from '../lib/dictionaryProvider';
-import { grammarSlides, exercises, homework, overviewSections } from '../lib/lessonContent';
+import { grammarSlides, exercises, homework } from '../lib/lessonContent';
+import { lessonBrief, sourceTranscript } from '../lib/lessonBrief';
+import { wordQuizItems, grammarQuizItems } from '../lib/sessionQuizzes';
+import { YOUGLISH_ACCENTS } from '../lib/youglish';
+import { YouGlishDock } from '../components/YouGlishDock';
+import { Play, Volume2, Star, Check, BookOpen } from 'lucide-react';
 
 const statusTone: Record<string, string> = { locked: 'muted', available: 'blue', progress: 'amber', done: 'blue', review: 'amber', approved: 'green' };
 
@@ -165,7 +170,11 @@ export function SessionPage({ sessionId }: any) {
   const [writing, setWriting] = useState('');
   const [listening, setListening] = useState('');
   const [videoDraft, setVideoDraft] = useState('');
-  useEffect(() => { setSlideIdx(0); setExerciseResult(null); setGrammarResult(null); setGrammarAnswers({}); }, [sessionId]);
+  const [yg, setYg] = useState<{ word: string; accent: string } | null>(null);
+  const [wordAnswers, setWordAnswers] = useState<Record<string, string>>({});
+  const [wordResult, setWordResult] = useState<{ marks: Record<string, boolean>; score: number; max: number } | null>(null);
+  const [sourceOpen, setSourceOpen] = useState(false);
+  useEffect(() => { setSlideIdx(0); setExerciseResult(null); setGrammarResult(null); setGrammarAnswers({}); setWordAnswers({}); setWordResult(null); setYg(null); setSourceOpen(false); }, [sessionId]);
   useEffect(() => {
     if (tab !== 'vocabulary') return;
     let alive = true;
@@ -200,7 +209,12 @@ export function SessionPage({ sessionId }: any) {
   const slides = [...grammarSlides(s), ...customNotes];
   const exerciseList = exercises(s);
   const hw = homework(s);
-  const overview = overviewSections(s);
+  const brief = lessonBrief(s);
+  const transcript = sourceTranscript(s);
+  const generatedWordQs = wordQuizItems(words, s.id).filter((q) => !qs.some((x) => x.prompt === q.prompt));
+  const wordQs = [...qs.filter((q) => q.scope === 'word'), ...generatedWordQs];
+  const generatedGrammarQs = grammarQuizItems(slides, s.id, grammarQs.map((q) => q.prompt));
+  const grammarAll = [...grammarQs, ...generatedGrammarQs];
   const tabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'vocabulary', label: `Vocabulary${words.length ? ` (${words.length})` : ''}` },
@@ -246,9 +260,9 @@ export function SessionPage({ sessionId }: any) {
   function speak(word: string) {
     try { const u = new SpeechSynthesisUtterance(word); u.lang = 'en-US'; u.rate = 0.85; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {}
   }
-  const youglishUrl = (word: string, accent: string) =>
-    `https://youglish.com/pronounce/${encodeURIComponent(word)}/english/${accent}`;
-  const ACCENTS = [['us', 'US'], ['uk', 'UK'], ['aus', 'AUS'], ['can', 'CAN']];
+  function openYouglish(word: string, accent = 'us') {
+    setYg({ word, accent });
+  }
   function savedWord(w: string) { return data.savedWords.some((x) => x.studentId === user!.id && x.word.toLowerCase() === w.toLowerCase()); }
   async function toggleSave(w: any) {
     if (locked) return;
@@ -260,18 +274,32 @@ export function SessionPage({ sessionId }: any) {
     }
   }
   async function submitGrammar() {
-    if (locked || !grammarQs.length) return;
+    if (locked || !grammarAll.length) return;
     let score = 0, max = 0;
     const marks: Record<string, boolean> = {};
-    for (const q of grammarQs) {
-      const g = gradeQuestion(q, grammarAnswers[q.id] || '');
+    for (const q of grammarAll) {
+      const g = gradeQuestion(q as any, grammarAnswers[q.id] || '');
       marks[q.id] = g.score > 0;
       score += g.score; max += q.points;
-      await put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: practiceId('grammar', s!.id, Number(q.id.split('-').pop()) || 1), answer: grammarAnswers[q.id] || '', autoScore: g.score, maxScore: q.points, status: g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending', createdAt: today() });
+      await put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: practiceId('grammar', s!.id, Number(String(q.id).split('-').pop()) || 1), answer: grammarAnswers[q.id] || '', autoScore: g.score, maxScore: q.points, status: g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending', createdAt: today() });
     }
     await grantScore(user!.id, 'grammar', data.settings.scoreRules.grammarQuiz || 10, `grammar-${s!.id}-${user!.id}`);
     await log('grammar-quiz', `${s!.title} · ${score}/${max}`);
     setGrammarResult({ marks, score, max });
+  }
+  async function submitWordQuiz() {
+    if (locked || !wordQs.length) return;
+    let score = 0, max = 0;
+    const marks: Record<string, boolean> = {};
+    for (const q of wordQs) {
+      const g = gradeQuestion(q as any, wordAnswers[q.id] || '');
+      marks[q.id] = g.score > 0;
+      score += g.score; max += q.points;
+      await put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: `wordquiz:${s!.id}:${q.id}`, answer: wordAnswers[q.id] || '', autoScore: g.score, maxScore: q.points, status: g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending', createdAt: today() });
+    }
+    await grantScore(user!.id, 'word', data.settings.scoreRules.wordQuiz || 10, `wordquiz-${s!.id}-${user!.id}`);
+    await log('word-quiz', `${s!.title} · ${score}/${max}`);
+    setWordResult({ marks, score, max });
   }
   async function savePractice(kind: string, text: string, n: number) {
     if (locked || !text.trim()) return;
@@ -318,7 +346,8 @@ export function SessionPage({ sessionId }: any) {
       <div className="between"><div><h3>Session quiz</h3><small className="muted">{qs.length} questions · Final passing is approved by the admin</small></div>
         <Button onClick={() => go(`/quiz/${s.id}`)} disabled={!qs.length || locked}>{qs.length ? 'Start quiz' : 'No questions yet'}</Button></div>
     </Card> : <>
-      {tab === 'vocabulary' && (words.length > 0 ? <div className="vocab-grid">{words.map((w, n) => {
+      {tab === 'vocabulary' && (words.length > 0 ? <div className="stack">
+        <div className="vocab-grid">{words.map((w, n) => {
         const def = defs[w.word] || w.definitions?.[0] || '';
         const example = (w.examples || [])[0] || '';
         const known = wordDone(w.word);
@@ -327,8 +356,9 @@ export function SessionPage({ sessionId }: any) {
             <span className="vocab-index">{String(n + 1).padStart(2, '0')}</span>
             <Badge tone="blue">{w.type || 'word'}</Badge>
             <span className="vocab-tools">
-              <button className="icon-btn" title="Play native pronunciation" onClick={() => pronounce(w)}>🔊</button>
-              <button className="icon-btn" title={savedWord(w.word) ? 'Remove from my words' : 'Save word'} onClick={() => toggleSave(w)} disabled={locked}>{savedWord(w.word) ? '★' : '☆'}</button>
+              <button className="icon-btn play-btn" title="Hear this word in real speech" onClick={() => openYouglish(w.word)}><Play size={16} /></button>
+              <button className="icon-btn" title="Play native pronunciation" onClick={() => pronounce(w)}><Volume2 size={16} /></button>
+              <button className="icon-btn" title={savedWord(w.word) ? 'Remove from my words' : 'Save word'} onClick={() => toggleSave(w)} disabled={locked}>{savedWord(w.word) ? <Star size={16} /> : <Star size={16} strokeWidth={1.5} />}</button>
             </span>
           </div>
           <div className="vocab-word en" dir="ltr">{w.word}</div>
@@ -337,18 +367,29 @@ export function SessionPage({ sessionId }: any) {
           {def && <div className="vocab-def en" dir="ltr">{def}</div>}
           {example && <div className="vocab-example en" dir="ltr">“{example}”</div>}
           <div className="youglish-row">
-            <span className="youglish-label">Pronunciation in use</span>
+            <span className="youglish-label">Hear it in use</span>
             <span className="youglish-btns">
-              {ACCENTS.map(([code, label]) => <a key={code} className="yg-btn en"
-                href={youglishUrl(w.word, code)} target="_blank" rel="noreferrer"
-                title={`Hear “${w.word}” in ${label} English on YouGlish`}>{label} ↗</a>)}
+              {YOUGLISH_ACCENTS.map((a) => <button key={a.code} type="button" className="yg-btn en"
+                onClick={() => openYouglish(w.word, a.code)}
+                title={`Hear “${w.word}” in ${a.label} English`}>{a.label}</button>)}
             </span>
           </div>
           <button className={`btn vocab-known ${known ? 'btn-ghost' : 'btn-primary'}`} onClick={() => markWord(w.word)} disabled={locked || known}>
             {known ? '✓ Studied' : 'I know this word'}
           </button>
         </article>;
-      })}</div> : <Empty title="No words in this session" hint="Words will appear here once they are added to the dictionary." />)}
+      })}</div>
+        {wordQs.length > 0 && <Card className="grammar-training">
+          <div className="between"><div><h3>Word quiz</h3><small className="muted">Check the new words from this session.</small></div><Badge tone="green">{wordQs.length} questions</Badge></div>
+          <div className="stack" style={{ marginTop: '.8rem' }}>{wordQs.map((q, i) => <div key={q.id} className="exercise-item">
+            <div className="between"><strong>{i + 1}. {q.prompt}</strong>{wordResult && <Badge tone={wordResult.marks[q.id] ? 'green' : 'red'}>{wordResult.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
+            {q.options.length ? <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${wordAnswers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={wordAnswers[q.id] === o} onChange={() => setWordAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
+              : <input value={wordAnswers[q.id] || ''} onChange={(e) => setWordAnswers((a) => ({ ...a, [q.id]: e.target.value }))} placeholder="Type the missing word…" disabled={locked} dir="ltr" />}
+          </div>)}</div>
+          <Button style={{ marginTop: '.8rem' }} onClick={submitWordQuiz} disabled={locked || !wordQs.every((q) => (wordAnswers[q.id] || '').trim())}>Check word answers</Button>
+          {wordResult && <div className="result-good" style={{ marginTop: '.6rem' }}>Word score: {wordResult.score} / {wordResult.max}</div>}
+        </Card>}
+      </div> : <Empty title="No words in this session" hint="Words will appear here once they are added to the dictionary." />)}
       {tab === 'grammar' && <>
         {slides.length ? <Card className="slides-card">
           <div className="between"><div><h3>Grammar slides</h3><small className="muted">One idea at a time — use the arrows to move through the lesson.</small></div><Badge tone="blue">{slideIdx + 1} / {slides.length}</Badge></div>
@@ -368,13 +409,13 @@ export function SessionPage({ sessionId }: any) {
             <Button size="sm" onClick={() => setSlideIdx((i) => Math.min(slides.length - 1, i + 1))} disabled={slideIdx === slides.length - 1}>Next →</Button>
           </div>
         </Card> : <Empty title="No grammar slides yet" hint="The grammar notes for this session will appear here as slides." />}
-        {grammarQs.length > 0 && <Card className="grammar-training">
-          <div className="between"><div><h3>Grammar training</h3><small className="muted">Practice comes after the slides.</small></div><Badge tone="green">{grammarQs.length} questions</Badge></div>
-          <div className="stack" style={{ marginTop: '.8rem' }}>{grammarQs.map((q, i) => <div key={q.id} className="exercise-item">
+        {grammarAll.length > 0 && <Card className="grammar-training">
+          <div className="between"><div><h3>Grammar training</h3><small className="muted">Practice comes after the slides.</small></div><Badge tone="green">{grammarAll.length} questions</Badge></div>
+          <div className="stack" style={{ marginTop: '.8rem' }}>{grammarAll.map((q, i) => <div key={q.id} className="exercise-item">
             <div className="between"><strong>{i + 1}. {q.prompt}</strong>{grammarResult && <Badge tone={grammarResult.marks[q.id] ? 'green' : 'red'}>{grammarResult.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
             <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${grammarAnswers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={grammarAnswers[q.id] === o} onChange={() => setGrammarAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
           </div>)}</div>
-          <Button style={{ marginTop: '.8rem' }} onClick={submitGrammar} disabled={locked || !grammarQs.every((q) => grammarAnswers[q.id])}>Check grammar answers</Button>
+          <Button style={{ marginTop: '.8rem' }} onClick={submitGrammar} disabled={locked || !grammarAll.every((q) => grammarAnswers[q.id])}>Check grammar answers</Button>
           {grammarResult && <div className="result-good" style={{ marginTop: '.6rem' }}>Grammar score: {grammarResult.score} / {grammarResult.max}</div>}
         </Card>}
       </>}
@@ -421,14 +462,27 @@ export function SessionPage({ sessionId }: any) {
           </Card>
         </div>
       </div>}
-      {tab === 'overview' && (overview.length ? <div className="grid g2">{overview.map((sec) => {
-        const isDone = done.includes(sec.id);
-        return <div key={sec.id} className={`section-card ${isDone ? 'done' : ''}`}>
-          <div className="section-head"><h3>{sec.title}</h3>{isDone ? <Badge tone="green">Studied</Badge> : <Button size="sm" variant="ghost" onClick={() => mark(sec.id)} disabled={locked}>Mark as studied</Button>}</div>
-          <div className="section-body" dir="auto">{sec.body}</div>
-        </div>;
-      })}</div> : <Empty title="No overview content in this session" hint="Check the other tabs for words, grammar and practice." />)}
+      {tab === 'overview' && <div className="stack">
+        <div className="brief-path">
+          <button className="brief-jump" onClick={() => setTab('vocabulary')}><BookOpen size={16} /> Words ({words.length})</button>
+          <button className="brief-jump" onClick={() => setTab('grammar')}><Check size={16} /> Grammar ({slides.length})</button>
+          <button className="brief-jump" onClick={() => setTab('practice')}>Practice</button>
+          <button className="brief-jump" onClick={() => setTab('quiz')}>Quiz</button>
+        </div>
+        {brief.map((block) => (
+          <article key={block.id} className={`brief-card kind-${block.kind}`}>
+            <div className="brief-kicker">{block.kind}</div>
+            <h3>{block.title}</h3>
+            <ul className="brief-list">{block.items.map((item, i) => <li key={i} dir="auto">{item}</li>)}</ul>
+          </article>
+        ))}
+        {transcript && <details className="brief-source" open={sourceOpen} onToggle={(e) => setSourceOpen((e.target as HTMLDetailsElement).open)}>
+          <summary>Full slide transcript from the session file</summary>
+          <pre className="brief-transcript en" dir="ltr">{transcript}</pre>
+        </details>}
+      </div>}
     </>}
+    {yg && <YouGlishDock word={yg.word} accent={yg.accent} onAccent={(accent) => setYg({ word: yg.word, accent })} onClose={() => setYg(null)} />}
   </div>;
 }
 
@@ -785,17 +839,22 @@ export function MaterialsPage() {
     </Card>
     {locked && <div className="note">🔒 This level is locked for your account. Your admin controls which level you can study.</div>}
     {level && sessions.length ? <div className="grid g2">{sessions.map((s) => {
-      const source = s.sections.find((x) => x.title === 'Lesson material (text)') || overviewSections(s)[0];
       const sessionLocked = locked || (!admin && !sessionOpen(user, s, data.levels));
-      return <Card key={s.id}>
-        <SectionTitle title={s.title} action={<Badge>{s.order}</Badge>} />
+      const wordCount = data.dictionary.filter((w) => (w.sessionIds || []).includes(s.id)).length;
+      const grammarTitle = (s.sections.find((x) => /grammar/i.test(x.title))?.title || 'Grammar').replace(/^Grammar\s*[—-]\s*/i, '');
+      return <Card key={s.id} className="material-card">
+        <div className="brief-kicker">Lesson {s.order}</div>
+        <h3>{s.title}</h3>
         <p className="muted" style={{ marginBottom: '.7rem' }}>{s.topic}</p>
-        {source && <div className="section-card" style={{ maxHeight: 120, overflow: 'hidden', marginBottom: '.7rem' }}>
-          <div className="section-body" style={{ fontSize: '.8rem' }}>{source.body.slice(0, 360)}…</div>
-        </div>}
-        <div className="row"><Badge tone={sessionLocked ? 'muted' : 'green'}>{sessionLocked ? '🔒 Locked' : `${s.sections.length} sections`}</Badge>
-          {materialPdf(s) && <a className="btn btn-ghost btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>PDF ↗</a>}
-          <Button size="sm" disabled={sessionLocked} onClick={() => go(`/session/${s.id}`)}>{sessionLocked ? 'Preview locked' : 'Open lesson'}</Button></div>
+        <div className="row" style={{ marginBottom: '.8rem' }}>
+          <Badge tone="blue">{wordCount} words</Badge>
+          <Badge>{grammarTitle.slice(0, 42)}</Badge>
+        </div>
+        <div className="row">
+          <Badge tone={sessionLocked ? 'muted' : 'green'}>{sessionLocked ? '🔒 Locked' : 'Ready'}</Badge>
+          {materialPdf(s) && <a className="btn btn-ghost btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>PDF</a>}
+          <Button size="sm" disabled={sessionLocked} onClick={() => go(`/session/${s.id}`)}>{sessionLocked ? 'Locked' : 'Open lesson'}</Button>
+        </div>
       </Card>;
     })}</div> : <Empty icon="📂" title="No materials in this level" hint="Materials appear here once lessons are added." />}
   </div>;

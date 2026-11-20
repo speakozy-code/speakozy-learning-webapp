@@ -1,27 +1,32 @@
 import React, { useState } from 'react';
+import {
+  Home, Map, FolderOpen, BookOpen, ListChecks, User,
+  LayoutDashboard, Users, Layers, FileText, PenLine, ClipboardList,
+  Inbox, Bell, Award, Settings, LogOut, Menu,
+} from 'lucide-react';
 import { useApp } from '../lib/store';
 import { go } from '../App';
 import { Modal, Button, Badge, fmtDate } from './UI';
 
 const studentNav = [
-  { path: '/', label: 'Home', ic: '⌂' },
-  { path: '/roadmap', label: 'LEVEL ROADMAP', ic: '▦' },
-  { path: '/materials', label: 'MATERIALS', ic: '❏' },
-  { path: '/dictionary', label: 'Dictionary', ic: '❖' },
-  { path: '/tasks', label: 'Tasks', ic: '✓' },
-  { path: '/profile', label: 'Profile', ic: '◉' },
+  { path: '/', label: 'Home', ic: Home },
+  { path: '/roadmap', label: 'LEVEL ROADMAP', ic: Map },
+  { path: '/materials', label: 'MATERIALS', ic: FolderOpen },
+  { path: '/dictionary', label: 'Dictionary', ic: BookOpen },
+  { path: '/tasks', label: 'Tasks', ic: ListChecks },
+  { path: '/profile', label: 'Profile', ic: User },
 ];
 const adminNav = [
-  { path: '/admin', label: 'Overview', ic: '⌂' },
-  { path: '/admin/students', label: 'Students', ic: '◉' },
-  { path: '/admin/curriculum', label: 'Levels & Sessions', ic: '▦' },
-  { path: '/admin/content', label: 'Content', ic: '☰' },
-  { path: '/admin/grammar', label: 'Grammar Studio', ic: '✎' },
-  { path: '/admin/quizzes', label: 'Quizzes', ic: '✎' },
-  { path: '/admin/reviews', label: 'Review Results', ic: '◔' },
-  { path: '/admin/operations', label: 'Tasks & Notifications', ic: '✓' },
-  { path: '/admin/certificates', label: 'Certificates', ic: '✦' },
-  { path: '/admin/settings', label: 'Settings', ic: '⚙' },
+  { path: '/admin', label: 'Overview', ic: LayoutDashboard },
+  { path: '/admin/students', label: 'Students', ic: Users },
+  { path: '/admin/curriculum', label: 'Levels & Sessions', ic: Layers },
+  { path: '/admin/content', label: 'Content', ic: FileText },
+  { path: '/admin/grammar', label: 'Grammar Studio', ic: PenLine },
+  { path: '/admin/quizzes', label: 'Quizzes', ic: ClipboardList },
+  { path: '/admin/reviews', label: 'Review Results', ic: Inbox },
+  { path: '/admin/operations', label: 'Tasks & Notifications', ic: ListChecks },
+  { path: '/admin/certificates', label: 'Certificates', ic: Award },
+  { path: '/admin/settings', label: 'Settings', ic: Settings },
 ];
 
 export function Layout({ current, children }: { current: string; children: React.ReactNode }) {
@@ -36,33 +41,33 @@ export function Layout({ current, children }: { current: string; children: React
   const active = (p: string) => p === '/' ? current === '/' : current.startsWith(p);
 
   const bellButton = <button className="icon-btn bell" onClick={() => setBell(true)} aria-label="Notifications" title="Notifications">
-    🔔{unread > 0 && <span className="badge badge-red bell-count">{unread}</span>}
+    <Bell size={18} />{unread > 0 && <span className="badge badge-red bell-count">{unread}</span>}
   </button>;
 
   const side = <aside className={`side ${open ? 'open' : ''}`}>
     <div className="brand"><span className="brand-dot" /> SPEAKOZY</div>
     <div className="nav-group">{admin ? 'Admin Dashboard' : 'Student Space'}</div>
     <nav className="nav" onClick={() => setOpen(false)}>
-      {nav.map((n) => <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
-        <span className="ic">{n.ic}</span>{n.label}
-      </a>)}
+      {nav.map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
+        <span className="ic"><Icon size={18} strokeWidth={2} /></span>{n.label}
+      </a>; })}
     </nav>
     <div className="side-foot">
       <div className="who"><span className="avatar">{user.name.charAt(0)}</span><span>{user.name}<br /><small>{admin ? 'Academy Manager' : 'Student'}</small></span></div>
-      <button className="btn btn-ghost btn-sm" style={{ width: '100%' }} onClick={() => { logout(); go('/'); }}>Log Out</button>
+      <button className="btn btn-ghost btn-sm" style={{ width: '100%' }} onClick={() => { logout(); go('/'); }}><LogOut size={14} /> Log Out</button>
     </div>
   </aside>;
 
   const mobile = <nav className="mobile-nav">
-    {nav.slice(0, 5).map((n) => <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
-      <span style={{ fontSize: '1.1rem' }}>{n.ic}</span><span>{n.label.split(' ')[0]}</span>
-    </a>)}
-    <button onClick={() => setOpen(true)}><span style={{ fontSize: '1.1rem' }}>☰</span><span>More</span></button>
+    {nav.slice(0, 5).map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
+      <Icon size={18} /><span>{n.label.split(' ')[0]}</span>
+    </a>; })}
+    <button onClick={() => setOpen(true)}><Menu size={18} /><span>More</span></button>
   </nav>;
 
   return <>
     <div className="topbar">
-      <button className="icon-btn" onClick={() => setOpen(true)} aria-label="Menu">☰</button>
+      <button className="icon-btn" onClick={() => setOpen(true)} aria-label="Menu"><Menu size={18} /></button>
       <div className="auth-brand" style={{ color: 'var(--ink)' }}><span className="brand-dot" /> SPEAKOZY</div>
       <span className="avatar">{user.name.charAt(0)}</span>
     </div>

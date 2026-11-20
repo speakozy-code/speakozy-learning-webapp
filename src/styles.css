@@ -34,7 +34,7 @@ small,.muted{color:var(--muted)}
 .side{background:var(--navy);color:#d7e0ee;padding:1.2rem 1rem;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:1rem;overflow-y:auto}
 .side .brand{color:#fff;font-weight:800;font-size:1.15rem;display:flex;align-items:center;gap:.55rem;padding:.3rem .4rem}
 .nav-group{font-size:.72rem;color:#7d8ca5;letter-spacing:.6px;margin:.6rem .6rem .25rem}
-.nav a,.nav button{display:flex;align-items:center;gap:.7rem;width:100%;padding:.68rem .8rem;border-radius:10px;color:#c6d2e4;background:transparent;border:0;cursor:pointer;text-align:right;font-size:.9rem;transition:.15s}
+.nav a,.nav button{display:flex;align-items:center;gap:.7rem;width:100%;padding:.68rem .8rem;border-radius:10px;color:#c6d2e4;background:transparent;border:0;cursor:pointer;text-align:left;font-size:.9rem;transition:.15s}
 .nav a:hover,.nav button:hover{background:rgba(255,255,255,.06);color:#fff}
 .nav a.active{background:rgba(18,206,144,.16);color:var(--green);font-weight:700}
 .nav .ic{width:20px;text-align:center;opacity:.9}
@@ -344,3 +344,26 @@ body { font-family: var(--font-arabic); }
 /* Expanded grammar explanation on each slide */
 .slide-detail{margin:.9rem 0 .2rem;padding:.8rem 1rem;background:rgba(106,165,255,.08);border-inline-start:3px solid var(--info);border-radius:9px;color:#d7e5f6;line-height:2;font-size:.95rem}
 .session-map .rm-level{margin-bottom:.2rem}
+
+/* Lesson brief (overview) */
+.brief-path{display:flex;flex-wrap:wrap;gap:.5rem}
+.brief-jump{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--line);background:#12223a;color:var(--ink);border-radius:999px;padding:.45rem .85rem;cursor:pointer;font-weight:700;font-size:.85rem}
+.brief-jump:hover{border-color:var(--green);color:var(--green)}
+.brief-card{background:linear-gradient(150deg,#12223a,#101a2c);border:1px solid var(--line);border-radius:16px;padding:1.1rem 1.2rem}
+.brief-kicker{font-size:.7rem;letter-spacing:1px;text-transform:uppercase;color:var(--green);font-weight:800;margin-bottom:.35rem}
+.brief-list{margin:.5rem 0 0;padding-inline-start:1.1rem;display:grid;gap:.4rem;line-height:1.7;color:#d5e3f4}
+.brief-source{border:1px dashed var(--line);border-radius:12px;padding:.8rem 1rem;background:rgba(255,255,255,.02)}
+.brief-source summary{cursor:pointer;font-weight:700;color:var(--muted)}
+.brief-transcript{white-space:pre-wrap;font-size:.78rem;line-height:1.7;color:#9fb3cc;max-height:280px;overflow:auto;margin:.7rem 0 0}
+.material-card h3{margin-top:.15rem}
+.play-btn{color:var(--green)}
+.yg-btn.is-on{background:rgba(18,206,144,.28);border-color:var(--green)}
+.yg-dock{position:sticky;bottom:0;z-index:40;margin-top:1rem;background:#0c1628;border:1px solid rgba(18,206,144,.35);border-radius:16px;overflow:hidden;box-shadow:0 -12px 40px rgba(0,0,0,.4)}
+.yg-dock-head{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;padding:.7rem 1rem;border-bottom:1px solid var(--line)}
+.yg-dock-title{display:flex;align-items:center;gap:.45rem;color:#fff}
+.yg-dock-accents{display:flex;gap:.25rem;margin-inline-start:auto}
+.yg-frame{width:100%;height:min(380px,52vh);border:0;background:#000}
+
+@media(max-width:600px){
+  .yg-frame{height:260px}
+}

@@ -7,7 +7,7 @@
     "dev": "node ./node_modules/vite/bin/vite.js --host 0.0.0.0 --port 3000",
     "build": "node ./node_modules/typescript/bin/tsc --noEmit && node ./node_modules/vite/bin/vite.js build",
     "preview": "node ./node_modules/vite/bin/vite.js preview --host 0.0.0.0 --port 3000",
-    "test": "node scripts/test-domain.mjs && node scripts/test-curriculum.mjs"
+    "test": "node scripts/test-domain.mjs && node scripts/test-curriculum.mjs && node scripts/test-lesson-ui.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.2",

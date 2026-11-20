@@ -108,3 +108,29 @@ export function addScoreOnce(data: AppData, score: { studentId: string; source: 
 export function needsReview(attempts: Attempt[]) {
   return attempts.filter((a) => a.status === 'pending').length;
 }
+
+export function buildStudentAccount(input: {
+  id?: string; name?: string; email?: string; demoPassword?: string;
+  role?: User['role']; active?: boolean; plan?: User['plan'];
+  levelId: string; maxLevelId: string; createdAt?: string; avatar?: string;
+}): User {
+  const name = String(input.name || '').trim();
+  const email = String(input.email || '').trim().toLowerCase();
+  const demoPassword = String(input.demoPassword || '').trim();
+  if (!name) throw new Error('Name is required');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Valid email is required');
+  if (demoPassword.length < 6) throw new Error('Password must be at least 6 characters');
+  return {
+    id: input.id || uid(),
+    name,
+    email,
+    demoPassword,
+    role: input.role === 'admin' ? 'admin' : 'student',
+    active: input.active !== false,
+    plan: input.plan || 'starter',
+    levelId: input.levelId,
+    maxLevelId: input.maxLevelId || input.levelId,
+    createdAt: input.createdAt || today(),
+    avatar: input.avatar,
+  };
+}

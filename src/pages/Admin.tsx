@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, Stat, SectionTitle, Empty, Tabs, Field, Modal, Table, fmtDate, fmtDay, isLate } from '../components/UI';
-import { uid, today, totalScore, levelProgress, needsReview } from '../lib/domain';
+import { uid, today, totalScore, levelProgress, needsReview, buildStudentAccount } from '../lib/domain';
 import { grammarSlides } from '../lib/lessonContent';
 
 export function AdminDashboard() {
@@ -33,45 +33,69 @@ export function StudentsPage() {
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<any>({});
-  const students = data.users.filter((u) => u.role === 'student' && (!q || (u.name + u.email).toLowerCase().includes(q.toLowerCase())));
+  const [error, setError] = useState('');
+  const [created, setCreated] = useState<{ email: string; password: string } | null>(null);
+  const rows = data.users.filter((u) => !q || (u.name + u.email).toLowerCase().includes(q.toLowerCase()));
 
   function openEdit(u?: any) {
-    setEditing(u || { id: uid(), role: 'student', active: true, createdAt: today(), demoPassword: 'demo123', levelId: data.levels[0]?.id, maxLevelId: data.levels[0]?.id, plan: 'starter' });
-    setForm(u ? { ...u } : { name: '', email: '', role: 'student', active: true, levelId: data.levels[0]?.id, maxLevelId: data.levels[0]?.id, plan: 'starter', createdAt: today(), demoPassword: 'demo123' });
+    setError('');
+    setCreated(null);
+    setEditing(u || { id: uid(), role: 'student', active: true, createdAt: today(), demoPassword: '', levelId: data.levels[0]?.id, maxLevelId: data.levels[0]?.id, plan: 'starter' });
+    setForm(u ? { ...u } : { name: '', email: '', role: 'student', active: true, levelId: data.levels[0]?.id, maxLevelId: data.levels[0]?.id, plan: 'starter', createdAt: today(), demoPassword: '' });
   }
   async function save() {
-    await put('users', { ...form, id: editing.id });
-    await log(editing.createdAt === form.createdAt && data.users.some((u) => u.id === editing.id) ? 'edit-student' : 'create-student', form.email);
-    setEditing(null);
+    try {
+      const account = buildStudentAccount({
+        ...form,
+        id: editing.id,
+        createdAt: data.users.some((u) => u.id === editing.id) ? (data.users.find((u) => u.id === editing.id)?.createdAt || form.createdAt) : today(),
+      });
+      await put('users', account);
+      await log(data.users.some((u) => u.id === editing.id) ? 'edit-student' : 'create-student', account.email);
+      setCreated({ email: account.email, password: account.demoPassword || '' });
+      setEditing(null);
+    } catch (e: any) {
+      setError(e?.message || 'Could not save account');
+    }
   }
   async function toggle(u: any) {
     await put('users', { ...u, active: !u.active });
     await log(u.active ? 'disable-student' : 'enable-student', u.email);
   }
+  async function copyLogin(u: any) {
+    const text = `${u.email} / ${u.demoPassword || ''}`;
+    try { await navigator.clipboard.writeText(text); } catch {}
+  }
 
   return <div className="stack">
-    <div className="between"><div><h1>Student Management</h1><p className="muted">Create accounts, edit levels, and activate them. In the real version, accounts are created via the server.</p></div><Button onClick={() => openEdit()}>+ New account</Button></div>
+    <div className="between"><div><h1>Student Management</h1><p className="muted">Create a login, set a password, and control which levels the student can open.</p></div><Button onClick={() => openEdit()}>+ New account</Button></div>
+    {created && <div className="result-good">Login ready: {created.email} · password {created.password}</div>}
     <Card><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or email..." /></Card>
-    <Card><Table head={['Student', 'Level', 'Plan', 'Max allowed', 'Points', 'Status', 'Actions']}>
-      {students.map((u) => <tr key={u.id}>
+    <Card><Table head={['Student', 'Login', 'Level', 'Plan', 'Max allowed', 'Points', 'Status', 'Actions']}>
+      {rows.map((u) => <tr key={u.id}>
         <td><strong>{u.name}</strong><div className="muted">{u.email}</div></td>
+        <td><code className="en" dir="ltr">{u.demoPassword || '—'}</code></td>
         <td>{data.levels.find((l) => l.id === u.levelId)?.title || '—'}</td>
         <td><Badge tone="blue">{(u.plan || 'starter').toUpperCase()}</Badge></td>
         <td>{data.levels.find((l) => l.id === u.maxLevelId)?.title || '—'}</td>
         <td>{totalScore(data, u.id)}</td>
         <td><Badge tone={u.active ? 'green' : 'red'}>{u.active ? 'Active' : 'Disabled'}</Badge></td>
-        <td><div className="row"><Button size="sm" variant="ghost" onClick={() => openEdit(u)}>Edit</Button><Button size="sm" variant={u.active ? 'danger' : 'ghost'} onClick={() => toggle(u)}>{u.active ? 'Disable' : 'Enable'}</Button></div></td>
+        <td><div className="row"><Button size="sm" variant="ghost" onClick={() => copyLogin(u)}>Copy login</Button><Button size="sm" variant="ghost" onClick={() => openEdit(u)}>Edit</Button><Button size="sm" variant={u.active ? 'danger' : 'ghost'} onClick={() => toggle(u)}>{u.active ? 'Disable' : 'Enable'}</Button></div></td>
       </tr>)}
     </Table></Card>
     <Modal open={!!editing} title={data.users.some((u) => u.id === editing?.id) ? 'Edit account' : 'New account'} onClose={() => setEditing(null)}>
       <Field label="Name"><input value={form.name || ''} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
-      <Field label="Email"><input type="email" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
+      <Field label="Email (login)"><input type="email" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
+      <Field label="Password" hint="At least 6 characters. The student uses this with the email to sign in."><input type="text" value={form.demoPassword || ''} onChange={(e) => setForm({ ...form, demoPassword: e.target.value })} placeholder="Set a password" /></Field>
       <div className="grid g2">
+        <Field label="Role"><select value={form.role || 'student'} onChange={(e) => setForm({ ...form, role: e.target.value })}><option value="student">Student</option><option value="admin">Admin</option></select></Field>
+        <Field label="Access"><select value={form.active === false ? '0' : '1'} onChange={(e) => setForm({ ...form, active: e.target.value === '1' })}><option value="1">Active — can sign in</option><option value="0">Disabled — blocked</option></select></Field>
         <Field label="Current level"><select value={form.levelId || ''} onChange={(e) => setForm({ ...form, levelId: e.target.value })}>{data.levels.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}</select></Field>
         <Field label="Maximum allowed level"><select value={form.maxLevelId || ''} onChange={(e) => setForm({ ...form, maxLevelId: e.target.value })}>{data.levels.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}</select></Field>
         <Field label="Subscription plan (sets level ceiling)"><select value={form.plan || 'starter'} onChange={(e) => setForm({ ...form, plan: e.target.value })}><option value="starter">Starter (3 levels)</option><option value="growth">Growth (7 levels)</option><option value="pro">Pro (all levels)</option></select></Field>
       </div>
-      <div className="row between"><Button onClick={save}>Save</Button><Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button></div>
+      {error && <div className="note">{error}</div>}
+      <div className="row between"><Button onClick={save}>Save account</Button><Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button></div>
     </Modal>
   </div>;
 }
