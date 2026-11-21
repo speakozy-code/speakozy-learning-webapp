@@ -431,3 +431,7 @@ body { font-family: 'Jua', var(--font-arabic); }
 .avatar-pick{width:48px;height:48px;border-radius:12px;border:1px solid var(--line);background:#12223a;font-size:1.4rem;cursor:pointer;display:grid;place-items:center;transition:.15s}
 .avatar-pick:hover{border-color:var(--green);transform:translateY(-2px)}
 .avatar-pick.is-on{border-color:var(--green);background:rgba(18,206,144,.16);box-shadow:0 0 0 2px rgba(18,206,144,.25)}
+
+@media(max-width:980px){
+  .content-bar{position:static}
+}
