@@ -37,6 +37,16 @@ export async function sbCurrentUserId(): Promise<string | null> {
   return data.user?.id || null;
 }
 
+export async function sbEnsureProfile(): Promise<void> {
+  if (!sb) return;
+  const { data } = await sb.auth.getUser();
+  const user = data.user;
+  if (!user?.email) return;
+  const name = (user.user_metadata?.name || user.user_metadata?.full_name || 'Student') as string;
+  const { error } = await sb.rpc('signup_student', { p_name: name, p_email: user.email, p_uid: user.id });
+  if (error) throw error;
+}
+
 export async function sbSignOut() {
   if (sb) await sb.auth.signOut();
 }

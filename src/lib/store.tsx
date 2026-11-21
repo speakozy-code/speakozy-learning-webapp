@@ -3,7 +3,7 @@ import type { AppData, User } from '../types';
 import { seedData } from './seed';
 import { uid, today, addScoreOnce, buildStudentAccount } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
-import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbSignInWithGoogle, sbCurrentUserId } from './supabase';
+import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbSignInWithGoogle, sbCurrentUserId, sbEnsureProfile } from './supabase';
 import { englishify } from './translate';
 
 const KEY = 'speakozy-demo-v11';
@@ -70,9 +70,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         await refresh();
         if (CLOUD === 'supabase') {
           const authId = await sbCurrentUserId();
-          const loaded = await sbLoadAll(['users']);
-          const found = (loaded.users || []).find((u: any) => u.id === `auth-${authId}` || u.authId === authId);
-          if (found) setUser(found as User);
+          if (authId) {
+            let loaded = await sbLoadAll(['users']);
+            let found = (loaded.users || []).find((u: any) => u.id === `auth-${authId}` || u.authId === authId);
+            if (!found) {
+              await sbEnsureProfile();
+              await refresh();
+              loaded = await sbLoadAll(['users']);
+              found = (loaded.users || []).find((u: any) => u.id === `auth-${authId}` || u.authId === authId);
+            }
+            if (found) setUser(found as User);
+          }
         }
       }
       setReady(true);
