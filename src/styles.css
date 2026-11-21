@@ -394,6 +394,7 @@ body { font-family: 'Jua', var(--font-arabic); }
 
 @media(max-width:600px){
   .yg-frame,.yg-dock .ygContainer{min-height:140px}
+  .yg-dock{bottom:4.4rem;height:min(540px,calc(100vh - 5.8rem));height:min(540px,calc(100dvh - 5.8rem))}
   .sticky-track{display:none}
   .content-bar-row{gap:.6rem}
 }
