@@ -222,11 +222,11 @@ export function SessionPage({ sessionId }: any) {
   const talk = letsTalk(s);
   const voices = voicePrompts(s);
   const transcript = sourceTranscript(s);
-  const generatedWordQs = wordQuizItems(words, s.id).filter((q) => !qs.some((x) => x.prompt === q.prompt));
+  const generatedWordQs = wordQuizItems(words, s.id, transcript).filter((q) => !qs.some((x) => x.prompt === q.prompt));
   const wordQs = generatedWordQs;
   const generatedGrammarQs = grammarQuizItems(slides, s.id, grammarQs.map((q) => q.prompt)).filter((q) => q.type === 'mcq');
   const grammarAll = generatedGrammarQs.length ? generatedGrammarQs : grammarQs;
-  const quizNine = sessionQuizItems(words, slides, s.id);
+  const quizNine = sessionQuizItems(words, slides, s.id, transcript);
   const allWordsStudied = words.length > 0 && words.every((w) => wordDone(w.word));
   const writingLines = writing.split(/\n/).map((x) => x.trim()).filter(Boolean).length;
   const tabs = [
@@ -483,7 +483,7 @@ export function QuizPage({ sessionId }: any) {
   const [result, setResult] = useState<any>(null);
   const s = data.sessions.find((x) => x.id === sessionId);
   const words = data.dictionary.filter((w) => (w.sessionIds || []).includes(sessionId));
-  const qs = s ? sessionQuizItems(words, grammarSlides(s), s.id) : [];
+  const qs = s ? sessionQuizItems(words, grammarSlides(s), s.id, (s.sections || []).map((x: any) => x.body || '').join('\n')) : [];
   if (!user) return null;
   if (!s) return <Empty title="Session not found" />;
   if (!qs.length) return <Empty title="There are no questions for this session" hint="Check the roadmap." />;

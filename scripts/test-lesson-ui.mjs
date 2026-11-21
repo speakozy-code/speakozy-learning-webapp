@@ -34,12 +34,13 @@ t('YouGlish widget query stays on the same page player', () => {
 t('word quizzes are English fill-in MCQ, never Arabic meanings', () => {
   const s = C.sessions[0];
   const words = C.dictionary.filter((w) => (w.sessionIds || []).includes(s.id));
-  const qs = wordQuizItems(words, s.id);
+  const body = (s.sections || []).map((x) => x.body || '').join('\n');
+  const qs = wordQuizItems(words, s.id, body);
   assert.ok(qs.length >= 3, `got ${qs.length}`);
   for (const q of qs) {
     assert.equal(q.scope, 'word');
     assert.equal(q.type, 'mcq');
-    assert.ok(q.prompt.includes('____'));
+    assert.ok(q.prompt.includes('____') || q.prompt.startsWith('Which word means:'), q.prompt);
     assert.ok(q.options.length >= 2);
     assert.ok(q.options.includes(q.correct));
     assert.ok(!/[\u0600-\u06FF]/.test(q.prompt + q.options.join(' ') + q.correct), q.prompt);
@@ -68,8 +69,10 @@ t('Wiktionary page extras yield transcript and synonyms', () => {
 t('session quiz is nine English questions on words and grammar', () => {
   const s = C.sessions[2];
   const words = C.dictionary.filter((w) => (w.sessionIds || []).includes(s.id));
-  const qs = sessionQuizItems(words, [{ title: 'Past Simple', rule: 'finished actions', examples: ['I visited my grandparents last weekend.'] }], s.id);
+  const body = (s.sections || []).map((x) => x.body || '').join('\n');
+  const qs = sessionQuizItems(words, [{ title: 'Past Simple', rule: 'finished actions', examples: ['I visited my grandparents last weekend.'] }], s.id, body);
   assert.equal(qs.length, 9);
+  assert.equal(new Set(qs.map((q) => q.prompt.toLowerCase())).size, qs.length);
   assert.ok(qs.filter((q) => q.scope === 'word').length >= 4);
   assert.ok(qs.filter((q) => q.scope === 'grammar').length >= 2);
   for (const q of qs) {

@@ -46,15 +46,33 @@ function uniqueOptions(correct: string, extras: string[], n = 4) {
   return out.length >= 2 ? out : [];
 }
 
-export function wordQuizItems(words: WordLike[], sessionId: string): QuizItem[] {
+function bodySentence(body: string, word: string): string | undefined {
+  if (!body) return undefined;
+  const re = new RegExp(`[^.!?\\n]*\\b${esc(word)}\\b[^.!?\\n]*[.!?]`, 'gi');
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(body))) {
+    const t = m[0].trim();
+    if (t.length > 20 && t.length < 160) return t;
+  }
+  return undefined;
+}
+
+export function wordQuizItems(words: WordLike[], sessionId: string, body = ''): QuizItem[] {
   const list = (words || []).filter((w) => w && w.word);
   const bank = list.map((w) => w.word);
   const items: QuizItem[] = [];
+  const usedPrompts = new Set<string>();
   list.forEach((w, i) => {
-    const example = (w.examples || []).find((ex) => new RegExp(`\\b${esc(w.word)}\\b`, 'i').test(ex || ''));
-    const prompt = example
-      ? example.replace(new RegExp(`\\b${esc(w.word)}\\b`, 'i'), '____')
-      : `Complete the sentence: In this lesson we use ____.`;
+    const example = (w.examples || []).find((ex) => new RegExp(`\\b${esc(w.word)}\\b`, 'i').test(ex || '')) || bodySentence(body, w.word);
+    let prompt: string;
+    if (example) {
+      prompt = example.replace(new RegExp(`\\b${esc(w.word)}\\b`, 'i'), '____');
+    } else {
+      const def = (w.definitions || []).find((d) => d && /[a-zA-Z]/.test(d));
+      if (!def) return;
+      prompt = `Which word means: ${def.slice(0, 140)}`;
+    }
+    if (usedPrompts.has(prompt.toLowerCase())) return;
     const distractors = pick(
       bank.filter((x) => x.toLowerCase() !== w.word.toLowerCase()).concat(['book', 'play', 'go', 'have', 'need']),
       3,
@@ -62,6 +80,7 @@ export function wordQuizItems(words: WordLike[], sessionId: string): QuizItem[] 
     );
     const options = uniqueOptions(w.word, distractors);
     if (options.length < 2) return;
+    usedPrompts.add(prompt.toLowerCase());
     items.push({
       id: `wq-${sessionId}-${w.word.toLowerCase()}-fill`,
       scope: 'word',
@@ -121,22 +140,24 @@ export function grammarQuizItems(slides: GrammarSlide[], sessionId: string, exis
   return items.slice(0, 5);
 }
 
-export function sessionQuizItems(words: WordLike[], slides: GrammarSlide[], sessionId: string): QuizItem[] {
-  const wordQs = wordQuizItems(words, sessionId);
-  const grammarQs = grammarQuizItems(slides, sessionId, wordQs.map((q) => q.prompt)).filter((q) => q.type === 'mcq');
-  const out: QuizItem[] = [...wordQs.slice(0, 6)];
-  let gi = 0;
-  while (out.filter((q) => q.scope === 'grammar').length < 3 && grammarQs.length && out.length < 9) {
-    const base = grammarQs[gi % grammarQs.length];
-    out.push({ ...base, id: `${base.id}-g${out.length}` });
-    gi++;
-  }
-  let wi = 0;
-  while (out.length < 9 && wordQs.length) {
-    const base = wordQs[wi % wordQs.length];
-    out.push({ ...base, id: `${base.id}-x${out.length}` });
-    wi++;
-    if (wi > 12) break;
-  }
+export function sessionQuizItems(words: WordLike[], slides: GrammarSlide[], sessionId: string, body = ''): QuizItem[] {
+  const wordQs = wordQuizItems(words, sessionId, body);
+  const grammarAll = grammarQuizItems(slides, sessionId, wordQs.map((q) => q.prompt));
+  const grammarMcq = grammarAll.filter((q) => q.type === 'mcq');
+  const grammarTf = grammarAll.filter((q) => q.type === 'truefalse').map((q) => ({ ...q, type: 'mcq' as const, options: ['True', 'False'] }));
+  const out: QuizItem[] = [];
+  const used = new Set<string>();
+  const add = (q: QuizItem) => {
+    const key = q.prompt.toLowerCase();
+    if (used.has(key) || out.length >= 9) return;
+    used.add(key);
+    out.push({ ...q, id: `${q.id}-s${out.length}` });
+  };
+  wordQs.slice(0, 5).forEach(add);
+  grammarMcq.slice(0, 3).forEach(add);
+  grammarTf.slice(0, 1).forEach(add);
+  wordQs.slice(5).forEach(add);
+  grammarMcq.slice(3).forEach(add);
+  grammarTf.slice(1).forEach(add);
   return out.slice(0, 9);
 }
