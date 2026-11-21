@@ -77,12 +77,14 @@ export function Layout({ current, children }: { current: string; children: React
       <span className="avatar">{user.name.charAt(0)}</span>
     </div>
     <div className="shell">{side}<main className="main" id="app-main"><div className="content-bar">
-      <div className="sticky-progress">
-        {!admin && <><span className="muted">{level?.title || 'Level'}</span><div className="progress-track sticky-track"><span style={{ width: `${pct}%` }} /></div><strong>{pct}%</strong></>}
-        {admin && <span className="muted">Admin Dashboard</span>}
+      <div className="content-bar-row">
+        <div className="sticky-progress">
+          {!admin && <><span className="sticky-level">{level?.title || 'Level'}</span><div className="progress-track sticky-track"><span style={{ width: `${pct}%` }} /></div><strong className="sticky-pct">{pct}%</strong></>}
+          {admin && <span className="muted">Admin Dashboard</span>}
+        </div>
+        {!admin && <strong className="sticky-points">{points} pts</strong>}
+        {bellButton}
       </div>
-      {!admin && <strong className="sticky-points">{points} pts</strong>}
-      {bellButton}
       {!admin && user.subscribed === false && <div className="sub-notice" dir="rtl">
         <span>أنت غير مشترك بالكورس، تواصل معنا للتفاصيل والاشتراك</span>
         <a className="btn btn-primary btn-sm" href="https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83%20%D9%81%D9%8A%20%D8%A7%D9%84%D9%83%D9%88%D8%B1%D8%B3" target="_blank" rel="noreferrer">واتساب</a>

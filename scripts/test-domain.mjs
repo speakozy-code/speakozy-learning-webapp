@@ -31,20 +31,25 @@ t('حالة الجلسة تتبع الإكمال والاعتماد', () => {
   assert.equal(sessionStatus(base, s, 'stu').key, 'approved');
   assert.equal(levelProgress(base, 'l1', 'stu'), 100);
 });
-t('فتح المستوى محدود بحد المسؤول', () => {
-  const u = { id:'u', name:'', email:'', role:'student', active:true, levelId:'l1', maxLevelId:'l1', createdAt:'' };
-  assert.equal(canOpenLevel(u, {id:'l1',order:1}, [{id:'l1',order:1},{id:'l2',order:2}]), true);
-  assert.equal(canOpenLevel(u, {id:'l2',order:2}, [{id:'l1',order:1},{id:'l2',order:2}]), false);
+t('نطاق المستويات من أول ليفل لآخر ليفل', () => {
+  const levels = [{ id: 'l1', order: 1 }, { id: 'l2', order: 2 }, { id: 'l3', order: 3 }, { id: 'l4', order: 4 }];
+  const u = { id: 'u', name: '', email: '', role: 'student', active: true, levelId: 'l2', maxLevelId: 'l3', createdAt: '' };
+  assert.equal(canOpenLevel(u, levels[0], levels), true);
+  assert.equal(canOpenLevel(u, levels[3], levels), true);
+  assert.equal(sessionOpen(u, { id: 's', levelId: 'l2', order: 3 }, levels), true);
+  assert.equal(sessionOpen(u, { id: 's', levelId: 'l3', order: 5 }, levels), true);
+  assert.equal(sessionOpen(u, { id: 's', levelId: 'l1', order: 1 }, levels), true);
+  assert.equal(sessionOpen(u, { id: 's', levelId: 'l1', order: 2 }, levels), false);
+  assert.equal(sessionOpen(u, { id: 's', levelId: 'l4', order: 1 }, levels), true);
+  assert.equal(sessionOpen(u, { id: 's', levelId: 'l4', order: 2 }, levels), false);
 });
-t('unsubscribed students open only the first session of every level', () => {
-  const u = { id: 'u', name: '', email: '', role: 'student', active: true, subscribed: false, levelId: 'l1', maxLevelId: 'l1', createdAt: '' };
-  const levels = [{ id: 'l1', order: 1 }, { id: 'l2', order: 2 }];
-  const first = { id: 's1', levelId: 'l1', order: 1 };
-  const second = { id: 's2', levelId: 'l1', order: 2 };
-  assert.equal(canOpenLevel(u, levels[1], levels), true);
-  assert.equal(sessionOpen(u, first, levels), true);
-  assert.equal(sessionOpen(u, second, levels), false);
-  assert.equal(sessionOpen({ ...u, subscribed: true }, second, levels), true);
+t('نطاق مستوى واحد: أول ليفل = آخر ليفل', () => {
+  const levels = [{ id: 'l1', order: 1 }, { id: 'l7', order: 7 }, { id: 'l8', order: 8 }];
+  const u = { id: 'u', name: '', email: '', role: 'student', active: true, subscribed: false, levelId: 'l7', maxLevelId: 'l7', createdAt: '' };
+  assert.equal(sessionOpen(u, { id: 's', levelId: 'l7', order: 4 }, levels), true);
+  assert.equal(sessionOpen(u, { id: 's', levelId: 'l1', order: 1 }, levels), true);
+  assert.equal(sessionOpen(u, { id: 's', levelId: 'l1', order: 2 }, levels), false);
+  assert.equal(sessionOpen(u, { id: 's', levelId: 'l8', order: 2 }, levels), false);
 });
 t('النقاط لا تُحتسب مرتين لنفس النشاط', () => {
   const d = { scores:[], settings:{} };

@@ -43,25 +43,30 @@ export function allowedLevelCount(user: User) {
   return PLANS[user.plan || 'starter']?.levels || 1;
 }
 
-// The subscription sets the ceiling; the admin-controlled maxLevelId sets the current cap.
-export function canOpenLevel(user: User, level: { id: string; order: number }, levels: { id: string; order: number }[]) {
-  if (user.role === 'admin') return true;
-  // غير المشترك يشوف أول سيشن من كل مستوى، من غير فتح باقي المستوى.
-  if (user.subscribed === false) return true;
-  const planMax = allowedLevelCount(user);
-  const adminLevel = levels.find((l) => l.id === user.maxLevelId);
-  const adminMax = adminLevel ? adminLevel.order : planMax;
-  const max = Math.min(planMax, adminMax || 1);
-  return level.order <= max;
+// نطاق المستويات المفتوحة بالكامل: من أول مستوى (levelId) لآخر مستوى (maxLevelId) شاملًا.
+export function levelRange(user: User, levels: { id: string; order: number }[]) {
+  const first = levels.find((l) => l.id === user.levelId)?.order ?? 1;
+  const last = levels.find((l) => l.id === user.maxLevelId)?.order ?? first;
+  return { first: Math.min(first, last), last: Math.max(first, last) };
 }
 
-// Students see every level and session, but only the admin-approved level is interactive.
+export function levelFullyOpen(user: User, level: { id: string; order: number }, levels: { id: string; order: number }[]) {
+  if (user.role === 'admin') return true;
+  const { first, last } = levelRange(user, levels);
+  return level.order >= first && level.order <= last;
+}
+
+// كل المستويات ظاهرة؛ اللي بره النطاق بيفتح أول سيشن بس.
+export function canOpenLevel(_user: User, _level: { id: string; order: number }, _levels: { id: string; order: number }[]) {
+  return true;
+}
+
 export function sessionOpen(user: User, session: { levelId: string; order: number }, levels: { id: string; order: number }[]) {
   const level = levels.find((l) => l.id === session.levelId);
-  if (!level || !canOpenLevel(user, level, levels)) return false;
+  if (!level) return false;
   if (user.role === 'admin') return true;
-  if (user.subscribed === false) return session.order === 1;
-  return true;
+  if (levelFullyOpen(user, level, levels)) return true;
+  return session.order === 1;
 }
 
 export const wordProgressId = (word: string) => `word:${word.toLowerCase()}`;
@@ -125,12 +130,11 @@ export function buildStudentAccount(input: {
   const demoPassword = String(input.demoPassword || '').trim();
   if (!name) throw new Error('Name is required');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Valid email is required');
-  if (demoPassword.length < 6) throw new Error('Password must be at least 6 characters');
   return {
     id: input.id || uid(),
     name,
     email,
-    demoPassword,
+    ...(demoPassword ? { demoPassword } : {}),
     role: input.role === 'admin' ? 'admin' : 'student',
     active: input.active !== false,
     plan: input.plan || 'starter',

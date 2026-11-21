@@ -117,10 +117,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     const d = readDemo();
     const mail = email.trim().toLowerCase();
-    if (d.users.some((u) => u.email.toLowerCase() === mail)) throw new Error('An account with this email already exists');
-    const first = d.levels.slice().sort((a, b) => a.order - b.order)[0]?.id || 'l1';
-    const account = buildStudentAccount({ name, email: mail, demoPassword: password, levelId: first, maxLevelId: first, subscribed: false });
-    d.users.push(account);
+    const granted = d.users.find((u) => u.email.toLowerCase() === mail);
+    if (granted && granted.demoPassword) throw new Error('An account with this email already exists');
+    let account: User;
+    if (granted) {
+      granted.demoPassword = password;
+      if (name.trim()) granted.name = name.trim();
+      account = granted;
+    } else {
+      const first = d.levels.slice().sort((a, b) => a.order - b.order)[0]?.id || 'l1';
+      account = buildStudentAccount({ name, email: mail, demoPassword: password, levelId: first, maxLevelId: first, subscribed: false });
+      d.users.push(account);
+    }
     saveDemo(d);
     localStorage.setItem('speakozy-user', account.id);
     setData(d);

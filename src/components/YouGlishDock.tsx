@@ -34,7 +34,7 @@ export function YouGlishDock({
         const el = document.getElementById(hostId);
         if (!el) return;
         el.innerHTML = '';
-        const widget = new (window as any).YG.Widget(hostId, { width: Math.max(320, el.clientWidth || 640), components: 255, autoStart: 1 });
+        const widget = new (window as any).YG.Widget(hostId, { width: Math.max(280, el.clientWidth || 640), components: 255, autoStart: 1 });
         widget.fetch(q.word, q.lang, q.accent);
         if (!dead) setStatus('ready');
       } catch {

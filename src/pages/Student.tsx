@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, Progress, Stat, SectionTitle, Empty, Tabs, Field, Modal, fmtDate, fmtDay, isLate } from '../components/UI';
-import { sessionStatus, levelProgress, engagementProgress, canOpenLevel, sessionOpen, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, uid, today, allowedLevelCount, PLANS } from '../lib/domain';
+import { sessionStatus, levelProgress, engagementProgress, sessionOpen, levelFullyOpen, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, uid, today } from '../lib/domain';
 import { go } from '../App';
 import { lookupWord, allCached, type LookupEntry } from '../lib/dictionaryProvider';
 import { grammarSlides } from '../lib/lessonContent';
@@ -55,8 +55,7 @@ export function StudentDashboard() {
         <div><div className="muted" style={{ color: '#9fb0c9' }}>Hi {user.name} 👋</div><h1 style={{ marginTop: '.35rem' }}>Ready to pick up where you left off?</h1>
           <div className="row" style={{ marginTop: '.8rem' }}>
             <Badge tone="green">{level?.title || 'No level'}</Badge>
-            <Badge tone="blue">Plan: {PLANS[user.plan || 'starter']?.label || 'Starter'}</Badge>
-            <span style={{ color: '#b8c4d6', fontSize: '.85rem' }}>Levels available: {Math.min(user.subscribed === false ? data.levels.length : allowedLevelCount(user), data.levels.length)} of {data.levels.length}</span>
+            <span style={{ color: '#b8c4d6', fontSize: '.85rem' }}>Full access: {data.levels.filter((l) => levelFullyOpen(user, l, data.levels)).length} of {data.levels.length} levels · other levels open their first session only</span>
           </div>
         </div>
         <Button onClick={() => go(next ? `/session/${next.id}` : '/roadmap')}>{next ? 'Continue studying' : 'Open roadmap'}</Button>
@@ -111,12 +110,6 @@ export function StudentDashboard() {
   </div>;
 }
 
-function maxOrderSafe(allLevels: any[], user: any) {
-  const planMax = allowedLevelCount(user);
-  const adminOrder = allLevels.find((l) => l.id === user.maxLevelId)?.order || planMax;
-  return Math.min(planMax, adminOrder);
-}
-
 export function Roadmap() {
   const { user, data } = useApp();
   const levels = [...data.levels].sort((a, b) => a.order - b.order);
@@ -147,13 +140,13 @@ export function Roadmap() {
       <div className="roadmap-map">
         {levels.map((l, i) => {
           const sessions = data.sessions.filter((s) => s.levelId === l.id).sort((a, b) => a.order - b.order);
-          const open = canOpenLevel(user, l, data.levels);
+          const full = levelFullyOpen(user, l, data.levels);
           const pct = engagementProgress(data, l.id, user.id);
           const approved = sessions.filter((s) => sessionStatus(data, s, user.id).key === 'approved').length;
-          return <div key={l.id} className={`rm-level ${open ? 'is-open' : 'is-locked'} ${i % 2 ? 'rm-right' : 'rm-left'}`}>
-            <div className="rm-marker">{open ? i + 1 : '🔒'}</div>
+          return <div key={l.id} className={`rm-level is-open ${i % 2 ? 'rm-right' : 'rm-left'}`}>
+            <div className="rm-marker">{i + 1}</div>
             <div className="rm-body">
-              <div className="between"><strong>{l.title}</strong><Badge tone={open ? 'green' : 'muted'}>{open ? 'Open' : 'Locked'}</Badge></div>
+              <div className="between"><strong>{l.title}</strong><Badge tone={full ? 'green' : 'muted'}>{full ? 'Full access' : 'First session only'}</Badge></div>
               <p className="muted" style={{ margin: '.3rem 0' }}>{l.description}</p>
               <div className="rm-dots">{sessions.map((s) => { const st = sessionStatus(data, s, user.id).key; return <span key={s.id} className={`rm-dot ${st === 'approved' ? 'done' : st === 'progress' || st === 'review' || st === 'done' ? 'active' : ''}`} title={s.title} />; })}</div>
               <div className="muted" style={{ fontSize: '.8rem' }}>{approved} of {sessions.length} sessions approved · {pct}% complete</div>
@@ -842,21 +835,21 @@ export function MaterialsPage() {
   const levelId = selected || user.levelId || levels[0]?.id;
   const level = data.levels.find((l) => l.id === levelId) || current;
   const sessions = data.sessions.filter((s) => s.levelId === level?.id).sort((a, b) => a.order - b.order);
-  const locked = level ? (!admin && !canOpenLevel(user, level, data.levels)) : false;
+  const partial = level ? (!admin && !levelFullyOpen(user, level, data.levels)) : false;
   return <div className="stack">
-    <div><h1>MATERIALS</h1><p className="muted">Choose a level from the list. Your current level loads automatically; other levels stay locked until your admin opens them.</p></div>
+    <div><h1>MATERIALS</h1><p className="muted">Choose a level from the list. Levels inside your allowed range open fully; other levels open their first session only.</p></div>
     <Card>
       <Field label="Level"><select value={levelId} onChange={(e) => setSelected(e.target.value)}>
         {levels.map((l) => {
-          const open = admin || canOpenLevel(user, l, data.levels);
-          return <option key={l.id} value={l.id} disabled={!open}>{l.title}{open ? '' : ' 🔒'}</option>;
+          const full = admin || levelFullyOpen(user, l, data.levels);
+          return <option key={l.id} value={l.id}>{l.title}{full ? '' : ' · first session only'}</option>;
         })}
       </select></Field>
-      {level && <div className="row" style={{ marginTop: '.2rem' }}><Badge tone={locked ? 'muted' : 'green'}>{locked ? '🔒 Locked' : 'Available'}</Badge><Badge tone="blue">{sessions.length} lessons</Badge></div>}
+      {level && <div className="row" style={{ marginTop: '.2rem' }}><Badge tone={partial ? 'muted' : 'green'}>{partial ? 'First session only' : 'Full access'}</Badge><Badge tone="blue">{sessions.length} lessons</Badge></div>}
     </Card>
-    {locked && <div className="note">🔒 This level is locked for your account. Your admin controls which level you can study.</div>}
+    {partial && <div className="note">This level is outside your allowed range, so only its first session is open. Contact us to unlock the full level.</div>}
     {level && sessions.length ? <div className="grid g2">{sessions.map((s) => {
-      const sessionLocked = locked || (!admin && !sessionOpen(user, s, data.levels));
+      const sessionLocked = !admin && !sessionOpen(user, s, data.levels);
       const wordCount = data.dictionary.filter((w) => (w.sessionIds || []).includes(s.id)).length;
       const grammarTitle = (s.sections.find((x) => /grammar/i.test(x.title))?.title || 'Grammar').replace(/^Grammar\s*[—-]\s*/i, '');
       return <Card key={s.id} className="material-card">
@@ -884,7 +877,7 @@ export function LevelExamPage({ levelId }: any) {
   if (!user) return null;
   const level = data.levels.find((l) => l.id === levelId);
   const qs = data.questions.filter((q) => q.levelId === levelId);
-  const locked = level ? !canOpenLevel(user, level, data.levels) : false;
+  const locked = level ? !levelFullyOpen(user, level, data.levels) : false;
 
   async function submit() {
     let auto = 0, max = 0, pending = 0;

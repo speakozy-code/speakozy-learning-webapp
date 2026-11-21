@@ -83,19 +83,18 @@ t('lets talk extracts speaking prompts from the session file', () => {
   assert.ok(talk.length >= 1, 'lets talk');
 });
 
-t('admin can mint a student login with password and permissions', () => {
+t('admin grants student access by email only, no password', () => {
   const u = buildStudentAccount({
-    name: 'Sara Ali', email: 'sara@speakozy.demo', demoPassword: 'secret1',
+    name: 'Sara Ali', email: 'sara@speakozy.demo',
     levelId: 'l1', maxLevelId: 'l2', plan: 'growth',
   });
   assert.equal(u.role, 'student');
   assert.equal(u.active, true);
-  assert.equal(u.demoPassword, 'secret1');
+  assert.equal(u.demoPassword, undefined);
   assert.equal(u.email, 'sara@speakozy.demo');
   assert.equal(u.plan, 'growth');
-  assert.throws(() => buildStudentAccount({ name: '', email: 'a@b.co', demoPassword: 'secret1', levelId: 'l1', maxLevelId: 'l1' }));
-  assert.throws(() => buildStudentAccount({ name: 'A', email: 'nope', demoPassword: 'secret1', levelId: 'l1', maxLevelId: 'l1' }));
-  assert.throws(() => buildStudentAccount({ name: 'A', email: 'a@b.co', demoPassword: '123', levelId: 'l1', maxLevelId: 'l1' }));
+  assert.throws(() => buildStudentAccount({ name: '', email: 'a@b.co', levelId: 'l1', maxLevelId: 'l1' }));
+  assert.throws(() => buildStudentAccount({ name: 'A', email: 'nope', levelId: 'l1', maxLevelId: 'l1' }));
 });
 
 console.log(`\n${pass} lesson-ui checks passed`);
