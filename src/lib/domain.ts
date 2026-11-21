@@ -161,3 +161,13 @@ export function levelLabel(level: { id: string; title: string; cefr?: string }):
   return level.cefr ? `${name} (${level.cefr})` : name;
 }
 export function cefrOf(level: { cefr?: string }): string { return level.cefr || ''; }
+
+// إشعارات يومية تلقائية للطالب: تاسك اليوم، شادوينج، ومراجعة السيشنات.
+export function dailyNotifications(studentId: string, studentLevel: string, date = new Date()): any[] {
+  const d = date.toISOString().slice(0, 10);
+  return [
+    { id: `daily-task-${studentId}-${d}`, targetId: studentId, title: 'تاسك اليوم', body: 'سجّل صوتك وابعته على جروب الواتساب — اتكلم كل يوم.', href: '#/tasks', read: false, createdAt: `${d}T08:00:00.000Z` },
+    { id: `daily-shadow-${studentId}-${d}`, targetId: studentId, title: 'شادوينج اليوم', body: 'اسمع وردّد ورا المتحدث في فيديو الشادوينج.', href: '#/shadowing', read: false, createdAt: `${d}T08:05:00.000Z` },
+    { id: `daily-review-${studentId}-${d}`, targetId: studentLevel, title: 'ذاكر سيشناتك', body: 'راجع سيشنات مستواك اللي فاتت وكمّل اللي ما خلصتش.', href: '#/roadmap', read: false, createdAt: `${d}T08:10:00.000Z` },
+  ];
+}

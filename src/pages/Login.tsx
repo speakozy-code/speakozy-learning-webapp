@@ -12,6 +12,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -19,12 +20,15 @@ export default function Login() {
     e?.preventDefault();
     setError('');
     if (mode === 'signup') {
+      if (name.trim().split(/\s+/).filter(Boolean).length < 2) { setError('اكتب اسمك الكامل (اسم أول واسم تاني)'); return; }
+      if (!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(email.trim())) { setError('اكتب إيميل صحيح'); return; }
+      if (!/^01[0-9]{9}$/.test(phone.trim())) { setError('اكتب رقم موبايل مصري صحيح (11 رقم)'); return; }
       if (password.length < 6) { setError('الباسورد لازم يكون 6 حروف على الأقل'); return; }
       if (password !== confirm) { setError('الباسورد مش متطابق'); return; }
     }
     setBusy(true);
     try {
-      if (mode === 'signup') await signup(name.trim(), email.trim(), password);
+      if (mode === 'signup') { localStorage.setItem('speakozy-phone', phone.trim()); await signup(name.trim(), email.trim(), password); }
       else await login(email.trim(), password);
       go('/');
     } catch (err: any) {
@@ -64,6 +68,7 @@ export default function Login() {
         {demo && <div className="note" style={{ margin: '1rem 0' }}>وضع تجريبي: الحسابات محفوظة على الجهاز ده. وصّل الخدمة الحقيقية عشان حسابات فعلية.</div>}
         <form onSubmit={submit}>
           {mode === 'signup' && <Field label="الاسم"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="اسمك" required autoComplete="name" /></Field>}
+          {mode === 'signup' && <Field label="رقم الموبايل"><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01xxxxxxxxx" required inputMode="numeric" /></Field>}
           <Field label="الإيميل"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required autoComplete="username" /></Field>
           <Field label="الباسورد"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} /></Field>
           {mode === 'signup' && <Field label="تأكيد الباسورد"><input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" required autoComplete="new-password" /></Field>}

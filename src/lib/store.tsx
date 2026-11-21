@@ -2,7 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { AppData, User } from '../types';
 import { seedData } from './seed';
 import { LEVEL_TASKS } from './levelTasks';
-import { uid, today, addScoreOnce, buildStudentAccount } from './domain';
+import { UNIT_WORDS } from './unitWords';
+import { uid, today, addScoreOnce, buildStudentAccount, dailyNotifications } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
 import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbCurrentAuth, sbEnsureProfile, sbSaveMyProfile, sbChangePassword, sbUpsertRecord, sbDeleteRecord } from './supabase';
 import { englishify } from './translate';
@@ -24,10 +25,18 @@ function readDemo(): AppData {
   saveDemo(seeded);
   return withLevelTasks(englishify(seeded));
 }
+function withDailyNotes(d: AppData, user: any): AppData {
+  if (!user || user.role !== 'student') return d;
+  const notes = dailyNotifications(user.id, user.levelId);
+  const ids = new Set(notes.map((n) => n.id));
+  return { ...d, notifications: [...notes, ...((d.notifications || []).filter((n: any) => !ids.has(n.id)))] };
+}
 // التاسكات المستوردة من مواقع المستويات مصدرها الكود؛ بتندمج مع أي تاسكات مخصصة من الأدمن.
 function withLevelTasks(d: AppData): AppData {
-  const ids = new Set(LEVEL_TASKS.map((t) => t.id));
-  return { ...d, tasks: [...LEVEL_TASKS, ...((d.tasks || []).filter((t) => !ids.has(t.id)))] };
+  const taskIds = new Set(LEVEL_TASKS.map((t) => t.id));
+  const wordKeys = new Set(UNIT_WORDS.map((w) => w.word.toLowerCase() + '|' + (w.sessionIds || [])[0]));
+  const customWords = (d.dictionary || []).filter((w) => !wordKeys.has(w.word.toLowerCase() + '|' + (w.sessionIds || [])[0]));
+  return { ...d, tasks: [...LEVEL_TASKS, ...((d.tasks || []).filter((t) => !taskIds.has(t.id)))], dictionary: [...UNIT_WORDS, ...customWords] };
 }
 function saveDemo(data: AppData) {
   try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
@@ -58,10 +67,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const demo = CLOUD === 'demo';
 
+  useEffect(() => {
+    if (!user || user.role !== 'student' || demo) return;
+    setData((prev) => withDailyNotes(prev, user));
+  }, [user?.id, user?.levelId]);
+
   async function refresh() {
-    if (demo) { setData(readDemo()); return; }
+    if (demo) { setData(withDailyNotes(readDemo(), user)); return; }
     const loaded = CLOUD === 'supabase' ? await sbLoadAll(COLLECTIONS) : await fbLoadAll(COLLECTIONS);
-    setData(withLevelTasks(englishify({ ...emptyData(), ...loaded } as AppData)));
+    setData(withDailyNotes(withLevelTasks(englishify({ ...emptyData(), ...loaded } as AppData)), user));
   }
 
   useEffect(() => {

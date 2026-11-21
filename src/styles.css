@@ -472,3 +472,18 @@ body { font-family: 'Jua', var(--font-arabic); }
 /* Testimonials */
 .testimonial-card{border-inline-start:3px solid var(--green)}
 .testimonial-card .avatar.small{width:36px;height:36px;font-size:.9rem}
+
+/* user chip + profile menu */
+.user-chip{display:flex;align-items:center;gap:.35rem;background:none;border:0;cursor:pointer;color:var(--ink)}
+.user-chip .avatar{width:34px;height:34px;font-size:.9rem}
+.user-chip-name{font-weight:700}
+.profile-menu{position:absolute;top:3.2rem;inset-inline-start:1rem;z-index:90;background:var(--navy);border:1px solid var(--line);border-radius:12px;padding:.4rem;display:grid;min-width:200px;box-shadow:var(--shadow)}
+.profile-menu button,.profile-menu a{background:none;border:0;color:var(--ink);text-align:start;padding:.6rem .7rem;border-radius:8px;cursor:pointer;font:inherit}
+.profile-menu button:hover,.profile-menu a:hover{background:rgba(18,206,144,.12)}
+.content-bar-row{position:relative}
+.shadow-inline{border-color:rgba(18,206,144,.3)}
+.sticky-progress-session{position:sticky;top:0;z-index:20;background:var(--card);backdrop-filter:blur(8px)}
+@media(max-width:980px){
+  .sticky-progress{position:sticky;top:0;z-index:20;background:var(--navy)}
+  .content-bar .content-bar-row{position:sticky;top:0;z-index:20}
+}

@@ -38,6 +38,7 @@ export function Layout({ current, children }: { current: string; children: React
   const { user, logout, data, put } = useApp();
   const [open, setOpen] = useState(false);
   const [bell, setBell] = useState(false);
+  const [profileMenu, setProfileMenu] = useState(false);
   if (!user) return <>{children}</>;
   const admin = user.role === 'admin';
   const nav = admin ? adminNav : studentNav;
@@ -82,6 +83,15 @@ export function Layout({ current, children }: { current: string; children: React
     </div>
     <div className="shell">{side}<main className="main" id="app-main"><div className="content-bar">
       <div className="content-bar-row">
+        <button className="user-chip" onClick={() => setProfileMenu((m) => !m)} aria-label="الملف الشخصي">
+          <span className="avatar">{user.avatar || user.name.charAt(0)}</span>
+          <span className="user-chip-name">{user.name.charAt(0)}</span>
+        </button>
+        {profileMenu && <div className="profile-menu">
+          <button onClick={() => { setProfileMenu(false); go('/profile'); }}>تعديل الملف الشخصي</button>
+          {!admin && user.subscribed === false && <a href="https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83" target="_blank" rel="noreferrer">الاشتراك في الكورس</a>}
+          <button onClick={() => { setProfileMenu(false); logout(); go('/'); }}>تسجيل الخروج / دخول حساب تاني</button>
+        </div>}
         <div className="sticky-progress">
           {!admin && <><span className="sticky-level">{level?.title || 'المستوى'}</span><div className="progress-track sticky-track"><span style={{ width: `${pct}%` }} /></div><strong className="sticky-pct">{pct}%</strong></>}
           {admin && <span className="muted">لوحة الأدمن</span>}

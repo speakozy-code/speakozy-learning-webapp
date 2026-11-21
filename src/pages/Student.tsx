@@ -36,10 +36,6 @@ const MATERIAL_PDF: Record<string, string> = {
   'l9-s6': './materials/6%20-%20Work.pdf',
   'l9-s7': './materials/7-%20Shopping.pdf',
 };
-function materialIsBilingual(levelId: string, data: { levels: { id: string; order: number }[] }): boolean {
-  const l = data.levels.find((x) => x.id === levelId);
-  return !!l && l.order <= 3;
-}
 function materialPdf(s: any): string {
   return s?.pdfUrl || MATERIAL_PDF[s?.id] || `./lesson-pdfs/${s?.id}.pdf`;
 }
@@ -213,9 +209,9 @@ export function SessionPage({ sessionId }: any) {
   }, [tab, sessionId]);
   const s = data.sessions.find((x: any) => x.id === sessionId);
   if (!user) return null;
-  const bilingualMaterial = s ? materialIsBilingual(s.levelId, data) : false;
   if (!s) return <Empty title="السيشن مش موجودة" hint="يمكن اتشالت أو الرابط غلط." />;
   const locked = !sessionOpen(user, s, data.levels);
+  const enMaterial = (data.levels.find((l) => l.id === s.levelId)?.order || 0) > 3;
   const done = data.progress.filter((p) => p.studentId === user.id && p.sessionId === s.id).map((p) => p.sectionId);
   const qs = data.questions.filter((q) => q.sessionId === s.id);
   const grammarQs = qs.filter((q) => q.scope === 'grammar');
@@ -329,20 +325,21 @@ export function SessionPage({ sessionId }: any) {
   }
 
   return <div className="stack">
-    <div className="row"><button className="icon-btn" onClick={() => go('/roadmap')}>→ الخريطة</button></div>
+    <div className="row"><button className="icon-btn" onClick={() => window.history.length > 1 ? window.history.back() : go('/roadmap')}>→ السابق</button></div>
     <Card className="between">
       <div><div className="muted">Session {s.order} · {data.levels.find((l) => l.id === s.levelId)?.title}</div><h1>{s.title}</h1><p className="muted">{s.topic} · {fmtDate(s.dueAt)}</p></div>
       <Badge tone={locked ? 'muted' : statusTone[st.key]}>{locked ? '🔒 مقفول' : st.label}</Badge>
     </Card>
     {locked && <div className="note">🔒 تقدر تقرأ كل حاجة في السيشن دي، بس هي مقفولة لحسابك. اطلب من الأدمن يفتح المستوى عشان تذاكر وتحفظ تقدمك.</div>}
-    <Card className="study-progress">
+    <Card className="study-progress sticky-progress-session">
       <div className="between"><span className="muted">تقدم السيشن · {done.filter((d) => d.startsWith(`${s.id}-`) || d.startsWith('word:')).length} من {totalParts} جزء خلص</span><strong>{pct}%</strong></div>
       <div className="progress-track"><span style={{ width: `${pct}%` }} /></div>
     </Card>
     {materialPdf(s) && <Card>
       <SectionTitle title="ملخص العرض للمراجعة" />
       <p className="muted">نسخة PDF من كل سلايدات العرض، للمشاهدة والمراجعة بعد السيشن.</p>
-      <div className="row"><a className="btn btn-primary btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer">افتح PDF ↗</a><a className="btn btn-ghost btn-sm" href={materialPdf(s)} download>نزّل PDF ⬇</a></div>
+      <div className="row"><a className="btn btn-primary btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer">افتح PDF ↗</a><a className="btn btn-ghost btn-sm" href={materialPdf(s)} download>نزّل PDF ⬇</a>
+        {s.driveUrl && <a className="btn btn-ghost btn-sm" href={s.driveUrl} target="_blank" rel="noreferrer">PDF من الدرايف ↗</a>}</div>
     </Card>}
     {s.driveUrl && <Card>
       <SectionTitle title="مصدر إضافي للمشاهدة" />
@@ -350,6 +347,10 @@ export function SessionPage({ sessionId }: any) {
       <a className="btn btn-ghost btn-sm" href={s.driveUrl} target="_blank" rel="noreferrer">افتح الملف ↗</a>
     </Card>}
     <div className="lesson-tabs">{tabs.map((t) => <button key={t.id} className={`tab ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>{t.label}</button>)}</div>
+    <Card className="shadow-inline">
+      <div className="row between"><span>🎧 {tab === 'vocabulary' ? 'عاوز تبدأ معانا الشادوينج؟ ردّد الكلمات دي ورا المتحدث.' : tab === 'grammar' ? 'عاوز تبدأ معانا الشادوينج؟ قول الجمل ورا المتحدث.' : tab === 'practice' ? 'عاوز تبدأ معانا الشادوينج؟ سجّل صوتك و ابعته.' : tab === 'quiz' ? 'عاوز تبدأ معانا الشادوينج؟ راجع الكلمات قبل الكويز.' : 'عاوز تبدأ معانا الشادوينج؟ اسمع السيشن وردّد ورا المتحدث.'}</span>
+        <a className="btn btn-primary btn-sm" href="https://wa.me/201091060951?text=%D8%B9%D8%A7%D9%88%D8%B2%20%D8%A3%D8%A8%D8%AF%D8%A3%20%D8%A7%D9%84%D8%B4%D8%A7%D8%AF%D9%88%D9%8A%D9%86%D8%AC" target="_blank" rel="noreferrer">واتساب</a></div>
+    </Card>
     {tab === 'quiz' ? <Card>
       <div className="between"><div><h3>كويز السيشن</h3><small className="muted">9 أسئلة على الكلمات والجرامر · كمّل الفراغ</small></div>
         <Button onClick={() => go(`/quiz/${s.id}`)} disabled={!quizNine.length || locked}>{quizNine.length ? 'ابدأ الكويز' : 'مفيش أسئلة لسه'}</Button></div>
@@ -371,7 +372,7 @@ export function SessionPage({ sessionId }: any) {
           </div>
           <div className="vocab-word en" dir="ltr">{w.word}</div>
           {w.phonetic && <div className="vocab-phonetic en" dir="ltr">/{w.phonetic}/</div>}
-          {bilingualMaterial && <div className="vocab-meaning" dir="rtl">{w.arabic || w.meaning}</div>}
+          <div className="vocab-meaning" dir="rtl">{w.arabic || w.meaning}</div>
           {def && <div className="vocab-def en" dir="ltr">{def}</div>}
           {example && <div className="vocab-example en" dir="ltr">“{example}”</div>}
           <div className="youglish-row">
@@ -453,7 +454,7 @@ export function SessionPage({ sessionId }: any) {
           </div>
         </Card>
       </div>}
-      {tab === 'overview' && <div className="stack">
+      {tab === 'overview' && <div className="stack" dir={enMaterial ? 'ltr' : undefined}>
         <Card className="brief-card">
           <div className="brief-kicker">الدرس</div>
           <h2 className="en" dir="ltr">{outline.title}</h2>
@@ -632,7 +633,7 @@ export function DictionaryPage() {
   }
 
   return <div className="stack">
-    <div><h1>الديكشنري</h1><p className="muted">الديكشنري عالمي: فيه 673 كلمة جاهزة، أو اكتب أي كلمة إنجليزي وهنقلك معناها من المصدر العالمي تلقائيًا. تقدر تحفظ أي كلمة.</p></div>
+    <div><h1>الديكشنري</h1><p className="muted">تقدر تحفظ أي كلمة، أو تسمعها من المتحدثين الأصليين على YouGlish. الديكشنري فيه آلاف الكلمات الجاهزة، ولو مش موجودة بنجيب معناها من المصدر العالمي.</p></div>
 
     <Card className="search-hero">
       <div className="row"><span style={{ fontSize: '1.4rem' }}>🔎</span><input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) showWord(q); }} placeholder="اكتب أي كلمة... مثال: serendipity" aria-label="دوّر في الديكشنري" /></div>
@@ -748,13 +749,16 @@ export function TasksPage() {
   const otherTasks = mine.filter((t) => !(t.instructions || []).length);
   const weeks = [...new Set(levelTasks.map((t) => t.week || 1))].sort((a, b) => a - b);
   const level = data.levels.find((l) => l.id === user.levelId);
+  const taskLocked = (t: any) => user.subscribed === false && (t.week || 1) > 1;
   async function toggle(t: any) {
+    if (taskLocked(t)) return;
     const existing = data.taskCompletions.find((c) => c.studentId === user!.id && c.taskId === t.id);
     if (existing) await remove('taskCompletions', existing.id);
     else await put('taskCompletions', { taskId: t.id, studentId: user!.id, completedAt: today() });
   }
   return <div className="stack">
-    <div><h1>تاسكاتي</h1><p className="muted">تاسكات تحدث لمستواك. سجّل صوتك وابعته على الجروب، وبعدين علّم التاسك إنها خلصت.</p></div>
+    <div><h1>تاسكاتي اليومية</h1><p className="muted">دي تاسكات يوميه علشان تتكلم كل يوم. هتسجّل ريكورد بتقرا أو بتجاوب على السؤال في تاسك اليوم وتبعته على جروب الواتساب.</p>
+      <a className="btn btn-primary btn-sm" style={{ marginTop: '.6rem' }} href="https://wa.me/201091060951?text=%D8%A8%D8%B9%D8%AA%20%D8%AA%D8%A7%D8%B3%D9%83%20%D8%A7%D9%84%D9%8A%D9%88%D9%85" target="_blank" rel="noreferrer">واتساب</a></div>
     <div className="grid g3">
       <Stat label="إجمالي التاسكات" value={mine.length} />
       <Stat label="خلصت" value={mine.filter(isDone).length} tone="green" />
@@ -777,7 +781,7 @@ export function TasksPage() {
               const open = expanded === t.id;
               return <div key={t.id} className={`task-item ${done ? 'is-done' : ''}`}>
                 <div className="task-item-head">
-                  <button className={`task-check ${done ? 'checked' : ''}`} onClick={() => toggle(t)} aria-label={done ? 'علّم إنها ما خلصتش' : 'علّم إنها خلصت'}>{done ? '✓' : ''}</button>
+                  <button className={`task-check ${done ? 'checked' : ''}`} onClick={() => toggle(t)} disabled={taskLocked(t)} aria-label={done ? 'علّم إنها ما خلصتش' : 'علّم إنها خلصت'}>{done ? '✓' : ''}</button>
                   <button className="task-item-title" onClick={() => setExpanded(open ? null : t.id)}>
                     <span className="task-badge">{t.badge || t.kind}</span>
                     <strong>{t.title}</strong>
@@ -797,7 +801,7 @@ export function TasksPage() {
       <SectionTitle title="تاسكات تانية" />
       <div className="stack">{otherTasks.map((t) => <div key={t.id} className="row between section-card">
         <div><strong>{t.title}</strong>{t.dueAt && <div className="muted">{fmtDate(t.dueAt)} · {t.kind}</div>}</div>
-        {isDone(t) ? <Badge tone="green">خلصت</Badge> : <Button size="sm" onClick={() => toggle(t)}>تم</Button>}
+        {isDone(t) ? <Badge tone="green">خلصت</Badge> : <Button size="sm" onClick={() => toggle(t)} disabled={taskLocked(t)}>تم</Button>}
       </div>)}</div>
     </Card>}
   </div>;
@@ -934,10 +938,13 @@ export function MaterialsPage() {
   const level = data.levels.find((l) => l.id === levelId) || current;
   const sessions = data.sessions.filter((s) => s.levelId === level?.id).sort((a, b) => a.order - b.order);
   const partial = level ? (!admin && !levelFullyOpen(user, level, data.levels)) : false;
-  return <div className="stack">
-    <div><h1>الماتيريال</h1><p className="muted">اختار مستوى من القائمة. المستويات جوه نطاقك المسموح بتفتح كامل؛ غيرها بيفتح أول سيشن بس.</p></div>
+  const en = !!level && level.order > 3;
+  const L = en ? { title:'Materials', hint:'Pick a level from the list. All levels are available for browsing.', level:'Level', words:'words', ready:'Ready', locked:'Locked', open:'Open lesson', none:'No materials in this level', noneHint:'Materials will appear here once lessons are added.', lesson:'Lesson', pdf:'Open PDF', dl:'Download' } :
+    { title:'الماتيريال', hint:'اختار مستوى من القائمة — كل المستويات متاحة للتصفح.', level:'المستوى', words:'كلمة', ready:'جاهز', locked:'مقفول', open:'افتح الدرس', none:'مفيش ماتيريال في المستوى ده', noneHint:'الماتيريال هتظهر هنا أول ما الدروس تتضاف.', lesson:'الدرس', pdf:'افتح PDF ↗', dl:'نزّل PDF ⬇' };
+  return <div className="stack" dir={en ? 'ltr' : undefined}>
+    <div><h1>{L.title}</h1><p className="muted">{L.hint}</p></div>
     <Card>
-      <Field label="المستوى"><select value={levelId} onChange={(e) => setSelected(e.target.value)}>
+      <Field label={L.level}><select value={levelId} onChange={(e) => setSelected(e.target.value)}>
         {levels.map((l) => {
           const full = admin || levelFullyOpen(user, l, data.levels);
           return <option key={l.id} value={l.id}>{levelLabel(l)}</option>;
@@ -950,20 +957,20 @@ export function MaterialsPage() {
       const wordCount = data.dictionary.filter((w) => (w.sessionIds || []).includes(s.id)).length;
       const grammarTitle = (s.sections.find((x) => /grammar/i.test(x.title))?.title || 'الجرامر').replace(/^Grammar\s*[—-]\s*/i, '');
       return <Card key={s.id} className="material-card">
-        <div className="brief-kicker">الدرس {s.order}</div>
+        <div className="brief-kicker">{L.lesson} {s.order}</div>
         <h3>{s.title}</h3>
         <p className="muted" style={{ marginBottom: '.7rem' }}>{s.topic}</p>
         <div className="row" style={{ marginBottom: '.8rem' }}>
-          <Badge tone="blue">{wordCount} كلمة</Badge>
+          <Badge tone="blue">{wordCount} {L.words}</Badge>
           <Badge>{grammarTitle.slice(0, 42)}</Badge>
         </div>
         <div className="row">
-          <Badge tone={sessionLocked ? 'muted' : 'green'}>{sessionLocked ? '🔒 مقفول' : 'جاهز'}</Badge>
-          {materialPdf(s) && <><a className="btn btn-primary btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>PDF ↗</a><a className="btn btn-ghost btn-sm" href={materialPdf(s)} download onClick={(e) => e.stopPropagation()}>⬇</a></>}
-          <Button size="sm" disabled={sessionLocked} onClick={() => go(`/session/${s.id}`)}>{sessionLocked ? 'مقفول' : 'افتح الدرس'}</Button>
+          <Badge tone={sessionLocked ? 'muted' : 'green'}>{sessionLocked ? '🔒 ' + L.locked : L.ready}</Badge>
+          {materialPdf(s) && <><a className="btn btn-primary btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{L.pdf}</a><a className="btn btn-ghost btn-sm" href={materialPdf(s)} download onClick={(e) => e.stopPropagation()}>{L.dl}</a></>}
+          <Button size="sm" disabled={sessionLocked} onClick={() => go(`/session/${s.id}`)}>{sessionLocked ? L.locked : L.open}</Button>
         </div>
       </Card>;
-    })}</div> : <Empty icon="📂" title="مفيش ماتيريال في المستوى ده" hint="الماتيريال هتظهر هنا أول ما الدروس تتضاف." />}
+    })}</div> : <Empty icon="📂" title={L.none} hint={L.noneHint} />}
   </div>;
 }
 

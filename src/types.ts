@@ -3,7 +3,7 @@ export type Role = 'student' | 'admin';
 export interface User {
   id: string; name: string; email: string; role: Role; active: boolean;
   levelId: string; maxLevelId: string; plan?: 'starter'|'growth'|'pro'; avatar?: string; createdAt: string;
-  demoPassword?: string; subscribed?: boolean;
+  demoPassword?: string; subscribed?: boolean; phone?: string;
 }
 
 export interface Section {
@@ -58,4 +58,4 @@ export interface AppData {
   testimonials: Testimonial[];
 }
 
-export interface Testimonial { id: string; studentId?: string; name: string; level: string; date: string; text: string; role: 'student'|'admin'; createdAt: string; }
+export interface Testimonial { id: string; studentId?: string; name: string; level: string; date: string; text: string; role: 'student'|'admin'; rating?: number; createdAt: string; }

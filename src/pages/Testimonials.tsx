@@ -9,6 +9,7 @@ export default function TestimonialsPage() {
   const [name, setName] = useState(user?.name || '');
   const [level, setLevel] = useState(user?.levelId || data.levels[0]?.id || '');
   const [text, setText] = useState('');
+  const [rating, setRating] = useState(5);
   const [saving, setSaving] = useState(false);
   if (!user) return null;
   const list = [...(data.testimonials || [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -20,7 +21,7 @@ export default function TestimonialsPage() {
     try {
       await put('testimonials', {
         name: name.trim(), level, date: new Date().toISOString().slice(0, 10), text: text.trim(),
-        role: user!.role, studentId: user!.id, createdAt: new Date().toISOString(),
+        role: user!.role, studentId: user!.id, rating, createdAt: new Date().toISOString(),
       });
       setText('');
     } finally { setSaving(false); }
@@ -39,6 +40,7 @@ export default function TestimonialsPage() {
             {data.levels.map((l) => <option key={l.id} value={l.id}>{l.title}{l.cefr ? ` (${l.cefr})` : ''}</option>)}
           </select></label>
         </div>
+        <div className="row" style={{ gap: '.25rem' }}><span>التقييم:</span>{[1,2,3,4,5].map((n) => <button key={n} type="button" className="icon-btn" onClick={() => setRating(n)} aria-label={`${n} stars`} style={{ color: n <= rating ? '#ffc107' : 'var(--muted)', fontSize: '1.4rem' }}>★</button>)}</div>
         <label className="field"><span>رأيك</span><textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} placeholder="اكتب رأيك عن الكورس والجلسات..." /></label>
         <div><Button type="submit" disabled={saving || !text.trim() || !name.trim()}>{saving ? 'بنحفظ…' : 'انشر رأيك'}</Button></div>
       </form>
@@ -52,7 +54,8 @@ export default function TestimonialsPage() {
           <Badge tone="blue">{data.levels.find((l) => l.id === t.level)?.title || t.level}{data.levels.find((l) => l.id === t.level)?.cefr ? ` (${data.levels.find((l) => l.id === t.level)?.cefr})` : ''}</Badge>
         </div>
         <p style={{ lineHeight: 1.9, margin: '.8rem 0 .5rem' }}>“{t.text}”</p>
-        <small className="muted">{t.date} · {t.role === 'admin' ? 'إدارة Speakozy' : 'طالب'}</small>
+        <div className="row between"><small className="muted">{t.date} · {t.role === 'admin' ? 'إدارة Speakozy' : 'طالب'} · {'★'.repeat(t.rating || 5)}{'☆'.repeat(5 - (t.rating || 5))}</small>
+          {(t.studentId === user.id || user.role === 'admin') && <Button size="sm" variant="ghost" onClick={() => { setName(t.name); setLevel(t.level); setText(t.text); setRating(t.rating || 5); }}>تعديل</Button>}</div>
       </Card>)}
     </div> : <Empty icon="💬" title="لسه مفيش آراء" hint="كن أول واحد يشارك رأيه!" />}
   </div>;
