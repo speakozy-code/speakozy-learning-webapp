@@ -83,7 +83,6 @@ export function Layout({ current, children }: { current: string; children: React
     <div className="topbar">
       <button className="icon-btn" onClick={() => setOpen(true)} aria-label="القائمة"><Menu size={18} /></button>
       <div className="auth-brand" style={{ color: 'var(--ink)' }}><span className="brand-dot" /> SPEAKOZY</div>
-      <span className="avatar">{user.avatar || user.name.charAt(0)}</span>
     </div>
     <div className="shell">{side}<main className="main" id="app-main"><div className="content-bar">
       <div className="content-bar-row">
