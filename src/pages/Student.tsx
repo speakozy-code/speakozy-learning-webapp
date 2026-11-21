@@ -36,6 +36,10 @@ const MATERIAL_PDF: Record<string, string> = {
   'l9-s6': './materials/6%20-%20Work.pdf',
   'l9-s7': './materials/7-%20Shopping.pdf',
 };
+function materialIsBilingual(levelId: string, data: { levels: { id: string; order: number }[] }): boolean {
+  const l = data.levels.find((x) => x.id === levelId);
+  return !!l && l.order <= 3;
+}
 function materialPdf(s: any): string {
   return s?.pdfUrl || MATERIAL_PDF[s?.id] || `./lesson-pdfs/${s?.id}.pdf`;
 }
@@ -209,6 +213,7 @@ export function SessionPage({ sessionId }: any) {
   }, [tab, sessionId]);
   const s = data.sessions.find((x: any) => x.id === sessionId);
   if (!user) return null;
+  const bilingualMaterial = s ? materialIsBilingual(s.levelId, data) : false;
   if (!s) return <Empty title="السيشن مش موجودة" hint="يمكن اتشالت أو الرابط غلط." />;
   const locked = !sessionOpen(user, s, data.levels);
   const done = data.progress.filter((p) => p.studentId === user.id && p.sessionId === s.id).map((p) => p.sectionId);
@@ -366,7 +371,7 @@ export function SessionPage({ sessionId }: any) {
           </div>
           <div className="vocab-word en" dir="ltr">{w.word}</div>
           {w.phonetic && <div className="vocab-phonetic en" dir="ltr">/{w.phonetic}/</div>}
-          <div className="vocab-meaning" dir="rtl">{w.arabic || w.meaning}</div>
+          {bilingualMaterial && <div className="vocab-meaning" dir="rtl">{w.arabic || w.meaning}</div>}
           {def && <div className="vocab-def en" dir="ltr">{def}</div>}
           {example && <div className="vocab-example en" dir="ltr">“{example}”</div>}
           <div className="youglish-row">
