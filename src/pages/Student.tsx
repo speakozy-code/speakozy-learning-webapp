@@ -12,7 +12,12 @@ import { YouGlishDock } from '../components/YouGlishDock';
 import { Play, Volume2, Star, Check, BookOpen } from 'lucide-react';
 
 const statusTone: Record<string, string> = { locked: 'muted', available: 'blue', progress: 'amber', done: 'blue', review: 'amber', approved: 'green' };
-const phon = (p?: string) => (p ? (/^\//.test(p) ? p : `/${p}/`) : '');
+const phon = (p?: string) => {
+  if (!p) return '';
+  const inner = p.replace(/^\/+|\/+$/g, '');
+  if (!/[a-zA-Z\u0250-\u02AF\u0300-\u036F]/.test(inner)) return '';
+  return /^\//.test(p) ? p : `/${p}/`;
+};
 
 // Resolve lesson PDFs by stable session id so stale demo localStorage still shows them.
 const MATERIAL_PDF: Record<string, string> = {

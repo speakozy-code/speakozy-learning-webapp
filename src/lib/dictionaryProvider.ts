@@ -96,8 +96,9 @@ export function fromWiktionary(raw: any, word: string): LookupEntry {
 export function parseWiktionaryExtras(html: string) {
   const out: { phonetic: string; synonyms: string[]; audioUrl: string } = { phonetic: '', synonyms: [], audioUrl: '' };
   if (!html) return out;
-  const ipa = html.match(/<span[^>]*\bIPA\b[^>]*>([^<]+)<\/span>/i);
-  if (ipa) out.phonetic = stripHtml(ipa[1]).slice(0, 60);
+  const ipaSpans = Array.from(html.matchAll(/<span[^>]*\bIPA\b[^>]*>([^<]+)<\/span>/gi)).map((m) => stripHtml(m[1]).trim());
+  const ipa = ipaSpans.find((t) => /[\/\[]/.test(t));
+  if (ipa) out.phonetic = ipa.slice(0, 60);
   const start = html.search(/synonyms\s*:/i);
   if (start >= 0) {
     const chunkAll = html.slice(start, start + 2500);
@@ -161,6 +162,15 @@ async function arabicMeaning(word: string): Promise<string> {
   }
 }
 
+// أول مصدر ينجح يكسب — المصدر الأساسي وويكشنري بيتسابقوا بدل ما نستنى واحد ورا التاني.
+function firstSuccess<T>(tasks: Promise<T>[]): Promise<T> {
+  return new Promise((resolve, reject) => {
+    let pending = tasks.length;
+    let lastErr: unknown;
+    tasks.forEach((t) => t.then(resolve, (e) => { lastErr = e; pending -= 1; if (pending === 0) reject(lastErr); }));
+  });
+}
+
 // محلي أولًا للسرعة، ثم المصدر الأساسي، ثم ويكشنري، ثم ترجمة المعنى، ثم إدخال يدوي.
 export async function lookupWord(word: string, local: DictionaryEntry[]): Promise<LookupEntry | undefined> {
   const w = word.trim().toLowerCase();
@@ -171,18 +181,18 @@ export async function lookupWord(word: string, local: DictionaryEntry[]): Promis
   if (hit) return hit;
 
   let entry: LookupEntry | undefined;
-  try {
-    const data = await fetchJson(`${API}/${encodeURIComponent(w)}`, 5000);
+  const primary = (async () => {
+    const data = await fetchJson(`${API}/${encodeURIComponent(w)}`, 6000);
     const raw = Array.isArray(data) ? data[0] : data;
-    if (raw?.meanings) entry = fromApi(raw);
-  } catch {}
-
-  if (!entry) {
-    try {
-      const data = await fetchJson(`${WIKTIONARY}${encodeURIComponent(w)}`, 8000);
-      if (data?.en?.length) entry = fromWiktionary(data, word.trim());
-    } catch {}
-  }
+    if (raw?.meanings) return fromApi(raw);
+    throw new Error('no-meanings');
+  })();
+  const fallback = (async () => {
+    const data = await fetchJson(`${WIKTIONARY}${encodeURIComponent(w)}`, 8000);
+    if (data?.en?.length) return fromWiktionary(data, word.trim());
+    throw new Error('no-wiktionary');
+  })();
+  entry = await firstSuccess([primary, fallback]).catch(() => undefined);
   if (!entry) return undefined;
   if (!entry.arabic) entry.arabic = await arabicMeaning(word.trim());
   if (!entry.phonetic || !(entry.synonyms || []).length || !entry.audioUrl) {

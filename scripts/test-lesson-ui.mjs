@@ -61,6 +61,8 @@ t('Wiktionary page extras yield transcript and synonyms', () => {
   const x = parseWiktionaryExtras(html);
   assert.equal(x.phonetic, '/ˈhæpi/');
   assert.deepEqual(x.synonyms, ['cheerful', 'glad']);
+  const withQualifier = '<span class="IPA">(</span><span class="IPA">/ˌsɛɹ.ənˈdɪp.ɪ.ti/</span><span class="IPA">)</span>';
+  assert.equal(parseWiktionaryExtras(withQualifier).phonetic, '/ˌsɛɹ.ənˈdɪp.ɪ.ti/');
 });
 
 t('session quiz is nine English questions on words and grammar', () => {
