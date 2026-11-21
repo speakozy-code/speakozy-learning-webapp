@@ -52,7 +52,7 @@ function bodySentence(body: string, word: string): string | undefined {
   let m: RegExpExecArray | null;
   while ((m = re.exec(body))) {
     const t = m[0].trim();
-    if (t.length > 20 && t.length < 160) return t;
+    if (t.length > 20 && t.length < 160 && !/[|🎯]/.test(t)) return t;
   }
   return undefined;
 }
@@ -63,7 +63,7 @@ export function wordQuizItems(words: WordLike[], sessionId: string, body = ''): 
   const items: QuizItem[] = [];
   const usedPrompts = new Set<string>();
   list.forEach((w, i) => {
-    const example = (w.examples || []).find((ex) => new RegExp(`\\b${esc(w.word)}\\b`, 'i').test(ex || '')) || bodySentence(body, w.word);
+    const example = (w.examples || []).find((ex) => new RegExp(`\\b${esc(w.word)}\\b`, 'i').test(ex || '') && !/[|🎯]/.test(ex || '')) || bodySentence(body, w.word);
     let prompt: string;
     if (example) {
       prompt = example.replace(new RegExp(`\\b${esc(w.word)}\\b`, 'i'), '____');
@@ -100,6 +100,7 @@ export function grammarQuizItems(slides: GrammarSlide[], sessionId: string, exis
   const pool = ['is', 'are', 'was', 'were', 'have', 'had', 'do', 'did'];
   for (const slide of slides || []) {
     for (const ex of (slide.examples || []).slice(0, 2)) {
+      if (/[|🎯]/.test(ex) || ex.split(/\s+/).length < 4) continue;
       const tokens = ex.split(/\s+/);
       const idx = tokens.findIndex((tok) => /^(am|is|are|was|were|have|has|had|do|does|did)$/i.test(tok.replace(/[.,!?;:]/g, '')) || /(ed|ing)$/i.test(tok.replace(/[.,!?;:]/g, '')));
       if (idx < 0) continue;
@@ -121,7 +122,7 @@ export function grammarQuizItems(slides: GrammarSlide[], sessionId: string, exis
       });
       if (items.length >= 5) return items;
     }
-    if (slide.rule && items.length < 5) {
+    if (slide.rule && items.length < 5 && !/[|🎯]/.test(slide.title || '')) {
       const prompt = `True or false: ${slide.title} — ${slide.rule.slice(0, 140)}`;
       if (!taken.has(prompt.toLowerCase())) {
         taken.add(prompt.toLowerCase());
