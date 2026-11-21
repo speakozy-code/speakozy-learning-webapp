@@ -39,7 +39,7 @@ export interface Task { id: string; title: string; kind: string; dueAt: string; 
 export interface TaskCompletion { id: string; taskId: string; studentId: string; completedAt: string; }
 export interface AppNotification { id: string; targetId: string; title: string; body: string; href: string; read: boolean; createdAt: string; }
 export interface Score { id: string; studentId: string; source: string; points: number; refId: string; createdAt: string; }
-export interface SavedWord { id: string; studentId: string; word: string; meaning: string; review: boolean; createdAt: string; }
+export interface SavedWord { id: string; studentId: string; word: string; meaning: string; review: boolean; createdAt: string; transcript?: string; nextReview?: string; audioUrl?: string; }
 export interface DictionaryEntry { id: string; word: string; meaning: string; type: string; examples: string[]; arabic: string; audio?: string; sessionIds?: string[]; source?: 'local'|'global'|'manual'; phonetic?: string; audioUrl?: string; definitions?: string[]; synonyms?: string[]; nextReview?: string; addedBy?: string; }
 export interface Certificate { id: string; studentId: string; levelIds: string[]; number: string; issuedAt: string; status: 'active'|'revoked'; reason?: string; }
 export interface AuditLog { id: string; actorId: string; action: string; target: string; createdAt: string; }

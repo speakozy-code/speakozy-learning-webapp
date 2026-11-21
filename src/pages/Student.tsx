@@ -57,18 +57,19 @@ export function StudentDashboard() {
   return <div className="stack">
     <Card style={{ background: 'linear-gradient(135deg,#0b1220,#16243c)', color: '#fff', border: 0 }}>
       <div className="between">
-        <div><div className="muted" style={{ color: '#9fb0c9' }}>Hi {user.name} 👋</div><h1 style={{ marginTop: '.35rem' }}>Ready to pick up where you left off?</h1>
+        <div><div className="muted" style={{ color: '#9fb0c9' }}>أهلًا {user.name} 👋</div><h1 style={{ marginTop: '.35rem' }}>جاهز تكمل من حيث وقفت؟</h1>
+          <p className="home-mission">رسالتنا: نساعد أكثر من مليون متعلم يتكلم إنجليزي بثقة — التعليم عندنا متاح وفعال وممتع للجميع. إحنا أكاديمية متخصصة في المحادثة: جلسات لايف، تاسكات يومية، ومتابعة شخصية خطوة بخطوة.</p>
           <div className="row" style={{ marginTop: '.8rem' }}>
-            <Badge tone="green">{level?.title || 'No level'}</Badge>
-            <span style={{ color: '#b8c4d6', fontSize: '.85rem' }}>{user.subscribed === false ? 'First session of every level is open · subscribe to unlock full levels' : `Full access: ${data.levels.filter((l) => levelFullyOpen(user, l, data.levels)).length} of ${data.levels.length} levels · other levels open their first session only`}</span>
+            <Badge tone="green">{level?.title || 'مفيش مستوى'}</Badge>
+            <span style={{ color: '#b8c4d6', fontSize: '.85rem' }}>{user.subscribed === false ? 'أول سيشن من كل مستوى مفتوحة ليك · اشترك عشان تفتح المستويات كاملة' : `مفتوح ليك كامل: ${data.levels.filter((l) => levelFullyOpen(user, l, data.levels)).length} من ${data.levels.length} مستويات · باقي المستويات أول سيشن بس`}</span>
           </div>
         </div>
-        <Button onClick={() => go(next ? `/session/${next.id}` : '/roadmap')}>{next ? 'Continue studying' : 'Open roadmap'}</Button>
+        <Button onClick={() => go(next ? `/session/${next.id}` : '/roadmap')}>{next ? 'كمّل مذاكرة' : 'افتح خريطة المستويات'}</Button>
       </div>
     </Card>
 
     <Card>
-      <SectionTitle title="Speakozy Champs" action={<span className="muted" style={{ fontSize: '.8rem' }}>Top scorers</span>} />
+      <SectionTitle title="أبطال Speakozy" action={<span className="muted" style={{ fontSize: '.8rem' }}>أعلى النقاط</span>} />
       {leaderboard(data).length ? <div className="champs-strip">
         {leaderboard(data).slice(0, 10).map((b, i) => <div key={b.id} className={`champ-chip ${b.id === user.id ? 'is-me' : ''}`}>
           <span className="champ-rank">{i + 1}</span>
@@ -76,41 +77,41 @@ export function StudentDashboard() {
           <span className="champ-name">{b.name}{b.id === user.id ? ' (You)' : ''}</span>
           <strong className="champ-points">{b.points} pts</strong>
         </div>)}
-      </div> : <Empty title="No ranked students yet" />}
+      </div> : <Empty title="مفيش طلاب في الترتيب لسه" />}
     </Card>
 
     <div className="grid g4">
-      <Stat label="Level progress" value={`${pct}%`} sub={level?.title} tone="green" />
-      <Stat label="Total points" value={totalScore(data, user.id)} sub="From all sources" />
-      <Stat label="Approved quizzes" value={approved} sub={pending ? `and ${pending} awaiting review` : 'Nothing pending'} />
-      <Stat label="Late tasks" value={late.length} sub={late.length ? 'Review them today' : 'Everything is on track'} tone={late.length ? 'danger' : ''} />
+      <Stat label="تقدم المستوى" value={`${pct}%`} sub={level?.title} tone="green" />
+      <Stat label="إجمالي النقاط" value={totalScore(data, user.id)} sub="من كل المصادر" />
+      <Stat label="كويزات معتمدة" value={approved} sub={pending ? `and ${pending} awaiting review` : 'مفيش حاجة منتظرة'} />
+      <Stat label="تاسكات متأخرة" value={late.length} sub={late.length ? 'راجعها النهارده' : 'كل حاجة في السكة'} tone={late.length ? 'danger' : ''} />
     </div>
 
     <Card>
-      <div className="between"><div><h3>Your progress in {level?.title || 'the level'}</h3><small className="muted">{sessions.filter((s) => sessionStatus(data, s, user.id).key === 'approved').length} of {sessions.length} approved sessions</small></div></div>
+      <div className="between"><div><h3>تقدمك في {level?.title || 'the level'}</h3><small className="muted">{sessions.filter((s) => sessionStatus(data, s, user.id).key === 'approved').length} من {sessions.length} سيشن معتمدة</small></div></div>
       <div style={{ marginTop: '.8rem' }}><Progress value={pct} /></div>
     </Card>
 
     <div className="grid g2">
       <Card>
-        <SectionTitle title="Upcoming session" action={<button className="icon-btn" onClick={() => go('/roadmap')}>View all ←</button>} />
+        <SectionTitle title="السيشن الجاية" action={<button className="icon-btn" onClick={() => go('/roadmap')}>شوف الكل ←</button>} />
         {next ? <div className="stack">
           <div className="row between"><strong>{next.title}</strong><Badge tone={statusTone[sessionStatus(data, next, user.id).key]}>{sessionStatus(data, next, user.id).label}</Badge></div>
           <small className="muted">{next.topic} · {fmtDay(next.dueAt)}</small>
-          <Button variant="ghost" onClick={() => go(`/session/${next.id}`)}>Open session</Button>
-        </div> : <Empty title="No sessions available right now" hint="They'll appear here once your admin opens a new session for you." />}
+          <Button variant="ghost" onClick={() => go(`/session/${next.id}`)}>افتح السيشن</Button>
+        </div> : <Empty title="مفيش سيشنات متاحة دلوقتي" hint="هتظهر هنا أول ما الأدمن يفتحلك سيشن جديدة." />}
       </Card>
       <Card>
-        <SectionTitle title="Latest notifications" action={<button className="icon-btn" onClick={() => go('/notifications')}>All ←</button>} />
+        <SectionTitle title="آخر الإشعارات" action={<button className="icon-btn" onClick={() => go('/notifications')}>All ←</button>} />
         {notes.length ? <div className="stack">{notes.map((n) => <div key={n.id} className="row between" style={{ alignItems: 'flex-start' }}>
           <div><strong style={{ fontSize: '.9rem' }}>{n.title}</strong><div className="muted" style={{ fontSize: '.82rem' }}>{n.body}</div></div>
-          {!n.read && <span className="badge badge-green">New</span>}
-        </div>)}</div> : <Empty title="No notifications" />}
+          {!n.read && <span className="badge badge-green">جديد</span>}
+        </div>)}</div> : <Empty title="مفيش إشعارات" />}
       </Card>
     </div>
 
     {late.length > 0 && <Card className="danger-zone">
-      <SectionTitle title="Late tasks" />
+      <SectionTitle title="تاسكات متأخرة" />
       <div className="stack">{late.map((t) => <div key={t.id} className="row between"><span>{t.title}</span><small className="muted">{fmtDate(t.dueAt)}</small></div>)}</div>
       <Button variant="ghost" size="sm" onClick={() => go('/tasks')} style={{ marginTop: '.8rem' }}>Review tasks ←</Button>
     </Card>}
@@ -124,9 +125,9 @@ export function Roadmap() {
   const currentLevel = data.levels.find((l) => l.id === user.levelId) || levels[0];
   const levelSessions = data.sessions.filter((s) => s.levelId === currentLevel?.id).sort((a, b) => a.order - b.order);
   return <div className="stack">
-    <div><h1>LEVEL ROADMAP</h1><p className="muted">Two views in one place: your sessions first, then the full level path. Both are for reading — study from the dashboard or materials.</p></div>
+    <div><h1>خريطة المستويات</h1><p className="muted">عرضين في مكان واحد: سيشناتك الأول وبعدين مسار المستويات كامل. الاتنين للقراءة — ذاكر من الرئيسية أو الماتيريال.</p></div>
     <Card className="roadmap-card">
-      <SectionTitle title={`Sessions · ${currentLevel?.title || '—'}`} action={<Badge tone="blue">{levelSessions.length} sessions</Badge>} />
+      <SectionTitle title={`سيشنات ${currentLevel?.title || '—'}`} action={<Badge tone="blue">{levelSessions.length} سيشن</Badge>} />
       <div className="roadmap-map session-map">
         {levelSessions.map((s, i) => {
           const st = sessionStatus(data, s, user.id);
@@ -134,16 +135,16 @@ export function Roadmap() {
           return <div key={s.id} className={`rm-level ${open ? 'is-open' : 'is-locked'} ${i % 2 ? 'rm-right' : 'rm-left'}`}>
             <div className="rm-marker">{open ? i + 1 : '🔒'}</div>
             <div className="rm-body">
-              <div className="between"><strong>{s.title}</strong><Badge tone={statusTone[st.key]}>{st.key === 'locked' ? 'Not started' : st.label}</Badge></div>
+              <div className="between"><strong>{s.title}</strong><Badge tone={statusTone[st.key]}>{st.key === 'locked' ? 'لسه ما بدأتش' : st.label}</Badge></div>
               <p className="muted" style={{ margin: '.3rem 0' }}>{s.topic} · {fmtDay(s.dueAt)}</p>
-              <div className="muted" style={{ fontSize: '.8rem' }}>{data.dictionary.filter((w) => (w.sessionIds || []).includes(s.id)).length} words · {s.sections.length} parts</div>
+              <div className="muted" style={{ fontSize: '.8rem' }}>{data.dictionary.filter((w) => (w.sessionIds || []).includes(s.id)).length} كلمة · {s.sections.length} أجزاء</div>
             </div>
           </div>;
         })}
       </div>
     </Card>
     <Card className="roadmap-card">
-      <SectionTitle title="Levels" action={<Badge tone="blue">{levels.length} levels</Badge>} />
+      <SectionTitle title="المستويات" action={<Badge tone="blue">{levels.length} مستوى</Badge>} />
       <div className="roadmap-map">
         {levels.map((l, i) => {
           const sessions = data.sessions.filter((s) => s.levelId === l.id).sort((a, b) => a.order - b.order);
@@ -153,10 +154,10 @@ export function Roadmap() {
           return <div key={l.id} className={`rm-level is-open ${i % 2 ? 'rm-right' : 'rm-left'}`}>
             <div className="rm-marker">{i + 1}</div>
             <div className="rm-body">
-              <div className="between"><strong>{l.title}</strong><Badge tone={full ? 'green' : 'muted'}>{full ? 'Full access' : 'First session only'}</Badge></div>
+              <div className="between"><strong>{l.title}</strong><Badge tone={full ? 'green' : 'muted'}>{full ? 'مفتوح كامل' : 'أول سيشن بس'}</Badge></div>
               <p className="muted" style={{ margin: '.3rem 0' }}>{l.description}</p>
               <div className="rm-dots">{sessions.map((s) => { const st = sessionStatus(data, s, user.id).key; return <span key={s.id} className={`rm-dot ${st === 'approved' ? 'done' : st === 'progress' || st === 'review' || st === 'done' ? 'active' : ''}`} title={s.title} />; })}</div>
-              <div className="muted" style={{ fontSize: '.8rem' }}>{approved} of {sessions.length} sessions approved · {pct}% complete</div>
+              <div className="muted" style={{ fontSize: '.8rem' }}>{approved} من {sessions.length} سيشن معتمدة · {pct}% مكتمل</div>
             </div>
           </div>;
         })}
@@ -207,7 +208,7 @@ export function SessionPage({ sessionId }: any) {
   }, [tab, sessionId]);
   const s = data.sessions.find((x: any) => x.id === sessionId);
   if (!user) return null;
-  if (!s) return <Empty title="Session not found" hint="It may have been removed or the link is wrong." />;
+  if (!s) return <Empty title="السيشن مش موجودة" hint="يمكن اتشالت أو الرابط غلط." />;
   const locked = !sessionOpen(user, s, data.levels);
   const done = data.progress.filter((p) => p.studentId === user.id && p.sessionId === s.id).map((p) => p.sectionId);
   const qs = data.questions.filter((q) => q.sessionId === s.id);
@@ -232,11 +233,11 @@ export function SessionPage({ sessionId }: any) {
   const allWordsStudied = words.length > 0 && words.every((w) => wordDone(w.word));
   const writingLines = writing.split(/\n/).map((x) => x.trim()).filter(Boolean).length;
   const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'vocabulary', label: `Vocabulary${words.length ? ` (${words.length})` : ''}` },
-    { id: 'grammar', label: 'Grammar' },
-    { id: 'practice', label: 'Practice' },
-    { id: 'quiz', label: 'Quiz (9)' },
+    { id: 'overview', label: 'نظرة عامة' },
+    { id: 'vocabulary', label: `الكلمات${words.length ? ` (${words.length})` : ''}` },
+    { id: 'grammar', label: 'الجرامر' },
+    { id: 'practice', label: 'الممارسة' },
+    { id: 'quiz', label: 'كويز (9)' },
   ];
   async function mark(sectionId: string) {
     if (locked || done.includes(sectionId)) return;
@@ -322,30 +323,30 @@ export function SessionPage({ sessionId }: any) {
   }
 
   return <div className="stack">
-    <div className="row"><button className="icon-btn" onClick={() => go('/roadmap')}>← Roadmap</button></div>
+    <div className="row"><button className="icon-btn" onClick={() => go('/roadmap')}>→ الخريطة</button></div>
     <Card className="between">
       <div><div className="muted">Session {s.order} · {data.levels.find((l) => l.id === s.levelId)?.title}</div><h1>{s.title}</h1><p className="muted">{s.topic} · {fmtDate(s.dueAt)}</p></div>
-      <Badge tone={locked ? 'muted' : statusTone[st.key]}>{locked ? '🔒 Locked' : st.label}</Badge>
+      <Badge tone={locked ? 'muted' : statusTone[st.key]}>{locked ? '🔒 مقفول' : st.label}</Badge>
     </Card>
-    {locked && <div className="note">🔒 You can read everything in this session, but it is locked for your account. Ask your admin to unlock the level to study and save progress.</div>}
+    {locked && <div className="note">🔒 تقدر تقرأ كل حاجة في السيشن دي، بس هي مقفولة لحسابك. اطلب من الأدمن يفتح المستوى عشان تذاكر وتحفظ تقدمك.</div>}
     <Card className="study-progress">
-      <div className="between"><span className="muted">Session progress · {done.filter((d) => d.startsWith(`${s.id}-`) || d.startsWith('word:')).length} of {totalParts} parts done</span><strong>{pct}%</strong></div>
+      <div className="between"><span className="muted">تقدم السيشن · {done.filter((d) => d.startsWith(`${s.id}-`) || d.startsWith('word:')).length} من {totalParts} جزء خلص</span><strong>{pct}%</strong></div>
       <div className="progress-track"><span style={{ width: `${pct}%` }} /></div>
     </Card>
     {materialPdf(s) && <Card>
-      <SectionTitle title="Presentation summary for review" />
-      <p className="muted">A PDF copy of all presentation slides, for viewing and review after the session.</p>
-      <a className="btn btn-ghost btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer">Open PDF ↗</a>
+      <SectionTitle title="ملخص العرض للمراجعة" />
+      <p className="muted">نسخة PDF من كل سلايدات العرض، للمشاهدة والمراجعة بعد السيشن.</p>
+      <a className="btn btn-ghost btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer">افتح PDF ↗</a>
     </Card>}
     {s.driveUrl && <Card>
-      <SectionTitle title="Additional resource to watch" />
-      <p className="muted">Viewing only. If it doesn't open, the file permissions may be wrong — the written content here is complete.</p>
-      <a className="btn btn-ghost btn-sm" href={s.driveUrl} target="_blank" rel="noreferrer">Open file ↗</a>
+      <SectionTitle title="مصدر إضافي للمشاهدة" />
+      <p className="muted">للمشاهدة بس. لو ما فتحش، يمكن صلاحيات الملف غلط — المحتوى المكتوب هنا كامل.</p>
+      <a className="btn btn-ghost btn-sm" href={s.driveUrl} target="_blank" rel="noreferrer">افتح الملف ↗</a>
     </Card>}
     <div className="lesson-tabs">{tabs.map((t) => <button key={t.id} className={`tab ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>{t.label}</button>)}</div>
     {tab === 'quiz' ? <Card>
-      <div className="between"><div><h3>Session quiz</h3><small className="muted">9 questions on words and grammar · fill in the blank</small></div>
-        <Button onClick={() => go(`/quiz/${s.id}`)} disabled={!quizNine.length || locked}>{quizNine.length ? 'Start quiz' : 'No questions yet'}</Button></div>
+      <div className="between"><div><h3>كويز السيشن</h3><small className="muted">9 أسئلة على الكلمات والجرامر · كمّل الفراغ</small></div>
+        <Button onClick={() => go(`/quiz/${s.id}`)} disabled={!quizNine.length || locked}>{quizNine.length ? 'ابدأ الكويز' : 'مفيش أسئلة لسه'}</Button></div>
     </Card> : <>
       {tab === 'vocabulary' && (words.length > 0 ? <div className="stack">
         <div className="vocab-grid">{words.map((w, n) => {
@@ -357,9 +358,9 @@ export function SessionPage({ sessionId }: any) {
             <span className="vocab-index">{String(n + 1).padStart(2, '0')}</span>
             <Badge tone="blue">{w.type || 'word'}</Badge>
             <span className="vocab-tools">
-              <button className="icon-btn play-btn" title="Hear this word in real speech" onClick={() => openYouglish(w.word)}><Play size={16} /></button>
-              <button className="icon-btn" title="Play native pronunciation" onClick={() => pronounce(w)}><Volume2 size={16} /></button>
-              <button className="icon-btn" title={savedWord(w.word) ? 'Remove from my words' : 'Save word'} onClick={() => toggleSave(w)} disabled={locked}>{savedWord(w.word) ? <Star size={16} /> : <Star size={16} strokeWidth={1.5} />}</button>
+              <button className="icon-btn play-btn" title="اسمع الكلمة دي في كلام حقيقي" onClick={() => openYouglish(w.word)}><Play size={16} /></button>
+              <button className="icon-btn" title="شغّل النطق الأصلي" onClick={() => pronounce(w)}><Volume2 size={16} /></button>
+              <button className="icon-btn" title={savedWord(w.word) ? 'شيلها من كلماتي' : 'احفظ الكلمة'} onClick={() => toggleSave(w)} disabled={locked}>{savedWord(w.word) ? <Star size={16} /> : <Star size={16} strokeWidth={1.5} />}</button>
             </span>
           </div>
           <div className="vocab-word en" dir="ltr">{w.word}</div>
@@ -368,7 +369,7 @@ export function SessionPage({ sessionId }: any) {
           {def && <div className="vocab-def en" dir="ltr">{def}</div>}
           {example && <div className="vocab-example en" dir="ltr">“{example}”</div>}
           <div className="youglish-row">
-            <span className="youglish-label">Hear it in use</span>
+            <span className="youglish-label">اسمعها في الاستخدام</span>
             <span className="youglish-btns">
               {YOUGLISH_ACCENTS.map((a) => <button key={a.code} type="button" className="yg-btn en"
                 onClick={() => openYouglish(w.word, a.code)}
@@ -376,101 +377,101 @@ export function SessionPage({ sessionId }: any) {
             </span>
           </div>
           <button className={`btn vocab-known ${known ? 'btn-ghost' : 'btn-primary'}`} onClick={() => markWord(w.word)} disabled={locked || known}>
-            {known ? '✓ Studied' : 'I know this word'}
+            {known ? '✓ اتذاكرت' : 'عارف الكلمة دي'}
           </button>
         </article>;
       })}</div>
-        {!allWordsStudied && words.length > 0 && <div className="note">Mark every word as studied to open the word quiz.</div>}
+        {!allWordsStudied && words.length > 0 && <div className="note">علّم كل الكلمات إنها اتذاكرت عشان يفتح كويز الكلمات.</div>}
         {allWordsStudied && wordQs.length > 0 && <Card className="grammar-training">
-          <div className="between"><div><h3>Word quiz</h3><small className="muted">Check the new words from this session.</small></div><Badge tone="green">{wordQs.length} questions</Badge></div>
+          <div className="between"><div><h3>كويز الكلمات</h3><small className="muted">راجع الكلمات الجديدة بتاعة السيشن دي.</small></div><Badge tone="green">{wordQs.length} questions</Badge></div>
           <div className="stack" style={{ marginTop: '.8rem' }}>{wordQs.map((q, i) => <div key={q.id} className="exercise-item">
             <div className="between"><strong>{i + 1}. {q.prompt}</strong>{wordResult && <Badge tone={wordResult.marks[q.id] ? 'green' : 'red'}>{wordResult.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
             {q.options.length ? <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${wordAnswers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={wordAnswers[q.id] === o} onChange={() => setWordAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
-              : <input value={wordAnswers[q.id] || ''} onChange={(e) => setWordAnswers((a) => ({ ...a, [q.id]: e.target.value }))} placeholder="Type the missing word…" disabled={locked} dir="ltr" />}
+              : <input value={wordAnswers[q.id] || ''} onChange={(e) => setWordAnswers((a) => ({ ...a, [q.id]: e.target.value }))} placeholder="اكتب الكلمة الناقصة…" disabled={locked} dir="ltr" />}
           </div>)}</div>
-          <Button style={{ marginTop: '.8rem' }} onClick={submitWordQuiz} disabled={locked || !wordQs.every((q) => (wordAnswers[q.id] || '').trim())}>Check word answers</Button>
+          <Button style={{ marginTop: '.8rem' }} onClick={submitWordQuiz} disabled={locked || !wordQs.every((q) => (wordAnswers[q.id] || '').trim())}>صحح إجابات الكلمات</Button>
           {wordResult && <div className="result-good" style={{ marginTop: '.6rem' }}>Word score: {wordResult.score} / {wordResult.max}</div>}
         </Card>}
-      </div> : <Empty title="No words in this session" hint="Words will appear here once they are added to the dictionary." />)}
+      </div> : <Empty title="مفيش كلمات في السيشن دي" hint="الكلمات هتظهر هنا أول ما تتضاف للديكشنري." />)}
       {tab === 'grammar' && <>
         {slides.length ? <Card className="slides-card">
-          <div className="between"><div><h3>Grammar slides</h3><small className="muted">One idea at a time — use the arrows to move through the lesson.</small></div><Badge tone="blue">{slideIdx + 1} / {slides.length}</Badge></div>
+          <div className="between"><div><h3>سلايدات الجرامر</h3><small className="muted">فكرة واحدة في كل مرة — استخدم الأسهم عشان تتنقل في الدرس.</small></div><Badge tone="blue">{slideIdx + 1} / {slides.length}</Badge></div>
           <div className="slide-stage" key={`${s.id}-${slideIdx}`}>
             <div className="slide-kicker">GRAMMAR · {slideIdx + 1}</div>
             <h2>{slides[slideIdx].title}</h2>
             {slides[slideIdx].rule && <p className="slide-rule" dir="auto">{slides[slideIdx].rule}</p>}
             {slides[slideIdx].detail && <p className="slide-detail" dir="rtl">{slides[slideIdx].detail}</p>}
             {slides[slideIdx].examples.length > 0 && <div className="slide-examples">
-              <div className="slide-examples-label">Examples</div>
+              <div className="slide-examples-label">أمثلة</div>
               {slides[slideIdx].examples.map((ex, i) => <div key={i} className="slide-example en" dir="ltr">{ex}</div>)}
             </div>}
           </div>
           <div className="slides-nav">
-            <Button variant="ghost" size="sm" onClick={() => setSlideIdx((i) => Math.max(0, i - 1))} disabled={slideIdx === 0}>← Previous</Button>
-            <div className="slide-dots">{slides.map((_, i) => <button key={i} className={`slide-dot ${i === slideIdx ? 'active' : ''}`} onClick={() => setSlideIdx(i)} aria-label={`Slide ${i + 1}`} />)}</div>
-            <Button size="sm" onClick={() => setSlideIdx((i) => Math.min(slides.length - 1, i + 1))} disabled={slideIdx === slides.length - 1}>Next →</Button>
+            <Button variant="ghost" size="sm" onClick={() => setSlideIdx((i) => Math.max(0, i - 1))} disabled={slideIdx === 0}>→ السابق</Button>
+            <div className="slide-dots">{slides.map((_, i) => <button key={i} className={`slide-dot ${i === slideIdx ? 'active' : ''}`} onClick={() => setSlideIdx(i)} aria-label={`سلايد ${i + 1}`} />)}</div>
+            <Button size="sm" onClick={() => setSlideIdx((i) => Math.min(slides.length - 1, i + 1))} disabled={slideIdx === slides.length - 1}>التالي ←</Button>
           </div>
-        </Card> : <Empty title="No grammar slides yet" hint="The grammar notes for this session will appear here as slides." />}
+        </Card> : <Empty title="مفيش سلايدات جرامر لسه" hint="ملاحظات الجرامر للسيشن دي هتظهر هنا على شكل سلايدات." />}
         {grammarAll.length > 0 && <Card className="grammar-training">
-          <div className="between"><div><h3>Grammar training</h3><small className="muted">Practice comes after the slides.</small></div><Badge tone="green">{grammarAll.length} questions</Badge></div>
+          <div className="between"><div><h3>تدريب الجرامر</h3><small className="muted">الممارسة بعد السلايدات.</small></div><Badge tone="green">{grammarAll.length} questions</Badge></div>
           <div className="stack" style={{ marginTop: '.8rem' }}>{grammarAll.map((q, i) => <div key={q.id} className="exercise-item">
             <div className="between"><strong>{i + 1}. {q.prompt}</strong>{grammarResult && <Badge tone={grammarResult.marks[q.id] ? 'green' : 'red'}>{grammarResult.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
             <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${grammarAnswers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={grammarAnswers[q.id] === o} onChange={() => setGrammarAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
           </div>)}</div>
-          <Button style={{ marginTop: '.8rem' }} onClick={submitGrammar} disabled={locked || !grammarAll.every((q) => grammarAnswers[q.id])}>Check grammar answers</Button>
+          <Button style={{ marginTop: '.8rem' }} onClick={submitGrammar} disabled={locked || !grammarAll.every((q) => grammarAnswers[q.id])}>صحح إجابات الجرامر</Button>
           {grammarResult && <div className="result-good" style={{ marginTop: '.6rem' }}>Grammar score: {grammarResult.score} / {grammarResult.max}</div>}
         </Card>}
       </>}
       {tab === 'practice' && <div className="stack">
         <Card className="activity-card">
-          <SectionTitle title="Let's talk" action={<Badge tone="blue">{talk.length || voices.length}</Badge>} />
-          {(talk.length ? talk : ['Talk about this lesson using the new words.']).map((q, i) => <div key={i} className="req-item" style={{ marginTop: '.5rem' }}><span className="req-check">{i + 1}</span><span dir="ltr" className="en">{q}</span></div>)}
+          <SectionTitle title="يلا نتكلم" action={<Badge tone="blue">{talk.length || voices.length}</Badge>} />
+          {(talk.length ? talk : ['اتكلم عن الدرس ده باستخدام الكلمات الجديدة.']).map((q, i) => <div key={i} className="req-item" style={{ marginTop: '.5rem' }}><span className="req-check">{i + 1}</span><span dir="ltr" className="en">{q}</span></div>)}
         </Card>
         <Card className="activity-card">
-          <SectionTitle title="Voice notes" action={<Badge>WhatsApp</Badge>} />
-          <p className="muted">Answer these two questions as voice notes on WhatsApp.</p>
+          <SectionTitle title="فويس نوتس" action={<Badge>WhatsApp</Badge>} />
+          <p className="muted">جاوب على السؤالين دول بفويس نوتس على واتساب.</p>
           {voices.slice(0, 2).map((q, i) => <div key={i} className="section-card" style={{ marginTop: '.7rem' }}>
             <strong>{i + 1}. <span className="en" dir="ltr">{q}</span></strong>
             <div className="row" style={{ marginTop: '.6rem' }}>
-              <a className="btn btn-primary btn-sm" href={`https://wa.me/201091060951?text=${encodeURIComponent('Speakozy voice note — ' + q)}`}>Send voice note</a>
+              <a className="btn btn-primary btn-sm" href={`https://wa.me/201091060951?text=${encodeURIComponent('فويس نوت Speakozy — ' + q)}`}>ابعت فويس نوت</a>
             </div>
           </div>)}
         </Card>
         <Card>
-          <SectionTitle title="Writing" />
-          <p className="muted">Summarise what you understood from this lesson in at least 6 lines.</p>
+          <SectionTitle title="كتابة" />
+          <p className="muted">لخّص اللي فهمته من الدرس ده في 6 سطور على الأقل.</p>
           <textarea value={writing} onChange={(e) => setWriting(e.target.value)} placeholder={'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6'} disabled={locked} />
           <div className="row" style={{ marginTop: '.6rem' }}>
             <span className="muted">{writingLines} / 6 lines</span>
-            <Button size="sm" onClick={() => savePractice('writing', writing, 1)} disabled={locked || writingLines < 6}>Save summary</Button>
+            <Button size="sm" onClick={() => savePractice('writing', writing, 1)} disabled={locked || writingLines < 6}>احفظ الملخص</Button>
           </div>
         </Card>
       </div>}
       {tab === 'overview' && <div className="stack">
         <Card className="brief-card">
-          <div className="brief-kicker">Lesson</div>
-          <h2>{outline.title}</h2>
-          {outline.topic && <p className="muted">{outline.topic}</p>}
+          <div className="brief-kicker">الدرس</div>
+          <h2 className="en" dir="ltr">{outline.title}</h2>
+          {outline.topic && <p className="muted en" dir="ltr">{outline.topic}</p>}
         </Card>
         <article className="brief-card">
-          <div className="brief-kicker">Objectives</div>
-          <h3>Objectives</h3>
+          <div className="brief-kicker">الأهداف</div>
+          <h3>الأهداف</h3>
           <ul className="brief-list">{outline.objectives.map((item, i) => <li key={i} className="en" dir="ltr">{item}</li>)}</ul>
         </article>
         <article className="brief-card">
-          <div className="brief-kicker">Words</div>
-          <h3>Words</h3>
+          <div className="brief-kicker">الكلمات</div>
+          <h3>الكلمات</h3>
           <p className="brief-summary en" dir="ltr">{outline.wordsAbout}</p>
-          <button className="brief-jump" style={{ marginTop: '.7rem' }} onClick={() => setTab('vocabulary')}>Open words</button>
+          <button className="brief-jump" style={{ marginTop: '.7rem' }} onClick={() => setTab('vocabulary')}>افتح الكلمات</button>
         </article>
         <article className="brief-card">
-          <div className="brief-kicker">Grammar</div>
-          <h3>Grammar</h3>
+          <div className="brief-kicker">الجرامر</div>
+          <h3>الجرامر</h3>
           <p className="brief-summary en" dir="ltr">{outline.grammarAbout}</p>
-          <button className="brief-jump" style={{ marginTop: '.7rem' }} onClick={() => setTab('grammar')}>Open grammar</button>
+          <button className="brief-jump" style={{ marginTop: '.7rem' }} onClick={() => setTab('grammar')}>افتح الجرامر</button>
         </article>
         <Card className="brief-card kind-summary">
-          <div className="brief-kicker">Summary</div>
+          <div className="brief-kicker">الملخص</div>
           <p className="brief-summary en" dir="ltr">{outline.summary}</p>
         </Card>
       </div>}
@@ -487,8 +488,8 @@ export function QuizPage({ sessionId }: any) {
   const words = data.dictionary.filter((w) => (w.sessionIds || []).includes(sessionId));
   const qs = s ? sessionQuizItems(words, grammarSlides(s), s.id, (s.sections || []).map((x: any) => x.body || '').join('\n')) : [];
   if (!user) return null;
-  if (!s) return <Empty title="Session not found" />;
-  if (!qs.length) return <Empty title="There are no questions for this session" hint="Check the roadmap." />;
+  if (!s) return <Empty title="السيشن مش موجودة" />;
+  if (!qs.length) return <Empty title="مفيش أسئلة للسيشن دي" hint="راجع خريطة المستويات." />;
 
   async function submit() {
     let auto = 0, max = 0, pending = 0;
@@ -506,22 +507,22 @@ export function QuizPage({ sessionId }: any) {
   }
 
   if (result) return <Card className="stack">
-    <h2>Quiz complete</h2>
+    <h2>الكويز خلص</h2>
     <div className={result.pending ? 'note' : 'result-good'}>
       <strong>Automated score: {result.auto} out of {result.max}</strong>
       {result.pending > 0 && <div>There are {result.pending} written answers to be reviewed by the admin. Final approval isn't immediate.</div>}
     </div>
-    <div className="row"><Button onClick={() => go(`/session/${s.id}`)}>Back to session</Button><Button variant="ghost" onClick={() => go('/roadmap')}>Roadmap</Button></div>
+    <div className="row"><Button onClick={() => go(`/session/${s.id}`)}>رجوع للسيشن</Button><Button variant="ghost" onClick={() => go('/roadmap')}>الخريطة</Button></div>
   </Card>;
 
   return <div className="stack">
-    <div className="row"><button className="icon-btn" onClick={() => go(`/session/${s.id}`)}>← Session</button></div>
-    <Card><h1>Quiz: {s.title}</h1><p className="muted">9 questions. Complete each sentence with the right word.</p></Card>
+    <div className="row"><button className="icon-btn" onClick={() => go(`/session/${s.id}`)}>→ السيشن</button></div>
+    <Card><h1>كويز: <span className="en" dir="ltr">{s.title}</span></h1><p className="muted">9 أسئلة. كمّل كل جملة بالكلمة الصح.</p></Card>
     {qs.map((q, i) => <Card key={q.id}>
-      <div className="row between"><strong>{i + 1}. {q.prompt}</strong><Badge>{q.points} points</Badge></div>
+      <div className="row between"><strong dir="ltr" className="en" style={{textAlign:"left"}}>{i + 1}. {q.prompt}</strong><Badge>{q.points} نقاط</Badge></div>
       <div style={{ marginTop: '.8rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${answers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={answers[q.id] === o} onChange={() => setAnswers((a) => ({ ...a, [q.id]: o }))} style={{ width: 'auto' }} /> <span className="en" dir="ltr">{o}</span></label>)}</div>
     </Card>)}
-    <Card><div className="between"><span className="muted">Written answers are saved for review.</span><Button onClick={submit}>Submit answers</Button></div></Card>
+    <Card><div className="between"><span className="muted">الإجابات الكتابية بتتحفظ للمراجعة.</span><Button onClick={submit}>سلّم الإجابات</Button></div></Card>
   </div>;
 }
 
@@ -625,40 +626,40 @@ export function DictionaryPage() {
   }
 
   return <div className="stack">
-    <div><h1>Dictionary</h1><p className="muted">The dictionary is global: search {all.length} ready-made words, or type any English word and we'll fetch its definition from the global source automatically. You can save any word.</p></div>
+    <div><h1>الديكشنري</h1><p className="muted">الديكشنري عالمي: فيه 673 كلمة جاهزة، أو اكتب أي كلمة إنجليزي وهنقلك معناها من المصدر العالمي تلقائيًا. تقدر تحفظ أي كلمة.</p></div>
 
     <Card className="search-hero">
-      <div className="row"><span style={{ fontSize: '1.4rem' }}>🔎</span><input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) showWord(q); }} placeholder="Type any word... e.g. serendipity" aria-label="Search the dictionary" /></div>
+      <div className="row"><span style={{ fontSize: '1.4rem' }}>🔎</span><input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) showWord(q); }} placeholder="اكتب أي كلمة... مثال: serendipity" aria-label="دوّر في الديكشنري" /></div>
       {suggestions.length > 0 && <div className="dict-suggest">{suggestions.map((d) => <button key={d.id} type="button" className="dict-suggest-item en" dir="ltr" onClick={() => { setQ(d.word); showWord(d.word); }}>{d.word}</button>)}</div>}
       <div className="row" style={{ marginTop: '.7rem', justifyContent: 'space-between' }}>
-        <div className="row">{types.map((t) => <button key={t} className={`tab ${type === t ? 'active' : ''}`} onClick={() => setType(t)}>{t === 'all' ? 'All' : t}</button>)}</div>
-        <div className="row"><Button size="sm" variant="ghost" onClick={() => setManual({ word: q.trim(), meaning: '', type: 'noun', examples: '' })}>+ Add word</Button><Button size="sm" onClick={() => q.trim() && showWord(q)} disabled={!q.trim() || looking}>{looking ? 'Searching...' : 'Search globally'}</Button></div>
+        <div className="row">{types.map((t) => <button key={t} className={`tab ${type === t ? 'active' : ''}`} onClick={() => setType(t)}>{t === 'all' ? 'الكل' : t}</button>)}</div>
+        <div className="row"><Button size="sm" variant="ghost" onClick={() => setManual({ word: q.trim(), meaning: '', type: 'noun', examples: '' })}>+ ضيف كلمة</Button><Button size="sm" onClick={() => q.trim() && showWord(q)} disabled={!q.trim() || looking}>{looking ? 'بندوّر...' : 'دوّر عالميًا'}</Button></div>
       </div>
       {q.trim() && !looking && <div className="muted" style={{ marginTop: '.5rem', fontSize: '.82rem' }}>
-        Local results: {localResults.length} · <button className="icon-btn" onClick={() => showWord(q)}>Search globally for "{q}" ←</button>
+        نتايج محلية: {localResults.length} · <button className="icon-btn" onClick={() => showWord(q)}>دوّر عالميًا عن "{q}" ←</button>
       </div>}
       {globalHit && <div className="global-hit">
-        <div className="row between"><div><small className="muted">Global dictionary</small>
+        <div className="row between"><div><small className="muted">الديكشنري العالمي</small>
           <div className="row"><strong className="en" style={{ fontSize: '1.1rem' }}>{globalHit.word}</strong><Badge tone="blue">{globalHit.type}</Badge>{globalHit.phonetic && <span className="en muted" dir="ltr">{phon(globalHit.phonetic)}</span>}</div>
           <div className="en" dir="ltr">{globalHit.meaning}</div>
           {!!(globalHit.synonyms || []).length && <div className="row" style={{ marginTop: '.4rem' }}>{globalHit.synonyms!.slice(0, 6).map((x) => <span key={x} className="word-chip en">{x}</span>)}</div>}
         </div>
           <div className="row">
-            <Button size="sm" variant="ghost" onClick={() => pronounce(globalHit)}>Listen</Button>
+            <Button size="sm" variant="ghost" onClick={() => pronounce(globalHit)}>استماع</Button>
             <Button size="sm" variant="ghost" onClick={() => setYg({ word: globalHit.word, accent: 'us' })}>YouGlish</Button>
-            <Button size="sm" onClick={() => toggle(globalHit)}>{isSaved(globalHit.word) ? 'Saved' : 'Add to my words'}</Button>
+            <Button size="sm" onClick={() => toggle(globalHit)}>{isSaved(globalHit.word) ? '✓ محفوظة' : 'ضيفها لكلماتي'}</Button>
           </div>
         </div>
       </div>}
     </Card>
 
     {wordOfDay && <Card className="word-day">
-      <div className="between"><div><div className="muted">Word of the day</div><h2 dir="ltr" className="en" style={{ fontSize: '1.7rem' }}>{wordOfDay.word}</h2><div>{wordOfDay.meaning} · {wordOfDay.type}</div></div>
-        <div className="row"><Button variant="ghost" onClick={() => speak(wordOfDay.word)}>🔊</Button><Button onClick={() => showWord(wordOfDay.word)}>Open card</Button></div>
+      <div className="between"><div><div className="muted">كلمة اليوم</div><h2 dir="ltr" className="en" style={{ fontSize: '1.7rem' }}>{wordOfDay.word}</h2><div>{wordOfDay.meaning} · {wordOfDay.type}</div></div>
+        <div className="row"><Button variant="ghost" onClick={() => speak(wordOfDay.word)}>🔊</Button><Button onClick={() => showWord(wordOfDay.word)}>افتح الكارت</Button></div>
       </div>
     </Card>}
 
-    <Tabs tabs={[{ id: 'search', label: 'Search' }, { id: 'saved', label: `My words (${saved.length})` }, { id: 'review', label: `Review (${reviewList.length})` }]} active={tab} onChange={setTab} />
+    <Tabs tabs={[{ id: 'search', label: 'بحث' }, { id: 'saved', label: `كلماتي (${saved.length})` }, { id: 'review', label: `مراجعة (${reviewList.length})` }]} active={tab} onChange={setTab} />
 
     {tab === 'search' && <div className="grid g2">
       <Card>
@@ -666,60 +667,66 @@ export function DictionaryPage() {
         {localResults.length ? <div className="stack">{localResults.map((d) => <div key={d.id} className="word-row">
           <button className="icon-btn" onClick={() => setDetail({ ...d, source: d.source || 'local' })}><strong className="en">{d.word}</strong></button>
           <span className="muted" dir="rtl">{d.meaning}</span>
-          <div className="row"><Badge>{d.type}</Badge><button className="icon-btn" onClick={() => pronounce(d)}>🔊</button><Button size="sm" variant={isSaved(d.word) ? 'ghost' : 'primary'} onClick={() => toggle(d)}>{isSaved(d.word) ? '✓' : 'Save'}</Button></div>
-        </div>)}</div> : <Empty icon="🔍" title="No local results" hint="We'll try the global source automatically, or you can add the word yourself." />}
+          <div className="row"><Badge>{d.type}</Badge><button className="icon-btn" onClick={() => pronounce(d)}>🔊</button><Button size="sm" variant={isSaved(d.word) ? 'ghost' : 'primary'} onClick={() => toggle(d)}>{isSaved(d.word) ? '✓' : 'حفظ'}</Button></div>
+        </div>)}</div> : <Empty icon="🔍" title="مفيش نتايج محلية" hint="هنجرّب المصدر العالمي تلقائيًا، أو تقدر تضيف الكلمة بنفسك." />}
       </Card>
-      <Card><SectionTitle title="Notes" />
-        <div className="note">Search includes the word, meaning, explanation, and examples. If a word isn't found, the global source will fetch its definition, and if you're offline you can add it manually.</div>
+      <Card><SectionTitle title="ملاحظات" />
+        <div className="note">البحث بيشمل الكلمة والمعنى والشرح والأمثلة. لو الكلمة مش موجودة، المصدر العالمي هيجيب تعريفها، ولو مفيش نت تقدر تضيفها يدويًا.</div>
         <div className="stack" style={{ marginTop: '1rem' }}>{saved.slice(0, 6).map((w) => <div key={w.id} className="row between"><strong className="en">{w.word}</strong><span className="muted" dir="rtl">{w.meaning}</span></div>)}</div>
       </Card>
     </div>}
 
     {tab === 'saved' && <Card>
-      <SectionTitle title={`Saved words (${savedResults.length})`} />
-      {savedResults.length ? <div className="stack">{savedResults.map((w) => <div key={w.id} className="word-row">
-        <div><strong className="en">{w.word}</strong><div className="muted" dir="rtl">{w.meaning}</div></div>
-        <div className="row"><Button size="sm" variant="ghost" onClick={() => markReview(w, w.review)}>{w.review ? 'Reviewed' : 'Needs review'}</Button><Button size="sm" variant="danger" onClick={() => remove('savedWords', w.id)}>Delete</Button></div>
-      </div>)}</div> : <Empty title="You haven't saved any words yet" hint="Save any word from search or from sessions." />}
+      <SectionTitle title={`الكلمات المحفوظة (${savedResults.length})`} action={<Badge tone="blue">{saved.filter((w) => w.review).length} محتاجة مراجعة</Badge>} />
+      {savedResults.length ? <div className="saved-grid">{savedResults.map((w) => <div key={w.id} className={`saved-card ${w.review ? 'needs-review' : ''}`}>
+        <div className="saved-word en" dir="ltr">{w.word}</div>
+        {w.transcript && <div className="saved-transcript en" dir="ltr">{w.transcript}</div>}
+        <div className="saved-meaning" dir="rtl">{w.meaning}</div>
+        <div className="saved-actions">
+          <button className={`icon-btn ${w.review ? '' : 'is-on'}`} title={w.review ? 'علّم إنها اتذاكرت' : 'علّم إنها محتاجة مراجعة'} onClick={() => markReview(w, w.review)}>{w.review ? '✓' : '↺'}</button>
+          <button className="icon-btn" title="اسمع النطق" onClick={() => pronounce(w)}>🔊</button>
+          <button className="icon-btn danger" title="حذف" onClick={() => remove('savedWords', w.id)}>🗑</button>
+        </div>
+      </div>)}</div> : <Empty title="لسه ما حفظتش أي كلمات" hint="احفظ أي كلمة من البحث أو من السيشنات." />}
     </Card>}
 
     {tab === 'review' && <Card>
-      <SectionTitle title="Quick review" />
+      <SectionTitle title="مراجعة سريعة" />
       {reviewList.length ? <div className="flashcard">
-        <div className="muted">Word to review ({reviewIdx % reviewList.length + 1} of {reviewList.length})</div>
+        <div className="muted">كلمة للمراجعة ({reviewIdx % reviewList.length + 1} من {reviewList.length})</div>
         <h2 dir="ltr" className="en">{reviewCard?.word}</h2>
-        {showMeaning ? <div className="result-good" dir="rtl">{reviewCard?.meaning}</div> : <Button variant="ghost" onClick={() => setShowMeaning(true)}>Show meaning</Button>}
-        {showMeaning && <div className="row" style={{ marginTop: '1rem' }}><Button onClick={() => markReview(reviewCard, true)}>I knew it ✓</Button><Button variant="danger" onClick={() => markReview(reviewCard, false)}>Needs more practice</Button></div>}
-      </div> : <Empty icon="🎴" title="All words are well saved" hint="The &quot;Needs more practice&quot; mark will make the word appear here." />}
+        {showMeaning ? <div className="result-good" dir="rtl">{reviewCard?.meaning}</div> : <Button variant="ghost" onClick={() => setShowMeaning(true)}>وريني المعنى</Button>}
+        {showMeaning && <div className="row" style={{ marginTop: '1rem' }}><Button onClick={() => markReview(reviewCard, true)}>عرفتها ✓</Button><Button variant="danger" onClick={() => markReview(reviewCard, false)}>محتاجة تدريب أكتر</Button></div>}
+      </div> : <Empty icon="🎴" title="كل الكلمات محفوظة تمام" hint="علامة «محتاجة تدريب أكتر» هتخلي الكلمة تظهر هنا." />}
     </Card>}
 
-    <Modal open={!!detail} title="Word card" onClose={() => setDetail(null)}>
+    <Modal open={!!detail} title="كارت الكلمة" onClose={() => setDetail(null)}>
       {detail && <div className="stack">
         <div className="between"><div><h2 dir="ltr" className="en" style={{ fontSize: '1.9rem' }}>{detail.word}</h2>
-          <div className="row"><Badge tone="green">{detail.type}</Badge>{detail.phonetic && <span className="muted" dir="ltr">{phon(detail.phonetic)}</span>}<Badge tone={detail.source === 'global' ? 'blue' : 'muted'}>{detail.source === 'global' ? 'Global dictionary' : detail.source === 'manual' ? 'Manual entry' : 'From the curriculum'}</Badge></div></div>
-          <Button variant="ghost" onClick={() => pronounce(detail)}>🔊 Listen to pronunciation</Button></div>
-        <div className="section-card"><h3>Meaning</h3><p className="en" dir="ltr">{detail.meaning}</p>
+          <div className="row"><Badge tone="green">{detail.type}</Badge>{detail.phonetic && <span className="muted" dir="ltr">{phon(detail.phonetic)}</span>}<Badge tone={detail.source === 'global' ? 'blue' : 'muted'}>{detail.source === 'global' ? 'الديكشنري العالمي' : detail.source === 'manual' ? 'إضافة يدوية' : 'من المنهج'}</Badge></div></div>
+          <Button variant="ghost" onClick={() => pronounce(detail)}>🔊 اسمع النطق</Button></div>
+        <div className="section-card"><h3>المعنى</h3><p className="en" dir="ltr">{detail.meaning}</p>
           {detail.arabic && <p dir="rtl">{detail.arabic}</p>}
           {detail.definitions && <div className="stack" style={{ marginTop: '.5rem' }}>{detail.definitions.map((d, i) => <div key={i} className="muted en" dir="ltr">• {d}</div>)}</div>}
         </div>
-        {detail.phonetic && <div className="section-card"><h3>Transcript</h3><p className="en" dir="ltr">{phon(detail.phonetic)}</p></div>}
-        <div className="section-card"><h3>Hear it in use</h3>
+        {detail.phonetic && <div className="section-card"><h3>النطق المكتوب</h3><p className="en" dir="ltr">{phon(detail.phonetic)}</p></div>}
+        <div className="section-card"><h3>اسمعها في الاستخدام</h3>
           <div className="youglish-btns">{YOUGLISH_ACCENTS.map((a) => <button key={a.code} type="button" className="yg-btn en" onClick={() => setYg({ word: detail.word, accent: a.code })}>{a.label}</button>)}</div>
         </div>
-        {detail.synonyms && detail.synonyms.length > 0 && <div className="section-card"><h3>Synonyms</h3><div className="row">{detail.synonyms.map((x) => <span key={x} className="word-chip en">{x}</span>)}</div></div>}
-        <div className="section-card"><h3>Examples</h3>{detail.examples.length ? detail.examples.map((ex, i) => <div key={i} className="en" dir="ltr" style={{ textAlign: 'left', lineHeight: 1.9 }}>{ex}</div>) : <p className="muted">No examples available.</p>}</div>
-        {(detail.sessionIds || []).length > 0 && <div className="section-card"><h3>Appears in sessions</h3>{detail.sessionIds!.map((sid) => { const sess = data.sessions.find((x) => x.id === sid); return sess ? <div key={sid}><button className="icon-btn" onClick={() => { setDetail(null); go(`/session/${sid}`); }}>{sess.title} ←</button></div> : null; })}</div>}
-        <Button onClick={() => toggle(detail)}>{isSaved(detail.word) ? 'Remove from saved' : 'Add to my words'}</Button>
+        {detail.synonyms && detail.synonyms.length > 0 && <div className="section-card"><h3>المرادفات</h3><div className="row">{detail.synonyms.map((x) => <span key={x} className="word-chip en">{x}</span>)}</div></div>}
+        <div className="section-card"><h3>أمثلة</h3>{detail.examples.length ? detail.examples.map((ex, i) => <div key={i} className="en" dir="ltr" style={{ textAlign: 'left', lineHeight: 1.9 }}>{ex}</div>) : <p className="muted">مفيش أمثلة متاحة.</p>}</div>
+        {(detail.sessionIds || []).length > 0 && <div className="section-card"><h3>بتظهر في سيشنات</h3>{detail.sessionIds!.map((sid) => { const sess = data.sessions.find((x) => x.id === sid); return sess ? <div key={sid}><button className="icon-btn" onClick={() => { setDetail(null); go(`/session/${sid}`); }}>{sess.title} ←</button></div> : null; })}</div>}
+        <Button onClick={() => toggle(detail)}>{isSaved(detail.word) ? 'شيلها من المحفوظات' : 'ضيفها لكلماتي'}</Button>
       </div>}
     </Modal>
     {yg && <YouGlishDock word={yg.word} accent={yg.accent} onAccent={(accent) => setYg({ word: yg.word, accent })} onClose={() => setYg(null)} />}
 
-    <Modal open={!!manual} title="Add a word yourself" onClose={() => setManual(null)}>
-      <Field label="Word"><input dir="ltr" value={manual?.word || ''} onChange={(e) => setManual({ ...manual, word: e.target.value })} /></Field>
-      <Field label="Meaning in Arabic"><input value={manual?.meaning || ''} onChange={(e) => setManual({ ...manual, meaning: e.target.value })} /></Field>
-      <Field label="Type"><select value={manual?.type || 'noun'} onChange={(e) => setManual({ ...manual, type: e.target.value })}>{['noun','verb','adjective','adverb','phrase','preposition'].map((x) => <option key={x}>{x}</option>)}</select></Field>
-      <Field label="Examples (one per line)"><textarea dir="ltr" value={manual?.examples || ''} onChange={(e) => setManual({ ...manual, examples: e.target.value })} /></Field>
-      <Button onClick={saveManual} disabled={!manual?.word?.trim() || !manual?.meaning?.trim()}>Save word</Button>
+    <Modal open={!!manual} title="ضيف كلمة بنفسك" onClose={() => setManual(null)}>
+      <Field label="الكلمة"><input dir="ltr" value={manual?.word || ''} onChange={(e) => setManual({ ...manual, word: e.target.value })} /></Field>
+      <Field label="المعنى بالعربي"><input value={manual?.meaning || ''} onChange={(e) => setManual({ ...manual, meaning: e.target.value })} /></Field>
+      <Field label="النوع"><select value={manual?.type || 'noun'} onChange={(e) => setManual({ ...manual, type: e.target.value })}>{['noun','verb','adjective','adverb','phrase','preposition'].map((x) => <option key={x}>{x}</option>)}</select></Field>
+      <Field label="أمثلة (واحد في كل سطر)"><textarea dir="ltr" value={manual?.examples || ''} onChange={(e) => setManual({ ...manual, examples: e.target.value })} /></Field>
+      <Button onClick={saveManual} disabled={!manual?.word?.trim() || !manual?.meaning?.trim()}>احفظ الكلمة</Button>
     </Modal>
   </div>;
 }
@@ -741,22 +748,22 @@ export function TasksPage() {
     else await put('taskCompletions', { taskId: t.id, studentId: user!.id, completedAt: today() });
   }
   return <div className="stack">
-    <div><h1>My tasks</h1><p className="muted">Speaking tasks for your level. Record your voice and send it on the group, then mark the task done.</p></div>
+    <div><h1>تاسكاتي</h1><p className="muted">تاسكات تحدث لمستواك. سجّل صوتك وابعته على الجروب، وبعدين علّم التاسك إنها خلصت.</p></div>
     <div className="grid g3">
-      <Stat label="Total tasks" value={mine.length} />
-      <Stat label="Completed" value={mine.filter(isDone).length} tone="green" />
-      <Stat label="Remaining" value={mine.filter((t) => !isDone(t)).length} />
+      <Stat label="إجمالي التاسكات" value={mine.length} />
+      <Stat label="خلصت" value={mine.filter(isDone).length} tone="green" />
+      <Stat label="الباقي" value={mine.filter((t) => !isDone(t)).length} />
     </div>
     {levelTasks.length ? <>
       <Card className="row between" style={{ gap: '1rem' }}>
-        <div><strong>{level?.title || 'Your level'} · Level tasks</strong><div className="muted">{levelTasks.filter(isDone).length} / {levelTasks.length} completed</div></div>
+        <div><strong>{level?.title || 'مستواك'} · Level tasks</strong><div className="muted">{levelTasks.filter(isDone).length} / {levelTasks.length} completed</div></div>
         <div className="progress-track" style={{ flex: 1, maxWidth: 260, marginTop: 0 }}><span style={{ width: `${levelTasks.length ? Math.round((levelTasks.filter(isDone).length / levelTasks.length) * 100) : 0}%` }} /></div>
       </Card>
       {weeks.map((w) => {
         const list = levelTasks.filter((t) => (t.week || 1) === w);
         const first = list[0];
         return <Card key={w}>
-          <SectionTitle title={`Week ${w} — ${first?.topic || ''}`} action={<Badge tone="blue">{list.filter(isDone).length}/{list.length}</Badge>} />
+          <SectionTitle title={`أسبوع ${w} — ${first?.topic || ''}`} action={<Badge tone="blue">{list.filter(isDone).length}/{list.length}</Badge>} />
           {first?.grammar && <div className="muted" style={{ fontSize: '.82rem', marginBottom: '.6rem' }} dir="ltr">{first.grammar}</div>}
           <div className="stack">
             {list.map((t) => {
@@ -764,7 +771,7 @@ export function TasksPage() {
               const open = expanded === t.id;
               return <div key={t.id} className={`task-item ${done ? 'is-done' : ''}`}>
                 <div className="task-item-head">
-                  <button className={`task-check ${done ? 'checked' : ''}`} onClick={() => toggle(t)} aria-label={done ? 'Mark as not done' : 'Mark as done'}>{done ? '✓' : ''}</button>
+                  <button className={`task-check ${done ? 'checked' : ''}`} onClick={() => toggle(t)} aria-label={done ? 'علّم إنها ما خلصتش' : 'علّم إنها خلصت'}>{done ? '✓' : ''}</button>
                   <button className="task-item-title" onClick={() => setExpanded(open ? null : t.id)}>
                     <span className="task-badge">{t.badge || t.kind}</span>
                     <strong>{t.title}</strong>
@@ -779,12 +786,12 @@ export function TasksPage() {
           </div>
         </Card>;
       })}
-    </> : <Card><Empty icon="🗂️" title={`No tasks for ${level?.title || 'your level'} yet`} hint="Level tasks appear here as soon as they are added for your level." /></Card>}
+    </> : <Card><Empty icon="🗂️" title={`مفيش تاسكات لـ ${level?.title || 'مستواك'} لسه`} hint="تاسكات المستوى هتظهر هنا أول ما تتضاف لمستواك." /></Card>}
     {otherTasks.length > 0 && <Card>
-      <SectionTitle title="Other tasks" />
+      <SectionTitle title="تاسكات تانية" />
       <div className="stack">{otherTasks.map((t) => <div key={t.id} className="row between section-card">
         <div><strong>{t.title}</strong>{t.dueAt && <div className="muted">{fmtDate(t.dueAt)} · {t.kind}</div>}</div>
-        {isDone(t) ? <Badge tone="green">Completed</Badge> : <Button size="sm" onClick={() => toggle(t)}>Done</Button>}
+        {isDone(t) ? <Badge tone="green">خلصت</Badge> : <Button size="sm" onClick={() => toggle(t)}>تم</Button>}
       </div>)}</div>
     </Card>}
   </div>;
@@ -800,14 +807,14 @@ export function NotificationsPage() {
     else await put('notificationReads', { id: `${user!.id}-${n.id}`, studentId: user!.id, notificationId: n.id, read: true });
   }
   return <div className="stack">
-    <div><h1>Notifications</h1><p className="muted">Notifications on the site are always available. Device notifications need your permission.</p></div>
+    <div><h1>الإشعارات</h1><p className="muted">إشعارات الموقع متاحة دايمًا. إشعارات الجهاز محتاجة إذنك.</p></div>
     <Card>{list.length ? <div className="stack">{list.map((n) => <div key={n.id} className={`section-card ${!n.read ? 'done' : ''}`}>
-      <div className="row between"><strong>{n.title}</strong>{!n.read && <Badge tone="green">New</Badge>}</div>
+      <div className="row between"><strong>{n.title}</strong>{!n.read && <Badge tone="green">جديد</Badge>}</div>
       <p className="muted" style={{ margin: '.4rem 0' }}>{n.body}</p>
       <div className="row"><small className="muted">{fmtDate(n.createdAt)}</small>
-        <Button size="sm" variant="ghost" onClick={async () => { await markRead(n); if (n.href) go(n.href.replace('#', '')); }}>Open</Button>
+        <Button size="sm" variant="ghost" onClick={async () => { await markRead(n); if (n.href) go(n.href.replace('#', '')); }}>افتح</Button>
       </div>
-    </div>)}</div> : <Empty title="No notifications" />}</Card>
+    </div>)}</div> : <Empty title="مفيش إشعارات" />}</Card>
   </div>;
 }
 
@@ -818,23 +825,30 @@ export function LeaderboardPage() {
   const board = leaderboard(data);
   const mine = board.findIndex((b) => b.id === user.id) + 1;
   return <div className="stack">
-    <div><h1>Speakozy Champs</h1><p className="muted">Ranked by score. Names are abbreviated per the privacy setting, and no private data is shown.</p></div>
-    <Tabs tabs={[{ id: 'weekly', label: 'Weekly' }, { id: 'monthly', label: 'Monthly' }, { id: 'total', label: 'All time' }]} active={period} onChange={setPeriod} />
-    {!data.settings.leaderboard.enabled ? <Card><Empty icon="🔒" title="The leaderboard is currently disabled" hint="The admin decided to hide it temporarily." /></Card> : <Card>
+    <div><h1>أبطال Speakozy</h1><p className="muted">الترتيب بالنقاط. الأسماء مختصرة حسب إعداد الخصوصية، ومفيش بيانات خاصة بتظهر.</p></div>
+    <Tabs tabs={[{ id: 'weekly', label: 'أسبوعي' }, { id: 'monthly', label: 'شهري' }, { id: 'total', label: 'كل الوقت' }]} active={period} onChange={setPeriod} />
+    {!data.settings.leaderboard.enabled ? <Card><Empty icon="🔒" title="لوحة الأبطال متوقفة حاليًا" hint="الأدمن قرر يخفيها مؤقتًا." /></Card> : <Card>
       {board.length ? <div className="stack">{board.map((b, i) => <div key={b.id} className={`row between section-card ${b.id === user.id ? 'done' : ''}`}>
-        <div className="row"><span className="node-num">{i + 1}</span><span className="champ-avatar">{b.avatar || b.name.charAt(0)}</span><strong>{b.name}</strong>{b.id === user.id && <Badge tone="green">You</Badge>}</div>
+        <div className="row"><span className="node-num">{i + 1}</span><span className="champ-avatar">{b.avatar || b.name.charAt(0)}</span><strong>{b.name}</strong>{b.id === user.id && <Badge tone="green">أنت</Badge>}</div>
         <strong className="green">{b.points} points</strong>
-      </div>)}</div> : <Empty title="No participants yet" />}
+      </div>)}</div> : <Empty title="مفيش مشاركين لسه" />}
     </Card>}
     {mine > 0 && <div className="note">Your current rank: #{mine}. Changes from the previous period will appear when comparison history is available.</div>}
   </div>;
 }
 
-export const AVATARS = ['🦁', '🐯', '🦊', '🐼', '🐨', '🦄', '🐬', '🦅', '🌟', '🚀', '🎯', '⚡', '🌈', '🎧', '⚽', '📚'];
+export const AVATARS = ['🦁','🐯','🦊','🐼','🐨','🦄','🐬','🦅','🐺','🦖','🐙','🦋','🐢','🦜','🐝','🦩','🐳','🦈','🐸','🦉','🌟','🚀','🎯','⚡','🌈','🎧','⚽','📚','🏀','🎮','🎸','🎨','🏆','🥇','🎓','✏️','🧠','💡','🔥','💎','🌙','☀️','🌊','🍀','🌵','🍕','🍩','🧋','🦸','🧑‍🚀','🧑‍🎤','🧑‍💻','🥷','🤖','👑','🎩','🕶️','🧢','👟','🛹','🚲','✈️','🗺️','🧭','⛰️','🏝️','🎪','🎢','🪁','🎲','🧩','🪄'];
 
 export function ProfilePage() {
-  const { user, data, resetDemo, demo, saveProfile } = useApp();
+  const { user, data, resetDemo, demo, saveProfile, changePassword } = useApp();
   const [savingAvatar, setSavingAvatar] = useState('');
+  const [name, setName] = useState(user?.name || '');
+  const [savingName, setSavingName] = useState(false);
+  const [nameMsg, setNameMsg] = useState('');
+  const [pw1, setPw1] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [savingPw, setSavingPw] = useState(false);
+  const [pwMsg, setPwMsg] = useState('');
   if (!user) return null;
   const level = data.levels.find((l) => l.id === user.levelId);
   const certs = data.certificates.filter((c) => c.studentId === user.id && c.status === 'active');
@@ -843,31 +857,65 @@ export function ProfilePage() {
     setSavingAvatar(a);
     try { await saveProfile({ avatar: a }); } finally { setSavingAvatar(''); }
   }
+  async function saveName() {
+    const clean = name.trim();
+    if (clean.length < 2) { setNameMsg('الاسم لازم يكون حرفين على الأقل'); return; }
+    setSavingName(true); setNameMsg('');
+    try { await saveProfile({ name: clean }); setNameMsg('✓ الاسم اتحفظ'); }
+    catch { setNameMsg('مش قادرين نحفظ الاسم، جرّب تاني'); }
+    finally { setSavingName(false); }
+  }
+  async function savePassword() {
+    if (pw1.length < 6) { setPwMsg('الباسورد لازم يكون 6 حروف على الأقل'); return; }
+    if (pw1 !== pw2) { setPwMsg('الباسورد مش متطابق'); return; }
+    setSavingPw(true); setPwMsg('');
+    try { await changePassword(pw1); setPw1(''); setPw2(''); setPwMsg('✓ الباسورد اتغير'); }
+    catch { setPwMsg('مش قادرين نغيّر الباسورد، جرّب تاني'); }
+    finally { setSavingPw(false); }
+  }
   return <div className="stack">
-    <div><h1>My profile</h1></div>
+    <div><h1>بروفايلي</h1></div>
     <Card className="row" style={{ gap: '1rem' }}><span className="avatar" style={{ width: 56, height: 56, fontSize: '1.3rem' }}>{user.avatar || user.name.charAt(0)}</span>
-      <div><h2>{user.name}</h2><div className="muted">{user.email}</div><div className="row" style={{ marginTop: '.4rem' }}><Badge tone="green">{level?.title || '—'}</Badge><Badge>Max: {data.levels.find((l) => l.id === user.maxLevelId)?.title || '—'}</Badge></div></div>
+      <div><h2>{user.name}</h2><div className="muted">{user.email}</div><div className="row" style={{ marginTop: '.4rem' }}><Badge tone="green">{level?.title || '—'}</Badge><Badge>آخر مستوى: {data.levels.find((l) => l.id === user.maxLevelId)?.title || '—'}</Badge></div></div>
     </Card>
     <Card>
-      <SectionTitle title="Choose your avatar" action={savingAvatar ? <span className="muted">Saving…</span> : undefined} />
-      <div className="avatar-grid">
-        {AVATARS.map((a) => <button key={a} className={`avatar-pick ${user.avatar === a ? 'is-on' : ''}`} onClick={() => pickAvatar(a)} aria-label={`Avatar ${a}`}>{a}</button>)}
+      <SectionTitle title="اسمك" />
+      <div className="row">
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="اكتب اسمك" style={{ maxWidth: 320 }} />
+        <Button onClick={saveName} disabled={savingName || name.trim() === user.name}>{savingName ? 'بنحفظ…' : 'احفظ الاسم'}</Button>
+      </div>
+      {nameMsg && <p className="field-hint" style={{ marginTop: '.5rem' }}>{nameMsg}</p>}
+    </Card>
+    <Card>
+      <SectionTitle title="تغيير الباسورد" />
+      <div className="grid g2">
+        <label className="field"><span>الباسورد الجديد</span><input type="password" value={pw1} onChange={(e) => setPw1(e.target.value)} placeholder="6 حروف على الأقل" autoComplete="new-password" /></label>
+        <label className="field"><span>تأكيد الباسورد</span><input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} placeholder="اكتبه تاني" autoComplete="new-password" /></label>
+      </div>
+      <div className="row" style={{ marginTop: '.7rem' }}>
+        <Button onClick={savePassword} disabled={savingPw || !pw1 || !pw2}>{savingPw ? 'بنحفظ…' : 'غيّر الباسورد'}</Button>
+        {pwMsg && <span className="field-hint">{pwMsg}</span>}
       </div>
     </Card>
-    <div className="grid g3"><Stat label="Total points" value={totalScore(data, user.id)} tone="green" /><Stat label="Certificates" value={certs.length} /><Stat label="Saved words" value={data.savedWords.filter((w) => w.studentId === user.id).length} /></div>
-    <Card><SectionTitle title="Score history" />
-      {recent.length ? <div className="stack">{recent.map((s) => <div key={s.id} className="row between"><span>{s.source}</span><span className="row"><strong>+{s.points}</strong><small className="muted">{fmtDate(s.createdAt)}</small></span></div>)}</div> : <Empty title="No points yet" />}
+    <Card>
+      <SectionTitle title="اختار الأفاتار بتاعك" action={savingAvatar ? <span className="muted">بنحفظ…</span> : <Badge tone="blue">{AVATARS.length} اختيار</Badge>} />
+      <div className="avatar-grid">
+        {AVATARS.map((a) => <button key={a} className={`avatar-pick ${user.avatar === a ? 'is-on' : ''}`} onClick={() => pickAvatar(a)} aria-label={`أفاتار ${a}`}>{a}</button>)}
+      </div>
     </Card>
-    {demo && <Card className="danger-zone"><SectionTitle title="Demo data" />
-      <p className="muted">If you're using an old version of the data, reset to load the full new curriculum.</p>
-      <Button variant="danger" onClick={() => { resetDemo(); go('/'); }}>Reset demo data</Button>
+    <div className="grid g3"><Stat label="إجمالي النقاط" value={totalScore(data, user.id)} tone="green" /><Stat label="الشهادات" value={certs.length} /><Stat label="الكلمات المحفوظة" value={data.savedWords.filter((w) => w.studentId === user.id).length} /></div>
+    <Card><SectionTitle title="سجل النقاط" />
+      {recent.length ? <div className="stack">{recent.map((s) => <div key={s.id} className="row between"><span>{s.source}</span><span className="row"><strong>+{s.points}</strong><small className="muted">{fmtDate(s.createdAt)}</small></span></div>)}</div> : <Empty title="مفيش نقاط لسه" />}
+    </Card>
+    {demo && <Card className="danger-zone"><SectionTitle title="بيانات تجريبية" />
+      <p className="muted">لو بتستخدم نسخة قديمة من البيانات، اعمل إعادة ضبط عشان تحمّل المنهج الجديد كامل.</p>
+      <Button variant="danger" onClick={() => { resetDemo(); go('/'); }}>إعادة ضبط البيانات التجريبية</Button>
     </Card>}
-    <Card><SectionTitle title="My certificates" />
-      {certs.length ? certs.map((c) => <div key={c.id} className="row between"><span>{c.levelIds.join(', ')}</span><Badge tone="green">{c.number}</Badge></div>) : <Empty title="No certificate yet" hint="A certificate is issued after the admin approves level completion." />}
+    <Card><SectionTitle title="شهاداتي" />
+      {certs.length ? certs.map((c) => <div key={c.id} className="row between"><span>{c.levelIds.join(', ')}</span><Badge tone="green">{c.number}</Badge></div>) : <Empty title="مفيش شهادة لسه" hint="الشهادة بتطلع بعد ما الأدمن يعتمد إكمال المستوى." />}
     </Card>
   </div>;
 }
-
 
 export function MaterialsPage() {
   const { user, data } = useApp();
@@ -881,36 +929,36 @@ export function MaterialsPage() {
   const sessions = data.sessions.filter((s) => s.levelId === level?.id).sort((a, b) => a.order - b.order);
   const partial = level ? (!admin && !levelFullyOpen(user, level, data.levels)) : false;
   return <div className="stack">
-    <div><h1>MATERIALS</h1><p className="muted">Choose a level from the list. Levels inside your allowed range open fully; other levels open their first session only.</p></div>
+    <div><h1>الماتيريال</h1><p className="muted">اختار مستوى من القائمة. المستويات جوه نطاقك المسموح بتفتح كامل؛ غيرها بيفتح أول سيشن بس.</p></div>
     <Card>
-      <Field label="Level"><select value={levelId} onChange={(e) => setSelected(e.target.value)}>
+      <Field label="المستوى"><select value={levelId} onChange={(e) => setSelected(e.target.value)}>
         {levels.map((l) => {
           const full = admin || levelFullyOpen(user, l, data.levels);
-          return <option key={l.id} value={l.id}>{l.title}{full ? '' : ' · first session only'}</option>;
+          return <option key={l.id} value={l.id}>{l.title}{full ? '' : ' · أول سيشن بس'}</option>;
         })}
       </select></Field>
-      {level && <div className="row" style={{ marginTop: '.2rem' }}><Badge tone={partial ? 'muted' : 'green'}>{partial ? 'First session only' : 'Full access'}</Badge><Badge tone="blue">{sessions.length} lessons</Badge></div>}
+      {level && <div className="row" style={{ marginTop: '.2rem' }}><Badge tone={partial ? 'muted' : 'green'}>{partial ? 'أول سيشن بس' : 'مفتوح كامل'}</Badge><Badge tone="blue">{sessions.length} دروس</Badge></div>}
     </Card>
-    {partial && <div className="note">This level is outside your allowed range, so only its first session is open. Contact us to unlock the full level.</div>}
+    {partial && <div className="note">المستوى ده بره النطاق المسموح ليك، فأول سيشن بس هي المفتوحة. تواصل معنا عشان نفتحلك المستوى كامل.</div>}
     {level && sessions.length ? <div className="grid g2">{sessions.map((s) => {
       const sessionLocked = !admin && !sessionOpen(user, s, data.levels);
       const wordCount = data.dictionary.filter((w) => (w.sessionIds || []).includes(s.id)).length;
-      const grammarTitle = (s.sections.find((x) => /grammar/i.test(x.title))?.title || 'Grammar').replace(/^Grammar\s*[—-]\s*/i, '');
+      const grammarTitle = (s.sections.find((x) => /grammar/i.test(x.title))?.title || 'الجرامر').replace(/^Grammar\s*[—-]\s*/i, '');
       return <Card key={s.id} className="material-card">
-        <div className="brief-kicker">Lesson {s.order}</div>
+        <div className="brief-kicker">الدرس {s.order}</div>
         <h3>{s.title}</h3>
         <p className="muted" style={{ marginBottom: '.7rem' }}>{s.topic}</p>
         <div className="row" style={{ marginBottom: '.8rem' }}>
-          <Badge tone="blue">{wordCount} words</Badge>
+          <Badge tone="blue">{wordCount} كلمة</Badge>
           <Badge>{grammarTitle.slice(0, 42)}</Badge>
         </div>
         <div className="row">
-          <Badge tone={sessionLocked ? 'muted' : 'green'}>{sessionLocked ? '🔒 Locked' : 'Ready'}</Badge>
+          <Badge tone={sessionLocked ? 'muted' : 'green'}>{sessionLocked ? '🔒 مقفول' : 'جاهز'}</Badge>
           {materialPdf(s) && <a className="btn btn-ghost btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>PDF</a>}
-          <Button size="sm" disabled={sessionLocked} onClick={() => go(`/session/${s.id}`)}>{sessionLocked ? 'Locked' : 'Open lesson'}</Button>
+          <Button size="sm" disabled={sessionLocked} onClick={() => go(`/session/${s.id}`)}>{sessionLocked ? 'مقفول' : 'افتح الدرس'}</Button>
         </div>
       </Card>;
-    })}</div> : <Empty icon="📂" title="No materials in this level" hint="Materials appear here once lessons are added." />}
+    })}</div> : <Empty icon="📂" title="مفيش ماتيريال في المستوى ده" hint="الماتيريال هتظهر هنا أول ما الدروس تتضاف." />}
   </div>;
 }
 
@@ -938,20 +986,20 @@ export function LevelExamPage({ levelId }: any) {
   }
 
   if (result) return <Card className="stack">
-    <h2>Level test complete</h2>
+    <h2>اختبار المستوى خلص</h2>
     <div className={result.pending ? 'note' : 'result-good'}><strong>Score: {result.auto} out of {result.max}</strong>{result.pending > 0 && <div>{result.pending} written answers are waiting for admin review.</div>}</div>
-    <div className="row"><Button onClick={() => go('/roadmap')}>Back to roadmap</Button></div>
+    <div className="row"><Button onClick={() => go('/roadmap')}>رجوع للخريطة</Button></div>
   </Card>;
 
   return <div className="stack">
-    <div className="row"><button className="icon-btn" onClick={() => go('/roadmap')}>← Roadmap</button></div>
+    <div className="row"><button className="icon-btn" onClick={() => go('/roadmap')}>→ الخريطة</button></div>
     <Card><h1>Level test: {level?.title || levelId}</h1><p className="muted">Multiple choice and writing questions from all {data.sessions.filter((s) => s.levelId === levelId).length} sessions. Written answers need admin approval.</p></Card>
-    {locked && <div className="note">🔒 This level is locked. Ask your admin to unlock it before taking the test.</div>}
+    {locked && <div className="note">🔒 المستوى ده مقفول. اطلب من الأدمن يفتحه قبل ما تمتحن.</div>}
     {qs.map((q, i) => <Card key={q.id}>
       <div className="row between"><strong>{i + 1}. {q.prompt}</strong><Badge>{q.points} pts</Badge></div>
       {(q.type === 'mcq' || q.type === 'truefalse') && <div style={{ marginTop: '.7rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${answers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={answers[q.id] === o} onChange={() => setAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>}
-      {(q.type === 'short' || q.type === 'fill') && <textarea style={{ marginTop: '.7rem' }} value={answers[q.id] || ''} onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))} placeholder="Write your answer in English…" disabled={locked} />}
+      {(q.type === 'short' || q.type === 'fill') && <textarea style={{ marginTop: '.7rem' }} value={answers[q.id] || ''} onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))} placeholder="اكتب إجابتك بالإنجليزي…" disabled={locked} />}
     </Card>)}
-    <Card><div className="between"><span className="muted">{qs.length} questions</span><Button onClick={submit} disabled={locked || !qs.length}>Submit test</Button></div></Card>
+    <Card><div className="between"><span className="muted">{qs.length} questions</span><Button onClick={submit} disabled={locked || !qs.length}>سلّم الاختبار</Button></div></Card>
   </div>;
 }

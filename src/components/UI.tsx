@@ -21,7 +21,7 @@ export function SectionTitle({ title, action }: any) {
 export function Empty({ icon = '📭', title, hint }: any) {
   return <div className="empty"><div className="empty-icon">{icon}</div><h3>{title}</h3>{hint && <p>{hint}</p>}</div>;
 }
-export function Loading({ label = 'Loading...' }: any) {
+export function Loading({ label = 'بنحمّل...' }: any) {
   return <div className="loading"><span className="spinner" /> {label}</div>;
 }
 export function Tabs({ tabs, active, onChange }: any) {
@@ -39,7 +39,7 @@ export function Modal({ open, title, onClose, children }: any) {
   if (!open) return null;
   return <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
     <div className="modal" role="dialog" aria-modal="true">
-      <div className="modal-head"><h3>{title}</h3><button className="icon-btn" onClick={onClose} aria-label="Close">✕</button></div>
+      <div className="modal-head"><h3>{title}</h3><button className="icon-btn" onClick={onClose} aria-label="إغلاق">✕</button></div>
       <div className="modal-body">{children}</div>
     </div>
   </div>;
@@ -56,6 +56,6 @@ export function useToast() {
   const [message, setMessage] = useState('');
   return { message, show: setMessage, node: <Toast message={message} onDone={() => setMessage('')} /> };
 }
-export const fmtDate = (d?: string) => d ? new Date(d).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
-export const fmtDay = (d?: string) => d ? new Date(d).toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' }) : '—';
+export const fmtDate = (d?: string) => d ? new Date(d).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+export const fmtDay = (d?: string) => d ? new Date(d).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' }) : '—';
 export const isLate = (d?: string) => d ? new Date(d).getTime() < Date.now() : false;

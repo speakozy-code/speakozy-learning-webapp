@@ -19,8 +19,8 @@ export default function Login() {
     e?.preventDefault();
     setError('');
     if (mode === 'signup') {
-      if (password.length < 6) { setError('Password must be at least 6 characters'); return; }
-      if (password !== confirm) { setError('Passwords do not match'); return; }
+      if (password.length < 6) { setError('الباسورد لازم يكون 6 حروف على الأقل'); return; }
+      if (password !== confirm) { setError('الباسورد مش متطابق'); return; }
     }
     setBusy(true);
     try {
@@ -28,7 +28,7 @@ export default function Login() {
       else await login(email.trim(), password);
       go('/');
     } catch (err: any) {
-      setError(err?.message?.includes('auth/') ? 'Invalid email or password' : (err?.message || 'Could not continue, please try again'));
+      setError(err?.message?.includes('auth/') ? 'إيميل أو باسورد غلط' : (err?.message || 'مش قادرين نكمل، جرّب تاني'));
     } finally { setBusy(false); }
   }
 
@@ -43,10 +43,10 @@ export default function Login() {
     <div className="auth-brand"><span className="brand-dot" /> SPEAKOZY</div>
     <div>
       <h1 dir="ltr" className="en">Anyone Can Speak English!</h1>
-      <p>Learn English by speaking, not memorizing. Short sessions, clear content, and a plan that follows you step by step.</p>
+      <p>اتعلم إنجليزي بالممارسة مش بالحفظ. سيشنات قصيرة، محتوى واضح، وخطة ماشية معاك خطوة بخطوة.</p>
     </div>
     <div className="row auth-points">
-      <span>Organized levels</span><span>Lesson-linked quizzes</span><span>Teacher-supervised grading</span>
+      <span>مستويات منظمة</span><span>كويزات مرتبطة بالدرس</span><span>تصحيح بإشراف المدرب</span>
     </div>
   </>;
 
@@ -56,26 +56,26 @@ export default function Login() {
       <div className="auth-card">
         <div className="auth-mobile-hero">{hero}</div>
         <div className="auth-tabs">
-          <button className={`auth-tab ${mode === 'signin' ? 'active' : ''}`} onClick={() => { setMode('signin'); setError(''); }}>Sign In</button>
-          <button className={`auth-tab ${mode === 'signup' ? 'active' : ''}`} onClick={() => { setMode('signup'); setError(''); }}>Create account</button>
+          <button className={`auth-tab ${mode === 'signin' ? 'active' : ''}`} onClick={() => { setMode('signin'); setError(''); }}>تسجيل الدخول</button>
+          <button className={`auth-tab ${mode === 'signup' ? 'active' : ''}`} onClick={() => { setMode('signup'); setError(''); }}>إنشاء حساب</button>
         </div>
-        <h2>{mode === 'signin' ? 'Welcome back' : 'Join Speakozy'}</h2>
-        <p className="muted">{mode === 'signin' ? 'Sign in to continue your learning plan.' : 'Create your account and start with the first session of any level.'}</p>
-        {demo && <div className="note" style={{ margin: '1rem 0' }}>Demo mode: accounts are stored on this device. Connect the live service for real accounts.</div>}
+        <h2>{mode === 'signin' ? 'أهلًا بعودتك' : 'انضم لـ Speakozy'}</h2>
+        <p className="muted">{mode === 'signin' ? 'سجّل دخول عشان تكمل خطة تعلمك.' : 'اعمل حسابك وابدأ بأول سيشن من أي مستوى.'}</p>
+        {demo && <div className="note" style={{ margin: '1rem 0' }}>وضع تجريبي: الحسابات محفوظة على الجهاز ده. وصّل الخدمة الحقيقية عشان حسابات فعلية.</div>}
         <form onSubmit={submit}>
-          {mode === 'signup' && <Field label="Name"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required autoComplete="name" /></Field>}
-          <Field label="Email"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required autoComplete="username" /></Field>
-          <Field label="Password"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} /></Field>
-          {mode === 'signup' && <Field label="Confirm password"><input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" required autoComplete="new-password" /></Field>}
+          {mode === 'signup' && <Field label="الاسم"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="اسمك" required autoComplete="name" /></Field>}
+          <Field label="الإيميل"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required autoComplete="username" /></Field>
+          <Field label="الباسورد"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} /></Field>
+          {mode === 'signup' && <Field label="تأكيد الباسورد"><input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" required autoComplete="new-password" /></Field>}
           {error && <div className="result-bad" style={{ marginBottom: '.8rem' }}>{error}</div>}
-          <Button type="submit" disabled={busy} style={{ width: '100%' }}>{busy ? 'Please wait...' : (mode === 'signin' ? 'Sign In' : 'Create account')}</Button>
+          <Button type="submit" disabled={busy} style={{ width: '100%' }}>{busy ? 'لحظة...' : (mode === 'signin' ? 'تسجيل الدخول' : 'إنشاء حساب')}</Button>
         </form>
-        <a className="auth-landing" href={LANDING} target="_blank" rel="noreferrer">Back to Speakozy home</a>
+        <a className="auth-landing" href={LANDING} target="_blank" rel="noreferrer">الرجوع لصفحة Speakozy</a>
         {demo && <div className="demo-box">
-          <div className="muted" style={{ fontSize: '.82rem' }}>Ready demo accounts (click to fill in the details):</div>
+          <div className="muted" style={{ fontSize: '.82rem' }}>حسابات تجريبية جاهزة (اضغط عشان تتملي البيانات):</div>
           <div className="demo-row">
-            <Button variant="ghost" size="sm" onClick={() => quick('student')}>Demo Student</Button>
-            <Button variant="ghost" size="sm" onClick={() => quick('admin')}>Demo Admin</Button>
+            <Button variant="ghost" size="sm" onClick={() => quick('student')}>طالب تجريبي</Button>
+            <Button variant="ghost" size="sm" onClick={() => quick('admin')}>أدمن تجريبي</Button>
           </div>
         </div>}
       </div>

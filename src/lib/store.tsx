@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { AppData, User } from '../types';
 import { seedData } from './seed';
+import { LEVEL_TASKS } from './levelTasks';
 import { uid, today, addScoreOnce, buildStudentAccount } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
-import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbCurrentAuth, sbEnsureProfile, sbSaveMyProfile } from './supabase';
+import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbCurrentAuth, sbEnsureProfile, sbSaveMyProfile, sbChangePassword, sbUpsertRecord, sbDeleteRecord } from './supabase';
 import { englishify } from './translate';
 
 const KEY = 'speakozy-demo-v11';
@@ -17,11 +18,16 @@ function emptyData(): AppData {
 function readDemo(): AppData {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return englishify(JSON.parse(raw) as AppData);
+    if (raw) return withLevelTasks(englishify(JSON.parse(raw) as AppData));
   } catch {}
   const seeded = seedData();
   saveDemo(seeded);
-  return englishify(seeded);
+  return withLevelTasks(englishify(seeded));
+}
+// التاسكات المستوردة من مواقع المستويات مصدرها الكود؛ بتندمج مع أي تاسكات مخصصة من الأدمن.
+function withLevelTasks(d: AppData): AppData {
+  const ids = new Set(LEVEL_TASKS.map((t) => t.id));
+  return { ...d, tasks: [...LEVEL_TASKS, ...((d.tasks || []).filter((t) => !ids.has(t.id)))] };
 }
 function saveDemo(data: AppData) {
   try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
@@ -34,6 +40,7 @@ type Ctx = {
   logout: () => Promise<void>;
   setUser: (u: User | null) => void;
   saveProfile: (updates: { avatar?: string; name?: string }) => Promise<void>;
+  changePassword: (newPassword: string) => Promise<void>;
   put: (collectionName: string, value: any) => Promise<void>;
   remove: (collectionName: string, id: string) => Promise<void>;
   putSettings: (s: AppData['settings']) => Promise<void>;
@@ -54,7 +61,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   async function refresh() {
     if (demo) { setData(readDemo()); return; }
     const loaded = CLOUD === 'supabase' ? await sbLoadAll(COLLECTIONS) : await fbLoadAll(COLLECTIONS);
-    setData(englishify({ ...emptyData(), ...loaded } as AppData));
+    setData(withLevelTasks(englishify({ ...emptyData(), ...loaded } as AppData)));
   }
 
   useEffect(() => {
@@ -163,6 +170,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser({ ...user, ...updates });
   }
 
+  const FAST_KEYS = ['progress', 'attempts', 'taskCompletions', 'savedWords', 'notificationReads'];
   async function put(collectionName: string, value: any) {
     const id = value.id || uid();
     const record = { ...value, id };
@@ -174,6 +182,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       saveDemo(next);
       setData(next);
     } else if (CLOUD === 'supabase') {
+      if (user?.role === 'student' && FAST_KEYS.includes(collectionName)) {
+        // تحديث فوري للواجهة + سفرة واحدة للخادم
+        setData((prev) => {
+          const list = ((prev as any)[collectionName] || []) as any[];
+          const idx = list.findIndex((x) => x.id === id);
+          const nextList = idx >= 0 ? list.map((x) => (x.id === id ? record : x)) : [...list, record];
+          return { ...prev, [collectionName]: nextList } as AppData;
+        });
+        await sbUpsertRecord(collectionName, record);
+        return;
+      }
       await sbWrite(collectionName, id, record);
       await refresh();
     } else {
@@ -189,12 +208,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       saveDemo(next);
       setData(next);
     } else if (CLOUD === 'supabase') {
+      if (user?.role === 'student' && FAST_KEYS.includes(collectionName)) {
+        setData((prev) => ({ ...prev, [collectionName]: (((prev as any)[collectionName] || []) as any[]).filter((x) => x.id !== id) } as AppData));
+        await sbDeleteRecord(collectionName, id);
+        return;
+      }
       await sbDelete(collectionName, id);
       await refresh();
     } else {
       await fbDelete(collectionName, id);
       await refresh();
     }
+  }
+
+  async function changePassword(newPassword: string) {
+    if (demo) {
+      if (!user) return;
+      const d = readDemo();
+      const me = d.users.find((u) => u.id === user.id);
+      if (me) { me.demoPassword = newPassword; saveDemo(d); setData(d); setUser({ ...me }); }
+      return;
+    }
+    if (CLOUD === 'supabase') { await sbChangePassword(newPassword); return; }
+    throw new Error('Password change needs the live account service');
   }
 
   async function putSettings(s: AppData['settings']) {
@@ -226,5 +262,5 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }
 
-  return <AppCtx.Provider value={{ user, ready, demo, data, login, signup, logout, setUser, saveProfile, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
+  return <AppCtx.Provider value={{ user, ready, demo, data, login, signup, logout, setUser, saveProfile, changePassword, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
 }

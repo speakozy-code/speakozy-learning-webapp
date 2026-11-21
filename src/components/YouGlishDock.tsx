@@ -27,6 +27,7 @@ export function YouGlishDock({
     const q = youglishWidgetQuery(word, accent);
     let dead = false;
     setStatus('loading');
+    document.body.classList.add('yg-open');
     (async () => {
       try {
         await loadWidget();
@@ -34,9 +35,14 @@ export function YouGlishDock({
         const el = document.getElementById(hostId);
         if (!el) return;
         el.innerHTML = '';
+        const frame = el.parentElement;
+        const fw = frame?.clientWidth || el.clientWidth || 640;
+        const fh = frame?.clientHeight || el.clientHeight || 360;
+        // الفيديو 16:9 — نصغّر عرض الودجيت لو الارتفاع مش كافي عشان الكنترولات ما تتقصش
+        const w = Math.max(280, Math.min(fw, Math.floor((fh - 130) * 16 / 9)));
         const widget = new (window as any).YG.Widget(hostId, {
-          width: Math.max(280, el.clientWidth || 640),
-          height: Math.max(240, el.clientHeight || 360),
+          width: w,
+          height: Math.max(240, fh),
           components: 88,
           autoStart: 1,
         });
@@ -49,26 +55,26 @@ export function YouGlishDock({
         }
       }
     })();
-    return () => { dead = true; };
+    return () => { dead = true; document.body.classList.remove('yg-open'); };
   }, [word, accent, hostId]);
   return (
-    <div className="yg-dock" role="dialog" aria-label={`Hear ${word} on YouGlish`}>
+    <div className="yg-dock" role="dialog" aria-label={`اسمع كلمة ${word} على YouGlish`}>
       <div className="yg-dock-head">
         <div className="yg-dock-title">
           <Play size={16} />
           <strong className="en" dir="ltr">{word}</strong>
-          <span className="muted">in real speech</span>
+          <span className="muted">في كلام حقيقي</span>
         </div>
         <div className="yg-dock-accents">
           {YOUGLISH_ACCENTS.map((a) => (
             <button key={a.code} className={`yg-btn ${accent === a.code ? 'is-on' : ''}`} onClick={() => onAccent(a.code)}>{a.label}</button>
           ))}
         </div>
-        <button className="icon-btn" onClick={onClose} aria-label="Close pronunciation"><X size={18} /></button>
+        <button className="icon-btn" onClick={onClose} aria-label="إغلاق النطق"><X size={18} /></button>
       </div>
-      <div id={hostId} className="yg-frame" />
-      {status === 'loading' && <p className="muted" style={{ padding: '0 1rem .8rem' }}>Loading YouGlish…</p>}
-      {status === 'error' && <p className="note" style={{ margin: '.6rem 1rem 1rem' }}>YouGlish could not load in this panel. The word was spoken on this page instead.</p>}
+      <div className="yg-frame"><div id={hostId} className="yg-host" /></div>
+      {status === 'loading' && <p className="muted" style={{ padding: '0 1rem .8rem' }}>بنحمّل YouGlish…</p>}
+      {status === 'error' && <p className="note" style={{ margin: '.6rem 1rem 1rem' }}>YouGlish ما اشتغلش في اللوحة دي. اتنطقت الكلمة في الصفحة بدلًا منه.</p>}
     </div>
   );
 }

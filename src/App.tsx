@@ -4,13 +4,15 @@ import { Loading, Toast, useToast } from './components/UI';
 import Login from './pages/Login';
 import { Layout } from './components/Layout';
 import { StudentDashboard, Roadmap, SessionPage, QuizPage, LevelExamPage, DictionaryPage, TasksPage, NotificationsPage, LeaderboardPage, ProfilePage, MaterialsPage } from './pages/Student';
+import TrialPage from './pages/Trial';
+import ShadowingPage from './pages/Shadowing';
 import { AdminDashboard, StudentsPage, CurriculumPage, ContentPage, GrammarStudioPage, QuizzesPage, ReviewsPage, OperationsPage, AdminSettingsPage, CertificatesPage, AdminWordsPage } from './pages/Admin';
 
 class ErrorBoundary extends React.Component<any, { error: any }> {
   state = { error: null as any };
   static getDerivedStateFromError(error: any) { return { error }; }
   render() {
-    if (this.state.error) return <div className="card"><h2>An error occurred on this page</h2><pre dir="ltr" style={{ whiteSpace: 'pre-wrap', fontSize: '.8rem' }}>{String(this.state.error?.stack || this.state.error)}</pre></div>;
+    if (this.state.error) return <div className="card"><h2>حصلت مشكلة في الصفحة دي — اعمل تحديث للصفحة وبياناتك في أمان</h2><pre dir="ltr" style={{ whiteSpace: 'pre-wrap', fontSize: '.8rem' }}>{String(this.state.error?.stack || this.state.error)}</pre></div>;
     return this.props.children;
   }
 }
@@ -35,8 +37,11 @@ export default function App() {
   const route = useRoute();
   const toast = useToast();
 
-  if (!ready) return <Loading label="Preparing Speakozy..." />;
-  if (!user) return <><Login />{toast.node}</>;
+  if (!ready) return <Loading label="بنجهز Speakozy..." />;
+  if (!user) {
+    if (route === '/trial') return <><TrialPage />{toast.node}</>;
+    return <><Login />{toast.node}</>;
+  }
 
   const parts = route.split('/').filter(Boolean);
   const isAdminArea = parts[0] === 'admin';
@@ -71,6 +76,8 @@ export default function App() {
       case 'notifications': page = <NotificationsPage />; break;
       case 'leaderboard': page = <LeaderboardPage />; break;
       case 'profile': page = <ProfilePage />; break;
+      case 'trial': page = <TrialPage />; break;
+      case 'shadowing': page = <ShadowingPage />; break;
       default: page = <StudentDashboard />;
     }
   }

@@ -74,6 +74,25 @@ export async function sbSaveMyProfile(updates: { avatar?: string; name?: string 
   if (error) throw error;
 }
 
+export async function sbChangePassword(newPassword: string): Promise<void> {
+  if (!sb) throw new Error('supabase-not-configured');
+  const { error } = await sb.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+}
+
+// كتابة سريعة بسفرة واحدة للخادم — من غير تحميل المستند كله.
+export async function sbUpsertRecord(collectionName: string, record: any): Promise<void> {
+  if (!sb) return;
+  const { error } = await sb.rpc('upsert_student_record', { p_key: collectionName, p_record: record });
+  if (error) throw error;
+}
+
+export async function sbDeleteRecord(collectionName: string, id: string): Promise<void> {
+  if (!sb) return;
+  const { error } = await sb.rpc('delete_student_record', { p_key: collectionName, p_id: id });
+  if (error) throw error;
+}
+
 export async function sbLoadDoc(): Promise<any> {
   if (!sb) return {};
   const { data: auth } = await sb.auth.getUser();

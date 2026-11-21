@@ -103,12 +103,14 @@ t('admin grants student access by email only, no password', () => {
   assert.throws(() => buildStudentAccount({ name: 'A', email: 'nope', levelId: 'l1', maxLevelId: 'l1' }));
 });
 
-t('E2 level tasks: 16 tasks across 4 weeks with instructions', () => {
-  assert.equal(LEVEL_TASKS.length, 16);
-  assert.ok(LEVEL_TASKS.every((x) => x.targetType === 'level' && x.targetId === 'l2'));
-  assert.deepEqual([...new Set(LEVEL_TASKS.map((x) => x.week))].sort(), [1, 2, 3, 4]);
+t('level tasks imported for 9 levels, no shadowing, all with instructions', () => {
+  assert.equal(LEVEL_TASKS.length, 143);
+  const levels = [...new Set(LEVEL_TASKS.map((x) => x.targetId))].sort();
+  assert.deepEqual(levels, ['l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10'].sort());
+  assert.ok(LEVEL_TASKS.every((x) => x.targetType === 'level'));
   assert.ok(LEVEL_TASKS.every((x) => (x.instructions || []).length >= 1));
-  assert.ok(LEVEL_TASKS.every((x) => x.badge && x.topic && x.grammar));
+  assert.ok(LEVEL_TASKS.every((x) => !/shadowing/i.test(x.badge + ' ' + x.title)));
+  assert.equal(LEVEL_TASKS.filter((x) => x.targetId === 'l2').length, 16);
 });
 
 console.log(`\n${pass} lesson-ui checks passed`);

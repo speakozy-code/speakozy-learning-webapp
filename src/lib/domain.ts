@@ -18,12 +18,12 @@ export function gradeQuestion(q: Question, answer: string): { score: number; aut
 export function sessionStatus(data: AppData, session: Session, studentId: string) {
   const prog = data.progress.filter((p) => p.studentId === studentId && p.sessionId === session.id);
   const attempts = data.attempts.filter((a) => a.studentId === studentId && a.sessionId === session.id);
-  if (!prog.length && !attempts.length) return { key: 'locked', label: 'Not started' };
-  if (prog.length < session.sections.length && !attempts.length) return { key: 'progress', label: 'In progress' };
-  if (attempts.some((a) => a.status === 'approved')) return { key: 'approved', label: 'Approved' };
-  if (attempts.some((a) => a.status === 'pending')) return { key: 'review', label: 'Awaiting review' };
-  if (attempts.length) return { key: 'done', label: 'Quiz done' };
-  return { key: 'available', label: 'Available' };
+  if (!prog.length && !attempts.length) return { key: 'locked', label: 'لسه ما بدأتش' };
+  if (prog.length < session.sections.length && !attempts.length) return { key: 'progress', label: 'جاري المذاكرة' };
+  if (attempts.some((a) => a.status === 'approved')) return { key: 'approved', label: 'معتمد' };
+  if (attempts.some((a) => a.status === 'pending')) return { key: 'review', label: 'منتظر المراجعة' };
+  if (attempts.length) return { key: 'done', label: 'الكويز خلص' };
+  return { key: 'available', label: 'متاح' };
 }
 
 export function levelProgress(data: AppData, levelId: string, studentId: string) {
