@@ -55,6 +55,10 @@ export function Layout({ current, children }: { current: string; children: React
 
   const side = <aside className={`side ${open ? 'open' : ''}`}>
     <div className="brand"><span className="brand-dot" /> SPEAKOZY</div>
+    {!admin && <div className="side-onboard">
+      <div className="row"><span className="avatar">{user.avatar || user.name.charAt(0)}</span><div><strong>{user.name}</strong><div className="muted" style={{ fontSize: '.75rem' }}>{user.subscribed === false ? 'غير مشترك' : 'مشترك'}</div></div></div>
+      <div className="row" style={{ marginTop: '.5rem' }}><a className="btn btn-ghost btn-sm" href="#/profile">تعديل البيانات</a><a className="btn btn-ghost btn-sm" href="#/trial">تفاصيل الكورس</a></div>
+    </div>}
     <div className="nav-group">{admin ? 'لوحة الأدمن' : 'مساحة الطالب'}</div>
     <nav className="nav" onClick={() => setOpen(false)}>
       {nav.map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
@@ -89,7 +93,8 @@ export function Layout({ current, children }: { current: string; children: React
         </button>
         {profileMenu && <div className="profile-menu">
           <button onClick={() => { setProfileMenu(false); go('/profile'); }}>تعديل الملف الشخصي</button>
-          {!admin && user.subscribed === false && <a href="https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83" target="_blank" rel="noreferrer">الاشتراك في الكورس</a>}
+          {!admin && user.subscribed === false && <a href="https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83" target="_blank" rel="noreferrer">اشترك في الكورس</a>}
+          <button onClick={() => { setProfileMenu(false); go('/trial'); }}>تفاصيل الكورس</button>
           <button onClick={() => { setProfileMenu(false); logout(); go('/'); }}>تسجيل الخروج / دخول حساب تاني</button>
         </div>}
         <div className="sticky-progress">
@@ -106,6 +111,7 @@ export function Layout({ current, children }: { current: string; children: React
     </div>{children}</main></div>
     {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 75 }} />}
     {mobile}
+    <a className="float-wa" href="https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83" target="_blank" rel="noreferrer" aria-label="واتساب">💬</a>
     <button className="to-top" onClick={() => { const main = document.querySelector('.main'); if (main) main.scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="العودة لأعلى">↑</button>
     <Modal open={bell} title="الإشعارات" onClose={() => setBell(false)}>
       {notes.length ? <div className="stack">{notes.map((n) => <div key={n.id} className="section-card">

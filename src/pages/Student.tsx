@@ -58,7 +58,7 @@ export function StudentDashboard() {
     <Card style={{ background: 'linear-gradient(135deg,#0b1220,#16243c)', color: '#fff', border: 0 }}>
       <div className="between">
         <div><div className="muted" style={{ color: '#9fb0c9' }}>أهلًا {user.name} 👋</div><h1 style={{ marginTop: '.35rem' }}>جاهز تكمل من حيث وقفت؟</h1>
-          <p className="home-mission">رسالتنا: نساعد أكثر من مليون متعلم يتكلم إنجليزي بثقة — التعليم عندنا متاح وفعال وممتع للجميع. إحنا أكاديمية متخصصة في المحادثة: جلسات لايف، تاسكات يومية، ومتابعة شخصية خطوة بخطوة.</p>
+          <p className="home-mission">رسالتنا: نساعد أكثر من مليون متعلم يتكلم إنجليزي بثقة — التعليم عندنا متاح وفعال وممتع للجميع. إحنا أكاديمية متخصصة في تعليم اللغة الإنجليزية: جلسات لايف، تاسكات يومية، ومتابعة شخصية خطوة بخطوة.</p>
           <div className="row" style={{ marginTop: '.8rem' }}>
             <Badge tone="green">{level?.title || 'مفيش مستوى'}</Badge>
             <span style={{ color: '#b8c4d6', fontSize: '.85rem' }}>{user.subscribed === false ? 'اشترك عشان تفتح المستويات كاملة' : `مفتوح ليك كامل: ${data.levels.filter((l) => levelFullyOpen(user, l, data.levels)).length} من ${data.levels.length} مستويات`}</span>
@@ -145,7 +145,9 @@ export function Roadmap() {
     </Card>
     <Card className="roadmap-card">
       <SectionTitle title="المستويات" action={<Badge tone="blue">{levels.length} مستوى — تصنيف CEFR العالمي</Badge>} />
-      {user.subscribed === false && <div className="note">تقدر تتصفح كل المستويات من البداية بتقسيمها العالمي — اشترك عشان تفتح كل الجلسات.</div>}
+      {user.subscribed === false && <><div className="note">تقدر تتصفح كل المستويات من البداية بتقسيمها العالمي — اشترك عشان تفتح كل الجلسات.</div>
+        <Card className="shadow-inline"><div className="row between"><span>🎧 تاسكات يومية هتخليك تتكلم إنجليزي كل يوم وتوصل لهدفك أسرع — ابدأ معانا الشادوينج.</span>
+          <a className="btn btn-primary btn-sm" href="https://wa.me/201091060951?text=%D8%B9%D8%A7%D9%88%D8%B2%20%D8%A3%D8%A8%D8%AF%D8%A3%20%D8%A7%D9%84%D8%B4%D8%A7%D8%AF%D9%88%D9%8A%D9%86%D8%AC" target="_blank" rel="noreferrer">واتساب</a></div></Card></>}
       <div className="roadmap-map">
         {levels.map((l, i) => {
           const sessions = data.sessions.filter((s) => s.levelId === l.id).sort((a, b) => a.order - b.order);
@@ -330,7 +332,9 @@ export function SessionPage({ sessionId }: any) {
       <div><div className="muted">Session {s.order} · {data.levels.find((l) => l.id === s.levelId)?.title}</div><h1>{s.title}</h1><p className="muted">{s.topic} · {fmtDate(s.dueAt)}</p></div>
       <Badge tone={locked ? 'muted' : statusTone[st.key]}>{locked ? '🔒 مقفول' : st.label}</Badge>
     </Card>
-    {locked && <div className="note">🔒 تقدر تقرأ كل حاجة في السيشن دي، بس هي مقفولة لحسابك. اطلب من الأدمن يفتح المستوى عشان تذاكر وتحفظ تقدمك.</div>}
+    {locked && <div className="note">🔒 تقدر تقرأ كل حاجة في السيشن دي، بس هي مقفولة لحسابك.
+        {user.subscribed === false && <div className="row" style={{ marginTop: '.6rem' }}><a className="btn btn-primary btn-sm" href="https://wa.me/201091060951?text=%D8%B9%D8%A7%D9%88%D8%B2%20%D8%A3%D8%B3%D8%AC%D9%84%20%D9%81%D9%8A%20%D8%A7%D9%84%D9%83%D9%88%D8%B1%D8%B3%20%D8%B9%D8%B4%D8%A7%D9%86%20%D8%A3%D9%83%D9%85%D9%84%20%D9%85%D8%B9%D8%A7%D9%83%D9%85" target="_blank" rel="noreferrer">سجّل في الكورس</a></div>}
+      </div>}
     <Card className="study-progress sticky-progress-session">
       <div className="between"><span className="muted">تقدم السيشن · {done.filter((d) => d.startsWith(`${s.id}-`) || d.startsWith('word:')).length} من {totalParts} جزء خلص</span><strong>{pct}%</strong></div>
       <div className="progress-track"><span style={{ width: `${pct}%` }} /></div>
@@ -347,10 +351,10 @@ export function SessionPage({ sessionId }: any) {
       <a className="btn btn-ghost btn-sm" href={s.driveUrl} target="_blank" rel="noreferrer">افتح الملف ↗</a>
     </Card>}
     <div className="lesson-tabs">{tabs.map((t) => <button key={t.id} className={`tab ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>{t.label}</button>)}</div>
-    <Card className="shadow-inline">
-      <div className="row between"><span>🎧 {tab === 'vocabulary' ? 'عاوز تبدأ معانا الشادوينج؟ ردّد الكلمات دي ورا المتحدث.' : tab === 'grammar' ? 'عاوز تبدأ معانا الشادوينج؟ قول الجمل ورا المتحدث.' : tab === 'practice' ? 'عاوز تبدأ معانا الشادوينج؟ سجّل صوتك و ابعته.' : tab === 'quiz' ? 'عاوز تبدأ معانا الشادوينج؟ راجع الكلمات قبل الكويز.' : 'عاوز تبدأ معانا الشادوينج؟ اسمع السيشن وردّد ورا المتحدث.'}</span>
+    {user.subscribed === false && <Card className="shadow-inline">
+      <div className="row between"><span>🎧 {tab === 'vocabulary' ? 'عرف كلمات أكتر واستخدمها في كلامك.' : tab === 'grammar' ? 'كمّل وتخلي الجرامر أسهل وميبقاش عقدة.' : tab === 'practice' ? 'تاسكات يومية هتخليك تتكلم إنجليزي كل يوم وتوصل لهدفك أسرع.' : tab === 'quiz' ? 'راجع الكلمات والجرامر قبل الكويز.' : 'اسمع السيشن وردّد ورا المتحدث.'}</span>
         <a className="btn btn-primary btn-sm" href="https://wa.me/201091060951?text=%D8%B9%D8%A7%D9%88%D8%B2%20%D8%A3%D8%A8%D8%AF%D8%A3%20%D8%A7%D9%84%D8%B4%D8%A7%D8%AF%D9%88%D9%8A%D9%86%D8%AC" target="_blank" rel="noreferrer">واتساب</a></div>
-    </Card>
+    </Card>}
     {tab === 'quiz' ? <Card>
       <div className="between"><div><h3>كويز السيشن</h3><small className="muted">9 أسئلة على الكلمات والجرامر · كمّل الفراغ</small></div>
         <Button onClick={() => go(`/quiz/${s.id}`)} disabled={!quizNine.length || locked}>{quizNine.length ? 'ابدأ الكويز' : 'مفيش أسئلة لسه'}</Button></div>
@@ -950,12 +954,12 @@ export function MaterialsPage() {
           return <option key={l.id} value={l.id}>{levelLabel(l)}</option>;
         })}
       </select></Field>
-      {level && <div className="row" style={{ marginTop: '.2rem' }}><Badge tone={partial ? 'muted' : 'green'}>{levelLabel(level)}</Badge><Badge tone="blue">{sessions.length} دروس</Badge></div>}
+      {level && <div className="row" style={{ marginTop: '.2rem' }}><Badge tone={partial ? 'muted' : 'green'}>{levelLabel(level)}</Badge><Badge tone="blue">{sessions.length} {en ? 'lessons' : 'دروس'}</Badge></div>}
     </Card>
     {level && sessions.length ? <div className="grid g2">{sessions.map((s) => {
       const sessionLocked = !admin && !sessionOpen(user, s, data.levels);
       const wordCount = data.dictionary.filter((w) => (w.sessionIds || []).includes(s.id)).length;
-      const grammarTitle = (s.sections.find((x) => /grammar/i.test(x.title))?.title || 'الجرامر').replace(/^Grammar\s*[—-]\s*/i, '');
+      const grammarTitle = (s.sections.find((x) => /grammar/i.test(x.title))?.title || (en ? 'Grammar' : 'الجرامر')).replace(/^Grammar\s*[—-]\s*/i, '');
       return <Card key={s.id} className="material-card">
         <div className="brief-kicker">{L.lesson} {s.order}</div>
         <h3>{s.title}</h3>
@@ -965,7 +969,6 @@ export function MaterialsPage() {
           <Badge>{grammarTitle.slice(0, 42)}</Badge>
         </div>
         <div className="row">
-          <Badge tone={sessionLocked ? 'muted' : 'green'}>{sessionLocked ? '🔒 ' + L.locked : L.ready}</Badge>
           {materialPdf(s) && <><a className="btn btn-primary btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{L.pdf}</a><a className="btn btn-ghost btn-sm" href={materialPdf(s)} download onClick={(e) => e.stopPropagation()}>{L.dl}</a></>}
           <Button size="sm" disabled={sessionLocked} onClick={() => go(`/session/${s.id}`)}>{sessionLocked ? L.locked : L.open}</Button>
         </div>
