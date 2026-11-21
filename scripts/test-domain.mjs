@@ -45,11 +45,19 @@ t('نطاق المستويات من أول ليفل لآخر ليفل', () => {
 });
 t('نطاق مستوى واحد: أول ليفل = آخر ليفل', () => {
   const levels = [{ id: 'l1', order: 1 }, { id: 'l7', order: 7 }, { id: 'l8', order: 8 }];
-  const u = { id: 'u', name: '', email: '', role: 'student', active: true, subscribed: false, levelId: 'l7', maxLevelId: 'l7', createdAt: '' };
+  const u = { id: 'u', name: '', email: '', role: 'student', active: true, subscribed: true, levelId: 'l7', maxLevelId: 'l7', createdAt: '' };
   assert.equal(sessionOpen(u, { id: 's', levelId: 'l7', order: 4 }, levels), true);
   assert.equal(sessionOpen(u, { id: 's', levelId: 'l1', order: 1 }, levels), true);
   assert.equal(sessionOpen(u, { id: 's', levelId: 'l1', order: 2 }, levels), false);
   assert.equal(sessionOpen(u, { id: 's', levelId: 'l8', order: 2 }, levels), false);
+});
+t('غير المشترك: أول سيشن فقط من كل ليفل حتى لو النطاق واسع', () => {
+  const levels = [{ id: 'l1', order: 1 }, { id: 'l2', order: 2 }, { id: 'l7', order: 7 }];
+  const u = { id: 'u', name: '', email: '', role: 'student', active: true, subscribed: false, levelId: 'l1', maxLevelId: 'l7', createdAt: '' };
+  assert.equal(sessionOpen(u, { id: 's', levelId: 'l1', order: 1 }, levels), true);
+  assert.equal(sessionOpen(u, { id: 's', levelId: 'l1', order: 2 }, levels), false);
+  assert.equal(sessionOpen(u, { id: 's', levelId: 'l7', order: 1 }, levels), true);
+  assert.equal(sessionOpen(u, { id: 's', levelId: 'l7', order: 3 }, levels), false);
 });
 t('النقاط لا تُحتسب مرتين لنفس النشاط', () => {
   const d = { scores:[], settings:{} };

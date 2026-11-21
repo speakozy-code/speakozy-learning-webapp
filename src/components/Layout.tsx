@@ -63,9 +63,10 @@ export function Layout({ current, children }: { current: string; children: React
     </div>
   </aside>;
 
+  const shortLabel = (l: string) => ({ 'LEVEL ROADMAP': 'Levels', 'MATERIALS': 'Materials', 'Levels & Sessions': 'Levels', 'Grammar Studio': 'Grammar', 'Review Results': 'Reviews', 'Tasks & Notifications': 'Tasks' } as Record<string, string>)[l] || l.split(' ')[0];
   const mobile = <nav className="mobile-nav">
     {nav.slice(0, 5).map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
-      <Icon size={18} /><span>{n.label.split(' ')[0]}</span>
+      <Icon size={18} /><span>{shortLabel(n.label)}</span>
     </a>; })}
     <button onClick={() => setOpen(true)}><Menu size={18} /><span>More</span></button>
   </nav>;

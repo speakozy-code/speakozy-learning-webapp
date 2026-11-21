@@ -52,6 +52,8 @@ export function levelRange(user: User, levels: { id: string; order: number }[]) 
 
 export function levelFullyOpen(user: User, level: { id: string; order: number }, levels: { id: string; order: number }[]) {
   if (user.role === 'admin') return true;
+  // غير المشترك: مفيش أي ليفل مفتوح كامل — أول سيشن بس من كل ليفل.
+  if (user.subscribed === false) return false;
   const { first, last } = levelRange(user, levels);
   return level.order >= first && level.order <= last;
 }

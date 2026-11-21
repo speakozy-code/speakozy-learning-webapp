@@ -45,11 +45,11 @@ export function StudentDashboard() {
   if (!user) return null;
   const level = data.levels.find((l) => l.id === user.levelId) || data.levels[0];
   const sessions = data.sessions.filter((s) => s.levelId === user.levelId).sort((a, b) => a.order - b.order);
-  const next = sessions.find((s) => ['available', 'progress', 'done', 'review'].includes(sessionStatus(data, s, user.id).key));
+  const next = sessions.find((s) => sessionOpen(user, s, data.levels) && sessionStatus(data, s, user.id).key !== 'approved');
   const myTasks = data.tasks.filter((t) => t.active && (t.targetType === 'all' || (t.targetType === 'student' && t.targetId === user.id)));
   const doneTaskIds = data.taskCompletions.filter((c) => c.studentId === user.id).map((c) => c.taskId);
   const late = myTasks.filter((t) => !doneTaskIds.includes(t.id) && isLate(t.dueAt));
-  const notes = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3);
+  const notes = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id || n.targetId === user.levelId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3);
   const approved = data.attempts.filter((a) => a.studentId === user.id && a.status === 'approved').length;
   const pending = data.attempts.filter((a) => a.studentId === user.id && a.status === 'pending').length;
   const pct = level ? engagementProgress(data, level.id, user.id) : 0;
@@ -60,7 +60,7 @@ export function StudentDashboard() {
         <div><div className="muted" style={{ color: '#9fb0c9' }}>Hi {user.name} 👋</div><h1 style={{ marginTop: '.35rem' }}>Ready to pick up where you left off?</h1>
           <div className="row" style={{ marginTop: '.8rem' }}>
             <Badge tone="green">{level?.title || 'No level'}</Badge>
-            <span style={{ color: '#b8c4d6', fontSize: '.85rem' }}>Full access: {data.levels.filter((l) => levelFullyOpen(user, l, data.levels)).length} of {data.levels.length} levels · other levels open their first session only</span>
+            <span style={{ color: '#b8c4d6', fontSize: '.85rem' }}>{user.subscribed === false ? 'First session of every level is open · subscribe to unlock full levels' : `Full access: ${data.levels.filter((l) => levelFullyOpen(user, l, data.levels)).length} of ${data.levels.length} levels · other levels open their first session only`}</span>
           </div>
         </div>
         <Button onClick={() => go(next ? `/session/${next.id}` : '/roadmap')}>{next ? 'Continue studying' : 'Open roadmap'}</Button>
