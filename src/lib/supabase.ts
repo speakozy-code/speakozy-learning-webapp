@@ -47,6 +47,13 @@ export async function sbCurrentUserId(): Promise<string | null> {
   return data.user?.id || null;
 }
 
+export async function sbCurrentAuth(): Promise<{ id: string; email: string } | null> {
+  if (!sb) return null;
+  const { data } = await sb.auth.getUser();
+  if (!data.user) return null;
+  return { id: data.user.id, email: (data.user.email || '').toLowerCase() };
+}
+
 export async function sbEnsureProfile(): Promise<void> {
   if (!sb) return;
   const { data } = await sb.auth.getUser();

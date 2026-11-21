@@ -3,7 +3,7 @@ import type { AppData, User } from '../types';
 import { seedData } from './seed';
 import { uid, today, addScoreOnce, buildStudentAccount } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
-import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbEnsureProfile } from './supabase';
+import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbCurrentAuth, sbEnsureProfile } from './supabase';
 import { englishify } from './translate';
 
 const KEY = 'speakozy-demo-v11';
@@ -68,15 +68,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } else {
         await refresh();
         if (CLOUD === 'supabase') {
-          const authId = await sbCurrentUserId();
-          if (authId) {
+          const auth = await sbCurrentAuth();
+          if (auth) {
+            const match = (list: any[]) => (list || []).find((u: any) => u.id === `auth-${auth.id}` || u.authId === auth.id || (u.email || '').toLowerCase() === auth.email);
             let loaded = await sbLoadAll(['users']);
-            let found = (loaded.users || []).find((u: any) => u.id === `auth-${authId}` || u.authId === authId);
+            let found = match(loaded.users);
             if (!found) {
               await sbEnsureProfile();
               await refresh();
               loaded = await sbLoadAll(['users']);
-              found = (loaded.users || []).find((u: any) => u.id === `auth-${authId}` || u.authId === authId);
+              found = match(loaded.users);
             }
             if (found) setUser(found as User);
           }
@@ -111,7 +112,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await refresh();
       const loaded = await sbLoadAll(['users']);
       const authId = await sbCurrentUserId();
-      const account = (loaded.users || []).find((u: any) => u.id === `auth-${authId}` || u.authId === authId);
+      const account = (loaded.users || []).find((u: any) => (u.email || '').toLowerCase() === email.trim().toLowerCase() || u.id === `auth-${authId}` || u.authId === authId);
       if (account) setUser(account as User);
       return;
     }
