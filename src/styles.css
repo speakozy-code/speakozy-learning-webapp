@@ -492,3 +492,26 @@ body { font-family: 'Jua', var(--font-arabic); }
 .side-onboard .avatar{width:36px;height:36px;font-size:.9rem}
 .float-wa{position:fixed;bottom:9.2rem;right:1rem;z-index:85;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#05281c;text-decoration:none;font-size:1.2rem;box-shadow:var(--shadow)}
 @media(max-width:980px){.float-wa{bottom:6.2rem}}
+
+@media(max-width:980px){
+  .side{overflow-y:auto;overscroll-behavior:contain;padding-bottom:calc(env(safe-area-inset-bottom) + 1rem);gap:.6rem}
+  .side .brand{flex:0 0 auto}
+  .side .nav{gap:.15rem;flex:0 0 auto}
+  .side .nav a{padding:.55rem .7rem;font-size:.88rem;min-height:40px}
+  .side .nav-group{margin-top:.2rem}
+  .side-foot{margin-top:auto;flex:0 0 auto;padding-top:.6rem;border-top:1px solid var(--line)}
+  .side-foot .who{padding:.3rem 0}
+}
+@media(max-width:420px){
+  .side .nav a{font-size:.82rem;padding:.5rem .6rem}
+  .side-foot .btn{padding:.5rem .7rem}
+}
+
+@media(max-width:600px){
+  .to-top{bottom:5.4rem;right:.7rem;width:38px;height:38px}
+  .float-wa{bottom:8.4rem;right:.7rem;width:38px;height:38px}
+  .content-bar-row{flex-wrap:wrap;row-gap:.5rem}
+  .user-chip{padding:.15rem}
+  .user-chip-name{display:none}
+  .sticky-points{margin-inline-start:auto}
+}
