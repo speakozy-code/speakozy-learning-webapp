@@ -6,10 +6,14 @@ import { seedData } from '../src/lib/seed.ts';
 let pass = 0;
 const t = (name, fn) => { fn(); pass++; console.log('ok -', name); };
 
-t('eleven ordered levels from E1 to Upper 2', () => {
-  assert.equal(C.levels.length, 11);
-  assert.deepEqual(C.levels.map(l => l.title), ['E1','E2','E3','Pre 1','Pre 2','Pre 3','Inter 1','Inter 2','Inter 3','Upper 1','Upper 2']);
+t('fourteen ordered levels with CEFR classification', () => {
+  assert.equal(C.levels.length, 14);
+  assert.deepEqual(C.levels.map(l => l.cefr), ['A0','A1','A1+','A2','A2+','A2++','B1','B1+','B1++','B2','B2+','B2++','C1','C1+']);
   C.levels.forEach((l, i) => assert.equal(l.order, i + 1));
+  for (const l of C.levels.slice(0, 11)) {
+    const list = C.sessions.filter(s => s.levelId === l.id);
+    assert.ok(list.length >= 2, `${l.id} sessions`);
+  }
 });
 
 t('every level has sessions with full lesson material', () => {

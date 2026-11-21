@@ -47,6 +47,10 @@ export function seedData(): AppData {
       { id: 'w1', studentId: 'stu-1', word: 'coffee', meaning: 'قهوة', review: false, createdAt: '2026-11-16T10:00:00.000Z' },
     ],
     certificates: [],
+    testimonials: [
+      { id: 'tst1', name: 'Mariem A.', level: 'E1', date: '2026-11-10', text: 'The sessions are short and I can actually speak now. I loved the group — nobody laughs when I make mistakes.', role: 'student', createdAt: '2026-11-10T10:00:00.000Z' },
+      { id: 'tst2', name: 'Yousef M.', level: 'E2', date: '2026-11-14', text: 'The daily tasks made me practise every day. The teacher explains grammar in a simple way.', role: 'student', createdAt: '2026-11-14T10:00:00.000Z' },
+    ],
     grammarNotes: NOTES,
     logs: [
       { id: 'lg1', actorId: 'admin-1', action: 'load-curriculum', target: `${LEVELS.length} levels / ${SESSIONS.length} sessions / ${DICTIONARY.length} words`, createdAt: '2026-11-18T09:00:00.000Z' },

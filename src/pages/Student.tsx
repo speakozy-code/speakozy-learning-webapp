@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, Progress, Stat, SectionTitle, Empty, Tabs, Field, Modal, fmtDate, fmtDay, isLate } from '../components/UI';
-import { sessionStatus, levelProgress, engagementProgress, sessionOpen, levelFullyOpen, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, uid, today } from '../lib/domain';
+import { sessionStatus, levelProgress, engagementProgress, sessionOpen, levelFullyOpen, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, uid, today, levelLabel, cefrOf } from '../lib/domain';
 import { go } from '../App';
 import { lookupWord, allCached, type LookupEntry } from '../lib/dictionaryProvider';
 import { grammarSlides } from '../lib/lessonContent';
@@ -37,7 +37,7 @@ const MATERIAL_PDF: Record<string, string> = {
   'l9-s7': './materials/7-%20Shopping.pdf',
 };
 function materialPdf(s: any): string {
-  return s?.pdfUrl || MATERIAL_PDF[s?.id] || (s?.id === 'l7-s8' ? './travel-b1-handout.pdf' : '');
+  return s?.pdfUrl || MATERIAL_PDF[s?.id] || `./lesson-pdfs/${s?.id}.pdf`;
 }
 
 export function StudentDashboard() {
@@ -61,7 +61,7 @@ export function StudentDashboard() {
           <p className="home-mission">رسالتنا: نساعد أكثر من مليون متعلم يتكلم إنجليزي بثقة — التعليم عندنا متاح وفعال وممتع للجميع. إحنا أكاديمية متخصصة في المحادثة: جلسات لايف، تاسكات يومية، ومتابعة شخصية خطوة بخطوة.</p>
           <div className="row" style={{ marginTop: '.8rem' }}>
             <Badge tone="green">{level?.title || 'مفيش مستوى'}</Badge>
-            <span style={{ color: '#b8c4d6', fontSize: '.85rem' }}>{user.subscribed === false ? 'أول سيشن من كل مستوى مفتوحة ليك · اشترك عشان تفتح المستويات كاملة' : `مفتوح ليك كامل: ${data.levels.filter((l) => levelFullyOpen(user, l, data.levels)).length} من ${data.levels.length} مستويات · باقي المستويات أول سيشن بس`}</span>
+            <span style={{ color: '#b8c4d6', fontSize: '.85rem' }}>{user.subscribed === false ? 'اشترك عشان تفتح المستويات كاملة' : `مفتوح ليك كامل: ${data.levels.filter((l) => levelFullyOpen(user, l, data.levels)).length} من ${data.levels.length} مستويات`}</span>
           </div>
         </div>
         <Button onClick={() => go(next ? `/session/${next.id}` : '/roadmap')}>{next ? 'كمّل مذاكرة' : 'افتح خريطة المستويات'}</Button>
@@ -144,7 +144,8 @@ export function Roadmap() {
       </div>
     </Card>
     <Card className="roadmap-card">
-      <SectionTitle title="المستويات" action={<Badge tone="blue">{levels.length} مستوى</Badge>} />
+      <SectionTitle title="المستويات" action={<Badge tone="blue">{levels.length} مستوى — تصنيف CEFR العالمي</Badge>} />
+      {user.subscribed === false && <div className="note">تقدر تتصفح كل المستويات من البداية بتقسيمها العالمي — اشترك عشان تفتح كل الجلسات.</div>}
       <div className="roadmap-map">
         {levels.map((l, i) => {
           const sessions = data.sessions.filter((s) => s.levelId === l.id).sort((a, b) => a.order - b.order);
@@ -154,7 +155,7 @@ export function Roadmap() {
           return <div key={l.id} className={`rm-level is-open ${i % 2 ? 'rm-right' : 'rm-left'}`}>
             <div className="rm-marker">{i + 1}</div>
             <div className="rm-body">
-              <div className="between"><strong>{l.title}</strong><Badge tone={full ? 'green' : 'muted'}>{full ? 'مفتوح كامل' : 'أول سيشن بس'}</Badge></div>
+              <div className="between"><strong>{levelLabel(l)}</strong><Badge tone={full ? 'green' : 'muted'}>{levelLabel(l)}</Badge></div>
               <p className="muted" style={{ margin: '.3rem 0' }}>{l.description}</p>
               <div className="rm-dots">{sessions.map((s) => { const st = sessionStatus(data, s, user.id).key; return <span key={s.id} className={`rm-dot ${st === 'approved' ? 'done' : st === 'progress' || st === 'review' || st === 'done' ? 'active' : ''}`} title={s.title} />; })}</div>
               <div className="muted" style={{ fontSize: '.8rem' }}>{approved} من {sessions.length} سيشن معتمدة · {pct}% مكتمل</div>
@@ -336,7 +337,7 @@ export function SessionPage({ sessionId }: any) {
     {materialPdf(s) && <Card>
       <SectionTitle title="ملخص العرض للمراجعة" />
       <p className="muted">نسخة PDF من كل سلايدات العرض، للمشاهدة والمراجعة بعد السيشن.</p>
-      <a className="btn btn-ghost btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer">افتح PDF ↗</a>
+      <div className="row"><a className="btn btn-primary btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer">افتح PDF ↗</a><a className="btn btn-ghost btn-sm" href={materialPdf(s)} download>نزّل PDF ⬇</a></div>
     </Card>}
     {s.driveUrl && <Card>
       <SectionTitle title="مصدر إضافي للمشاهدة" />
@@ -934,12 +935,11 @@ export function MaterialsPage() {
       <Field label="المستوى"><select value={levelId} onChange={(e) => setSelected(e.target.value)}>
         {levels.map((l) => {
           const full = admin || levelFullyOpen(user, l, data.levels);
-          return <option key={l.id} value={l.id}>{l.title}{full ? '' : ' · أول سيشن بس'}</option>;
+          return <option key={l.id} value={l.id}>{levelLabel(l)}</option>;
         })}
       </select></Field>
-      {level && <div className="row" style={{ marginTop: '.2rem' }}><Badge tone={partial ? 'muted' : 'green'}>{partial ? 'أول سيشن بس' : 'مفتوح كامل'}</Badge><Badge tone="blue">{sessions.length} دروس</Badge></div>}
+      {level && <div className="row" style={{ marginTop: '.2rem' }}><Badge tone={partial ? 'muted' : 'green'}>{levelLabel(level)}</Badge><Badge tone="blue">{sessions.length} دروس</Badge></div>}
     </Card>
-    {partial && <div className="note">المستوى ده بره النطاق المسموح ليك، فأول سيشن بس هي المفتوحة. تواصل معنا عشان نفتحلك المستوى كامل.</div>}
     {level && sessions.length ? <div className="grid g2">{sessions.map((s) => {
       const sessionLocked = !admin && !sessionOpen(user, s, data.levels);
       const wordCount = data.dictionary.filter((w) => (w.sessionIds || []).includes(s.id)).length;
@@ -954,7 +954,7 @@ export function MaterialsPage() {
         </div>
         <div className="row">
           <Badge tone={sessionLocked ? 'muted' : 'green'}>{sessionLocked ? '🔒 مقفول' : 'جاهز'}</Badge>
-          {materialPdf(s) && <a className="btn btn-ghost btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>PDF</a>}
+          {materialPdf(s) && <><a className="btn btn-primary btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>PDF ↗</a><a className="btn btn-ghost btn-sm" href={materialPdf(s)} download onClick={(e) => e.stopPropagation()}>⬇</a></>}
           <Button size="sm" disabled={sessionLocked} onClick={() => go(`/session/${s.id}`)}>{sessionLocked ? 'مقفول' : 'افتح الدرس'}</Button>
         </div>
       </Card>;

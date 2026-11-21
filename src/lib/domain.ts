@@ -147,3 +147,17 @@ export function buildStudentAccount(input: {
     avatar: input.avatar,
   };
 }
+
+// التصنيف العالمي (CEFR) بجانب كل مستوى
+const CEFR_NAMES: Record<string,string> = {
+  l1:'Elementary 1', l2:'Elementary 2', l3:'Elementary 3',
+  l8:'Pre-Intermediate 1', l9:'Pre-Intermediate 2', l10:'Pre-Intermediate 3',
+  l4:'Intermediate 1', l5:'Intermediate 2', l6:'Intermediate 3',
+  l7:'Upper-Intermediate 1', l11:'Upper-Intermediate 2', l12:'Upper-Intermediate 3',
+  l13:'Advanced 1', l14:'Advanced 2',
+};
+export function levelLabel(level: { id: string; title: string; cefr?: string }): string {
+  const name = CEFR_NAMES[level.id] || level.title;
+  return level.cefr ? `${name} (${level.cefr})` : name;
+}
+export function cefrOf(level: { cefr?: string }): string { return level.cefr || ''; }

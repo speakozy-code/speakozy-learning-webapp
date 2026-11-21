@@ -93,9 +93,9 @@ export function StudentsPage() {
       <div className="grid g2">
         <Field label="الدور"><select value={form.role || 'student'} onChange={(e) => setForm({ ...form, role: e.target.value })}><option value="student">طالب</option><option value="admin">أدمن</option></select></Field>
         <Field label="الصلاحية"><select value={form.active === false ? '0' : '1'} onChange={(e) => setForm({ ...form, active: e.target.value === '1' })}><option value="1">نشط — يقدر يسجل دخول</option><option value="0">موقوف — محظور</option></select></Field>
-        <Field label="اشتراك الكورس"><select value={form.subscribed === false ? '0' : '1'} onChange={(e) => setForm({ ...form, subscribed: e.target.value === '1' })}><option value="0">غير مشترك — أول سيشن من كل مستوى بس</option><option value="1">مشترك — وصول كامل لنطاق المستويات المسموح</option></select></Field>
+        <Field label="اشتراك الكورس"><select value={form.subscribed === false ? '0' : '1'} onChange={(e) => setForm({ ...form, subscribed: e.target.value === '1' })}><option value="0">غير مشترك</option><option value="1">مشترك — وصول كامل لنطاق المستويات المسموح</option></select></Field>
         <Field label="أول مستوى مسموح" hint="المستويات من ده لحد آخر مستوى مسموح بتفتح كامل."><select value={form.levelId || ''} onChange={(e) => setForm({ ...form, levelId: e.target.value })}>{data.levels.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}</select></Field>
-        <Field label="آخر مستوى مسموح" hint="بره النطاق ده، أول سيشن بس من كل مستوى هي المفتوحة."><select value={form.maxLevelId || ''} onChange={(e) => setForm({ ...form, maxLevelId: e.target.value })}>{data.levels.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}</select></Field>
+        <Field label="آخر مستوى مسموح" hint="المستويات بره النطاق متاحة للتصفح."><select value={form.maxLevelId || ''} onChange={(e) => setForm({ ...form, maxLevelId: e.target.value })}>{data.levels.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}</select></Field>
       </div>
       {error && <div className="note">{error}</div>}
       <div className="row between"><Button onClick={save}>احفظ الحساب</Button><Button variant="ghost" onClick={() => setEditing(null)}>إلغاء</Button></div>

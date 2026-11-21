@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Home, Map, FolderOpen, BookOpen, ListChecks, User,
   LayoutDashboard, Users, Layers, FileText, PenLine, ClipboardList,
-  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, Gift,
+  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, Gift, MessageSquareHeart,
 } from 'lucide-react';
 import { useApp } from '../lib/store';
 import { go } from '../App';
@@ -17,6 +17,7 @@ const studentNav = [
   { path: '/tasks', label: 'التاسكات', ic: ListChecks },
   { path: '/shadowing', label: 'الشادوينج', ic: Headphones },
   { path: '/trial', label: 'تجربة مجانية', ic: Gift },
+  { path: '/testimonials', label: 'آراء طلابنا', ic: MessageSquareHeart },
   { path: '/profile', label: 'البروفايل', ic: User },
 ];
 const adminNav = [
@@ -65,7 +66,7 @@ export function Layout({ current, children }: { current: string; children: React
     </div>
   </aside>;
 
-  const shortLabel = (l: string) => ({ 'خريطة المستويات': 'المستويات', 'تجربة مجانية': 'تجربة', 'المستويات والجلسات': 'المستويات', 'استوديو الجرامر': 'الجرامر', 'مراجعة النتائج': 'المراجعة', 'التاسكات والإشعارات': 'التاسكات' } as Record<string, string>)[l] || l.split(' ')[0];
+  const shortLabel = (l: string) => ({ 'خريطة المستويات': 'المستويات', 'تجربة مجانية': 'تجربة', 'آراء طلابنا': 'آراء', 'المستويات والجلسات': 'المستويات', 'استوديو الجرامر': 'الجرامر', 'مراجعة النتائج': 'المراجعة', 'التاسكات والإشعارات': 'التاسكات' } as Record<string, string>)[l] || l.split(' ')[0];
   const mobile = <nav className="mobile-nav">
     {nav.slice(0, 5).map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
       <Icon size={18} /><span>{shortLabel(n.label)}</span>

@@ -9,10 +9,10 @@ import { englishify } from './translate';
 
 const KEY = 'speakozy-demo-v11';
 const CLOUD = isSupabase ? 'supabase' : isFirebase ? 'firebase' : 'demo';
-const COLLECTIONS = ['users','levels','sessions','questions','attempts','progress','tasks','taskCompletions','notifications','scores','savedWords','dictionary','certificates','logs','grammarNotes'];
+const COLLECTIONS = ['users','levels','sessions','questions','attempts','progress','tasks','taskCompletions','notifications','scores','savedWords','dictionary','certificates','logs','grammarNotes','testimonials'];
 
 function emptyData(): AppData {
-  return { users: [], levels: [], sessions: [], questions: [], attempts: [], progress: [], tasks: [], taskCompletions: [], notifications: [], scores: [], savedWords: [], dictionary: [], certificates: [], logs: [], grammarNotes: [], settings: seedData().settings };
+  return { users: [], levels: [], sessions: [], questions: [], attempts: [], progress: [], tasks: [], taskCompletions: [], notifications: [], scores: [], savedWords: [], dictionary: [], certificates: [], logs: [], grammarNotes: [], testimonials: [], settings: seedData().settings };
 }
 
 function readDemo(): AppData {
@@ -170,7 +170,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser({ ...user, ...updates });
   }
 
-  const FAST_KEYS = ['progress', 'attempts', 'taskCompletions', 'savedWords', 'notificationReads'];
+  const FAST_KEYS = ['progress', 'attempts', 'taskCompletions', 'savedWords', 'notificationReads', 'testimonials'];
   async function put(collectionName: string, value: any) {
     const id = value.id || uid();
     const record = { ...value, id };
@@ -193,11 +193,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         await sbUpsertRecord(collectionName, record);
         return;
       }
-      await sbWrite(collectionName, id, record);
-      await refresh();
+      setData((prev) => {
+        const list = ((prev as any)[collectionName] || []) as any[];
+        const idx = list.findIndex((x) => x.id === id);
+        const nextList = idx >= 0 ? list.map((x) => (x.id === id ? record : x)) : [...list, record];
+        return { ...prev, [collectionName]: nextList } as AppData;
+      });
+      void sbWrite(collectionName, id, record).catch((e) => { console.error('write failed', e); void refresh(); });
     } else {
-      await fbWrite(collectionName, id, record);
-      await refresh();
+      setData((prev) => {
+        const list = ((prev as any)[collectionName] || []) as any[];
+        const idx = list.findIndex((x) => x.id === id);
+        const nextList = idx >= 0 ? list.map((x) => (x.id === id ? record : x)) : [...list, record];
+        return { ...prev, [collectionName]: nextList } as AppData;
+      });
+      void fbWrite(collectionName, id, record).catch((e) => { console.error('write failed', e); void refresh(); });
     }
   }
 
@@ -213,11 +223,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         await sbDeleteRecord(collectionName, id);
         return;
       }
-      await sbDelete(collectionName, id);
-      await refresh();
+      setData((prev) => ({ ...prev, [collectionName]: (((prev as any)[collectionName] || []) as any[]).filter((x) => x.id !== id) } as AppData));
+      void sbDelete(collectionName, id).catch((e) => { console.error('delete failed', e); void refresh(); });
     } else {
-      await fbDelete(collectionName, id);
-      await refresh();
+      setData((prev) => ({ ...prev, [collectionName]: (((prev as any)[collectionName] || []) as any[]).filter((x) => x.id !== id) } as AppData));
+      void fbDelete(collectionName, id).catch((e) => { console.error('delete failed', e); void refresh(); });
     }
   }
 
@@ -237,7 +247,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (demo) {
       const next = readDemo(); next.settings = s; saveDemo(next); setData(next);
     } else if (CLOUD === 'supabase') {
-      const doc = await sbLoadDoc(); doc.settings = s; await sbSaveDoc(doc);
+      setData((prev) => ({ ...prev, settings: s } as AppData));
+      void sbLoadDoc().then((doc) => { doc.settings = s; return sbSaveDoc(doc); }).catch((e) => { console.error('settings failed', e); void refresh(); });
     } else await fbWrite('settings', 'ledger', s);
   }
 

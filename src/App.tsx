@@ -6,6 +6,7 @@ import { Layout } from './components/Layout';
 import { StudentDashboard, Roadmap, SessionPage, QuizPage, LevelExamPage, DictionaryPage, TasksPage, NotificationsPage, LeaderboardPage, ProfilePage, MaterialsPage } from './pages/Student';
 import TrialPage from './pages/Trial';
 import ShadowingPage from './pages/Shadowing';
+import TestimonialsPage from './pages/Testimonials';
 import { AdminDashboard, StudentsPage, CurriculumPage, ContentPage, GrammarStudioPage, QuizzesPage, ReviewsPage, OperationsPage, AdminSettingsPage, CertificatesPage, AdminWordsPage } from './pages/Admin';
 
 class ErrorBoundary extends React.Component<any, { error: any }> {
@@ -78,6 +79,7 @@ export default function App() {
       case 'profile': page = <ProfilePage />; break;
       case 'trial': page = <TrialPage />; break;
       case 'shadowing': page = <ShadowingPage />; break;
+      case 'testimonials': page = <TestimonialsPage />; break;
       default: page = <StudentDashboard />;
     }
   }

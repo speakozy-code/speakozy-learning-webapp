@@ -468,3 +468,7 @@ body { font-family: 'Jua', var(--font-arabic); }
 @media(max-width:420px){
   .saved-grid{grid-template-columns:1fr}
 }
+
+/* Testimonials */
+.testimonial-card{border-inline-start:3px solid var(--green)}
+.testimonial-card .avatar.small{width:36px;height:36px;font-size:.9rem}

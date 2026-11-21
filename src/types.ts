@@ -11,7 +11,7 @@ export interface Section {
 }
 
 export interface Level {
-  id: string; title: string; order: number; description: string; active: boolean;
+  id: string; title: string; order: number; description: string; active: boolean; cefr?: string;
 }
 
 export interface Session {
@@ -55,4 +55,7 @@ export interface AppData {
   attempts: Attempt[]; progress: Progress[]; tasks: Task[]; taskCompletions: TaskCompletion[];
   notifications: AppNotification[]; scores: Score[]; savedWords: SavedWord[];
   dictionary: DictionaryEntry[]; certificates: Certificate[]; logs: AuditLog[]; settings: Settings; grammarNotes: GrammarNote[];
+  testimonials: Testimonial[];
 }
+
+export interface Testimonial { id: string; studentId?: string; name: string; level: string; date: string; text: string; role: 'student'|'admin'; createdAt: string; }
