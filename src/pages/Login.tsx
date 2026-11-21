@@ -50,7 +50,7 @@ export default function Login() {
       <p>اتعلم إنجليزي بالممارسة مش بالحفظ. سيشنات قصيرة، محتوى واضح، وخطة ماشية معاك خطوة بخطوة.</p>
     </div>
     <div className="row auth-points">
-      <span>مستويات منظمة</span><span>كويزات مرتبطة بالدرس</span><span>تصحيح بإشراف المدرب</span>
+      <span>سيشنات لايف ومسجلة</span><span>محتوي مخصص ليك</span><span>مستويات منظمة</span><span>كويزات مرتبطة بالدرس</span><span>تصحيح بإشراف المدرب</span>
     </div>
   </>;
 
