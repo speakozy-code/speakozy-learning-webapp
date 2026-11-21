@@ -3,7 +3,7 @@ import type { AppData, User } from '../types';
 import { seedData } from './seed';
 import { uid, today, addScoreOnce, buildStudentAccount } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
-import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbSignInWithGoogle, sbCurrentUserId, sbEnsureProfile } from './supabase';
+import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbEnsureProfile } from './supabase';
 import { englishify } from './translate';
 
 const KEY = 'speakozy-demo-v11';
@@ -31,7 +31,6 @@ type Ctx = {
   user: User | null; ready: boolean; demo: boolean; data: AppData;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   setUser: (u: User | null) => void;
   put: (collectionName: string, value: any) => Promise<void>;
@@ -128,22 +127,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(account);
   }
 
-  async function signInWithGoogle() {
-    if (!demo) { await sbSignInWithGoogle(); return; }
-    const d = readDemo();
-    const mail = 'google.student@speakozy.demo';
-    let account = d.users.find((u) => u.email.toLowerCase() === mail);
-    if (!account) {
-      const first = d.levels.slice().sort((a, b) => a.order - b.order)[0]?.id || 'l1';
-      account = buildStudentAccount({ name: 'Google Student', email: mail, demoPassword: 'google-demo', levelId: first, maxLevelId: first, subscribed: false });
-      d.users.push(account);
-      saveDemo(d);
-    }
-    localStorage.setItem('speakozy-user', account.id);
-    setData(d);
-    setUser(account);
-  }
-
   async function logout() {
     if (CLOUD === 'supabase') await sbSignOut(); else if (!demo) await fbSignOut();
     localStorage.removeItem('speakozy-user');
@@ -213,5 +196,5 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }
 
-  return <AppCtx.Provider value={{ user, ready, demo, data, login, signup, signInWithGoogle, logout, setUser, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
+  return <AppCtx.Provider value={{ user, ready, demo, data, login, signup, logout, setUser, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
 }

@@ -47,14 +47,8 @@ npm run build      # فحص أنواع + بناء الإنتاج في dist/
 4. بعد ما تختار المشروع: `firebase use --add <project>` وبعدين `firebase deploy --only hosting:speakozy-learning`.
 5. شغّل `supabase/schema.sql` في SQL Editor قبل استخدام الوضع المتصل.
 
-## تفعيل دخول جوجل
-الزرار شغال في الواجهة، بس مزوّد Google متوقف في إعدادات المصادقة لحد دلوقتي. لتفعيله:
-1. في Google Cloud Console أنشئ OAuth client من نوع «Web application».
-2. أضف هذا الرابط كـ Authorized redirect URI:
-   `https://jhcaqlhzfavpjqukaamu.supabase.co/auth/v1/callback`
-3. انسخ `Client ID` و `Client Secret` وضعهما في Supabase → Authentication → Providers → Google وشغّل المزوّد.
-4. رابط العودة بعد الدخول: `https://speakozy-code.github.io/speakozy-learning-webapp/` (موجود بالفعل في `site_url` و `uri_allow_list`).
-5. أي مستخدم جديد بجوجل لازم يتعمله ملف في `academy_state`؛ استدعاء `signup_student` بيعمل ده تلقائيًا عند التسجيل بالبريد.
+## الدخول
+التسجيل والدخول بالإيميل والباسورد فقط. دخول جوجل اتشال بقرار صاحب المشروع عشان مايبقاش مفتوح لأي حد، ومزوّد Google متوقف في إعدادات المصادقة.
 
 ## البنية
 - `src/types.ts` — مخطط البيانات (كيانات منفصلة ومترابطة).

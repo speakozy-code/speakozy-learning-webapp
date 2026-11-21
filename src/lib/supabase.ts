@@ -41,12 +41,6 @@ export async function sbSignUp(name: string, email: string, password: string) {
   if (profile.error) throw profile.error;
 }
 
-export async function sbSignInWithGoogle() {
-  if (!sb) throw new Error('supabase-not-configured');
-  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
-  if (error) throw error;
-}
-
 export async function sbCurrentUserId(): Promise<string | null> {
   if (!sb) return null;
   const { data } = await sb.auth.getUser();
