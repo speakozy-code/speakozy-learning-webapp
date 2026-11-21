@@ -394,7 +394,7 @@ body { font-family: 'Jua', var(--font-arabic); }
 .dict-suggest{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.65rem}
 .dict-suggest-item{border:1px solid var(--line);background:#12223a;color:var(--ink);border-radius:999px;padding:.28rem .7rem;cursor:pointer;font-weight:700;font-size:.82rem}
 .dict-suggest-item:hover{border-color:var(--green);color:var(--green)}
-.to-top{position:fixed;bottom:5.2rem;right:1rem;z-index:85;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--navy);color:var(--green);font-size:1.1rem;cursor:pointer;box-shadow:var(--shadow)}
+.to-top{position:fixed;bottom:5.2rem;left:1rem;z-index:85;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--navy);color:var(--green);font-size:1.1rem;cursor:pointer;box-shadow:var(--shadow)}
 
 @media(max-width:980px){
   .yg-frame,.yg-dock .ygContainer{min-height:140px}
@@ -490,7 +490,7 @@ body { font-family: 'Jua', var(--font-arabic); }
 
 .side-onboard{background:rgba(18,206,144,.08);border:1px solid rgba(18,206,144,.25);border-radius:12px;padding:.7rem}
 .side-onboard .avatar{width:36px;height:36px;font-size:.9rem}
-.float-wa{position:fixed;bottom:9.2rem;right:1rem;z-index:85;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#05281c;text-decoration:none;font-size:1.2rem;box-shadow:var(--shadow)}
+.float-wa{position:fixed;bottom:9.2rem;left:1rem;z-index:85;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#05281c;text-decoration:none;font-size:1.2rem;box-shadow:var(--shadow)}
 @media(max-width:980px){.float-wa{bottom:6.2rem}}
 
 @media(max-width:980px){
@@ -508,10 +508,14 @@ body { font-family: 'Jua', var(--font-arabic); }
 }
 
 @media(max-width:600px){
-  .to-top{bottom:5.4rem;right:.7rem;width:38px;height:38px}
+  .to-top{bottom:5.4rem;left:.7rem;width:38px;height:38px}
   .float-wa{bottom:8.4rem;right:.7rem;width:38px;height:38px}
   .content-bar-row{flex-wrap:wrap;row-gap:.5rem}
   .user-chip{padding:.15rem}
   .user-chip-name{display:none}
   .sticky-points{margin-inline-start:auto}
 }
+
+.content-bar-row{justify-content:flex-start}
+.user-chip{order:5}
+.profile-menu{inset-inline-start:auto;inset-inline-end:1rem}

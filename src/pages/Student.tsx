@@ -213,7 +213,8 @@ export function SessionPage({ sessionId }: any) {
   if (!user) return null;
   if (!s) return <Empty title="السيشن مش موجودة" hint="يمكن اتشالت أو الرابط غلط." />;
   const locked = !sessionOpen(user, s, data.levels);
-  const enMaterial = (data.levels.find((l) => l.id === s.levelId)?.order || 0) > 3;
+  const lv = data.levels.find((l) => l.id === s.levelId);
+  const enMaterial = !!lv && (lv.order > 3 || ['l8','l9','l10','l4','l5','l6','l7','l11','l12','l13','l14'].includes(lv.id));
   const done = data.progress.filter((p) => p.studentId === user.id && p.sessionId === s.id).map((p) => p.sectionId);
   const qs = data.questions.filter((q) => q.sessionId === s.id);
   const grammarQs = qs.filter((q) => q.scope === 'grammar');
@@ -942,7 +943,7 @@ export function MaterialsPage() {
   const level = data.levels.find((l) => l.id === levelId) || current;
   const sessions = data.sessions.filter((s) => s.levelId === level?.id).sort((a, b) => a.order - b.order);
   const partial = level ? (!admin && !levelFullyOpen(user, level, data.levels)) : false;
-  const en = !!level && level.order > 3;
+  const en = !!level && (level.order > 3 || ['l8','l9','l10','l4','l5','l6','l7','l11','l12','l13','l14'].includes(level.id));
   const L = en ? { title:'Materials', hint:'Pick a level from the list. All levels are available for browsing.', level:'Level', words:'words', ready:'Ready', locked:'Locked', open:'Open lesson', none:'No materials in this level', noneHint:'Materials will appear here once lessons are added.', lesson:'Lesson', pdf:'Open PDF', dl:'Download' } :
     { title:'الماتيريال', hint:'اختار مستوى من القائمة — كل المستويات متاحة للتصفح.', level:'المستوى', words:'كلمة', ready:'جاهز', locked:'مقفول', open:'افتح الدرس', none:'مفيش ماتيريال في المستوى ده', noneHint:'الماتيريال هتظهر هنا أول ما الدروس تتضاف.', lesson:'الدرس', pdf:'افتح PDF ↗', dl:'نزّل PDF ⬇' };
   return <div className="stack" dir={en ? 'ltr' : undefined}>

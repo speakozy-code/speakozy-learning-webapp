@@ -55,10 +55,6 @@ export function Layout({ current, children }: { current: string; children: React
 
   const side = <aside className={`side ${open ? 'open' : ''}`}>
     <div className="brand"><span className="brand-dot" /> SPEAKOZY</div>
-    {!admin && <div className="side-onboard">
-      <div className="row"><span className="avatar">{user.avatar || user.name.charAt(0)}</span><div><strong>{user.name}</strong><div className="muted" style={{ fontSize: '.75rem' }}>{user.subscribed === false ? 'غير مشترك' : 'مشترك'}</div></div></div>
-      <div className="row" style={{ marginTop: '.5rem' }}><a className="btn btn-ghost btn-sm" href="#/profile">تعديل البيانات</a><a className="btn btn-ghost btn-sm" href="#/trial">تفاصيل الكورس</a></div>
-    </div>}
     <div className="nav-group">{admin ? 'لوحة الأدمن' : 'مساحة الطالب'}</div>
     <nav className="nav" onClick={() => setOpen(false)}>
       {nav.map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
@@ -86,10 +82,6 @@ export function Layout({ current, children }: { current: string; children: React
     </div>
     <div className="shell">{side}<main className="main" id="app-main"><div className="content-bar">
       <div className="content-bar-row">
-        <button className="user-chip" onClick={() => setProfileMenu((m) => !m)} aria-label="الملف الشخصي">
-          <span className="avatar">{user.avatar || user.name.charAt(0)}</span>
-          <span className="user-chip-name">{user.name.charAt(0)}</span>
-        </button>
         {profileMenu && <div className="profile-menu">
           <button onClick={() => { setProfileMenu(false); go('/profile'); }}>تعديل الملف الشخصي</button>
           {!admin && user.subscribed === false && <a href="https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83" target="_blank" rel="noreferrer">اشترك في الكورس</a>}
@@ -102,6 +94,7 @@ export function Layout({ current, children }: { current: string; children: React
         </div>
         {!admin && <strong className="sticky-points">{points} pts</strong>}
         {bellButton}
+        <button className="user-chip" onClick={() => setProfileMenu((m) => !m)} aria-label="الملف الشخصي"><span className="avatar">{user.avatar || user.name.charAt(0)}</span></button>
       </div>
       {!admin && user.subscribed === false && <div className="sub-notice" dir="rtl">
         <span>أنت غير مشترك بالكورس، تواصل معنا للتفاصيل والاشتراك</span>
