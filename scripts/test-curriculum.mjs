@@ -59,7 +59,7 @@ t('Arabic fields do not leak Latin script', () => {
 
 t('seed exposes the imported curriculum to the app', () => {
   const d = seedData();
-  assert.equal(d.levels.length, 11);
+  assert.equal(d.levels.length, 14);
   assert.equal(d.sessions.length, C.sessions.length);
   assert.equal(d.dictionary.length, C.dictionary.length);
   assert.ok(d.grammarNotes.length > 50);
