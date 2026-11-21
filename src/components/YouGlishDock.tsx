@@ -34,7 +34,12 @@ export function YouGlishDock({
         const el = document.getElementById(hostId);
         if (!el) return;
         el.innerHTML = '';
-        const widget = new (window as any).YG.Widget(hostId, { width: Math.max(280, el.clientWidth || 640), components: 255, autoStart: 1 });
+        const widget = new (window as any).YG.Widget(hostId, {
+          width: Math.max(280, el.clientWidth || 640),
+          height: Math.max(240, el.clientHeight || 360),
+          components: 88,
+          autoStart: 1,
+        });
         widget.fetch(q.word, q.lang, q.accent);
         if (!dead) setStatus('ready');
       } catch {

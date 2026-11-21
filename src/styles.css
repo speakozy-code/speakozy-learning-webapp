@@ -385,7 +385,7 @@ body { font-family: 'Jua', var(--font-arabic); }
 .yg-dock-accents{display:flex;gap:.25rem;margin-inline-start:auto}
 .yg-frame{flex:1 1 auto;width:100%;min-height:160px;border:0;background:#000;position:relative}
 .yg-frame iframe{width:100%!important;border:0}
-.yg-dock .ygContainer{flex:1 1 auto;min-height:160px;width:100%;overflow-y:auto;background:#000}
+.yg-dock .ygContainer{flex:1 1 auto;min-height:160px;width:100%;overflow:hidden;background:#000;position:relative}
 .brief-summary{line-height:1.8;margin:.4rem 0 0}
 .dict-suggest{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.65rem}
 .dict-suggest-item{border:1px solid var(--line);background:#12223a;color:var(--ink);border-radius:999px;padding:.28rem .7rem;cursor:pointer;font-weight:700;font-size:.82rem}
