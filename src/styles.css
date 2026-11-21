@@ -398,3 +398,33 @@ body { font-family: 'Jua', var(--font-arabic); }
   .sticky-track{display:none}
   .content-bar-row{gap:.6rem}
 }
+
+/* Horizontal champs strip */
+.champs-strip{display:flex;gap:.6rem;overflow-x:auto;padding-bottom:.4rem;scrollbar-width:thin}
+.champ-chip{display:flex;align-items:center;gap:.5rem;flex:0 0 auto;background:#12223a;border:1px solid var(--line);border-radius:999px;padding:.4rem .85rem .4rem .5rem}
+.champ-chip.is-me{border-color:var(--green);background:rgba(18,206,144,.12)}
+.champ-rank{width:22px;height:22px;border-radius:50%;background:#1b2940;color:var(--muted);display:grid;place-items:center;font-size:.72rem;font-weight:800;flex:0 0 auto}
+.champ-chip.is-me .champ-rank{background:var(--green);color:var(--navy)}
+.champ-avatar{font-size:1.05rem;line-height:1}
+.champ-name{font-size:.85rem;font-weight:700;white-space:nowrap}
+.champ-points{color:var(--green);font-size:.85rem;white-space:nowrap}
+
+/* Level tasks */
+.task-item{border:1px solid var(--line);border-radius:12px;background:#0f1c30;overflow:hidden}
+.task-item.is-done{border-color:rgba(18,206,144,.4);background:rgba(18,206,144,.06)}
+.task-item-head{display:flex;align-items:center;gap:.7rem;padding:.7rem .8rem}
+.task-check{width:28px;height:28px;flex:0 0 auto;border-radius:8px;border:2px solid var(--line);background:transparent;color:var(--navy);font-weight:900;cursor:pointer;display:grid;place-items:center;font-size:.95rem}
+.task-check.checked{background:var(--green);border-color:var(--green)}
+.task-item-title{display:flex;align-items:center;gap:.6rem;flex:1;min-width:0;background:transparent;border:0;color:var(--ink);cursor:pointer;text-align:start;padding:.2rem 0;font-size:.92rem}
+.task-item-title strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task-badge{flex:0 0 auto;font-size:.72rem;font-weight:700;background:#1b2940;color:#bcd0e8;border-radius:999px;padding:.22rem .6rem;white-space:nowrap}
+.task-caret{color:var(--muted);flex:0 0 auto}
+.task-instructions{border-top:1px solid var(--line);padding:.8rem .9rem;display:flex;flex-direction:column;gap:.55rem;background:#0c1628}
+.task-ins{display:flex;gap:.55rem;line-height:1.7;font-size:.9rem}
+.task-ins-num{color:var(--green);font-weight:800;flex:0 0 auto}
+
+/* Avatar picker */
+.avatar-grid{display:flex;flex-wrap:wrap;gap:.55rem}
+.avatar-pick{width:48px;height:48px;border-radius:12px;border:1px solid var(--line);background:#12223a;font-size:1.4rem;cursor:pointer;display:grid;place-items:center;transition:.15s}
+.avatar-pick:hover{border-color:var(--green);transform:translateY(-2px)}
+.avatar-pick.is-on{border-color:var(--green);background:rgba(18,206,144,.16);box-shadow:0 0 0 2px rgba(18,206,144,.25)}

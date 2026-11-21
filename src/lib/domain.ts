@@ -105,7 +105,7 @@ export function leaderboard(data: AppData) {
     .map((u) => {
       const parts = u.name.trim().split(/\s+/);
       const name = data.settings.leaderboard.nameMode === 'first' ? parts[0] : parts[0] + ' ' + (parts[1] || '').charAt(0) + '.';
-      return { id: u.id, name, points: totalScore(data, u.id), level: u.levelId };
+      return { id: u.id, name, points: totalScore(data, u.id), level: u.levelId, avatar: u.avatar };
     })
     .sort((a, b) => b.points - a.points);
 }

@@ -1,5 +1,6 @@
 import type { AppData } from '../types';
 import { DRIVE_CURRICULUM as D } from './driveCurriculum.ts';
+import { LEVEL_TASKS } from './levelTasks.ts';
 
 // Full curriculum imported from the Speakozy Google Drive decks (E1 → Upper 1).
 // Seven levels, ordered from level 1 upwards; every session carries its original
@@ -10,26 +11,6 @@ const SESSIONS = (D as any).sessions as AppData['sessions'];
 const QUESTIONS = (D as any).questions as AppData['questions'];
 const DICTIONARY = (D as any).dictionary as AppData['dictionary'];
 const NOTES = (D as any).grammarNotes as AppData['grammarNotes'];
-
-// Two sessions per week per level. A week is complete when both sessions are approved.
-const WEEKLY_TASKS = LEVELS.flatMap((level) => {
-  const list = SESSIONS.filter((s) => s.levelId === level.id).sort((a, b) => a.order - b.order);
-  const out: any[] = [];
-  for (let i = 0; i < list.length; i += 2) {
-    const group = list.slice(i, i + 2);
-    out.push({
-      id: `week-${level.id}-${i / 2 + 1}`,
-      title: `${level.title} · Week ${i / 2 + 1} — sessions ${group.map((g) => g.order).join(' & ')}`,
-      kind: 'weekly',
-      dueAt: group[0].dueAt,
-      targetType: 'level',
-      targetId: level.id,
-      sessionIds: group.map((g) => g.id),
-      active: true,
-    });
-  }
-  return out;
-});
 
 export function seedData(): AppData {
   return {
@@ -51,14 +32,13 @@ export function seedData(): AppData {
       { id: 'p2', studentId: 'stu-1', sessionId: 'l1-s1', sectionId: 'l1-s1-b', completedAt: '2026-11-16T10:10:00.000Z' },
     ],
     tasks: [
-      ...WEEKLY_TASKS,
-      { id: 't1', title: 'Study the vocabulary of session 1', kind: 'study', dueAt: '2026-11-20T20:00:00.000Z', targetType: 'all', active: true },
-      { id: 't2', title: 'Review five saved words', kind: 'words', dueAt: '2026-11-21T20:00:00.000Z', targetType: 'student', targetId: 'stu-1', active: true },
+      ...LEVEL_TASKS,
     ],
-    taskCompletions: [{ id: 'tc1', taskId: 't1', studentId: 'stu-2', completedAt: '2026-11-19T09:00:00.000Z' }],
+    taskCompletions: [{ id: 'tc1', taskId: 'e2-t1', studentId: 'stu-2', completedAt: '2026-11-19T09:00:00.000Z' }],
     notifications: [
       { id: 'n1', targetId: 'stu-1', title: 'A task is due', body: 'Review today’s words before the next session.', href: '#/tasks', read: false, createdAt: '2026-11-19T08:00:00.000Z' },
       { id: 'n2', targetId: 'all', title: 'The new path is ready', body: `${LEVELS.length} levels and ${SESSIONS.length} sessions from the lesson decks.`, href: '#/roadmap', read: false, createdAt: '2026-11-18T14:00:00.000Z' },
+      { id: 'n3', targetId: 'l2', title: 'E2 tasks are ready', body: '16 speaking tasks across 4 weeks: reading aloud, questions and personal speaking. Record your voice and send it on the group.', href: '#/tasks', read: false, createdAt: '2026-11-21T12:00:00.000Z' },
     ],
     scores: [
       { id: 'sc1', studentId: 'stu-1', source: 'study', points: 20, refId: 'progress-l1-s1', createdAt: '2026-11-16T10:10:00.000Z' },

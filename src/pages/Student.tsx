@@ -69,10 +69,12 @@ export function StudentDashboard() {
 
     <Card>
       <SectionTitle title="Speakozy Champs" action={<span className="muted" style={{ fontSize: '.8rem' }}>Top scorers</span>} />
-      {leaderboard(data).length ? <div className="row" style={{ alignItems: 'stretch', flexWrap: 'nowrap', overflowX: 'auto' }}>
-        {leaderboard(data).slice(0, 6).map((b, i) => <div key={b.id} className="section-card" style={{ minWidth: 140 }}>
-          <div className="node-num">{i + 1}</div><strong>{b.name}</strong><div className="muted">{b.points} pts</div>
-          {b.id === user.id && <Badge tone="green">You</Badge>}
+      {leaderboard(data).length ? <div className="champs-strip">
+        {leaderboard(data).slice(0, 10).map((b, i) => <div key={b.id} className={`champ-chip ${b.id === user.id ? 'is-me' : ''}`}>
+          <span className="champ-rank">{i + 1}</span>
+          <span className="champ-avatar">{b.avatar || b.name.charAt(0)}</span>
+          <span className="champ-name">{b.name}{b.id === user.id ? ' (You)' : ''}</span>
+          <strong className="champ-points">{b.points} pts</strong>
         </div>)}
       </div> : <Empty title="No ranked students yet" />}
     </Card>
@@ -723,63 +725,87 @@ export function DictionaryPage() {
 }
 
 export function TasksPage() {
-  const { user, data, put, grantScore, log } = useApp();
-  const [tab, setTab] = useState('due');
+  const { user, data, put, remove } = useApp();
+  const [expanded, setExpanded] = useState<string | null>(null);
   if (!user) return null;
   const mine = data.tasks.filter((t) => t.active && (t.targetType === 'all' || (t.targetType === 'student' && t.targetId === user.id) || (t.targetType === 'level' && t.targetId === user.levelId)));
   const doneIds = data.taskCompletions.filter((c) => c.studentId === user.id).map((c) => c.taskId);
-  const weekDone = (t: any) => t.kind === 'weekly' && (t.sessionIds || []).length > 0 && (t.sessionIds || []).every((id: string) => {
-    const sess = data.sessions.find((x) => x.id === id);
-    return !!sess && sessionStatus(data, sess, user.id).key === 'approved';
-  });
-  const isDone = (t: any) => doneIds.includes(t.id) || weekDone(t);
-  const groups = {
-    due: mine.filter((t) => !isDone(t) && !isLate(t.dueAt)),
-    late: mine.filter((t) => !isDone(t) && isLate(t.dueAt)),
-    done: mine.filter((t) => isDone(t)),
-  };
-  async function complete(id: string) {
-    await put('taskCompletions', { taskId: id, studentId: user!.id, completedAt: today() });
-    await grantScore(user!.id, 'exercise', data.settings.scoreRules.exercise, `task-${id}`);
-    await log('task-complete', id);
+  const isDone = (t: any) => doneIds.includes(t.id);
+  const levelTasks = mine.filter((t) => (t.instructions || []).length > 0).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const otherTasks = mine.filter((t) => !(t.instructions || []).length);
+  const weeks = [...new Set(levelTasks.map((t) => t.week || 1))].sort((a, b) => a - b);
+  const level = data.levels.find((l) => l.id === user.levelId);
+  async function toggle(t: any) {
+    const existing = data.taskCompletions.find((c) => c.studentId === user!.id && c.taskId === t.id);
+    if (existing) await remove('taskCompletions', existing.id);
+    else await put('taskCompletions', { taskId: t.id, studentId: user!.id, completedAt: today() });
   }
   return <div className="stack">
-    <div><h1>My tasks</h1><p className="muted">Today's and past tasks. Completion is recorded with its date and time.</p></div>
+    <div><h1>My tasks</h1><p className="muted">Speaking tasks for your level. Record your voice and send it on the group, then mark the task done.</p></div>
     <div className="grid g3">
-      <Stat label="Due today" value={groups.due.length} tone="green" />
-      <Stat label="Late" value={groups.late.length} tone={groups.late.length ? 'danger' : ''} />
-      <Stat label="Completed" value={groups.done.length} />
+      <Stat label="Total tasks" value={mine.length} />
+      <Stat label="Completed" value={mine.filter(isDone).length} tone="green" />
+      <Stat label="Remaining" value={mine.filter((t) => !isDone(t)).length} />
     </div>
-    <Tabs tabs={[{ id: 'due', label: 'Due' }, { id: 'late', label: 'Late' }, { id: 'done', label: 'Completed' }]} active={tab} onChange={setTab} />
-    <Card>{groups[tab as keyof typeof groups].length ? <div className="stack">
-      {groups[tab as keyof typeof groups].map((t) => <div key={t.id} className="row between section-card">
-        <div><strong>{t.title}</strong><div className="muted">{fmtDate(t.dueAt)} · {t.kind}</div>
-          {t.kind === 'weekly' && <div className="week-sessions">{(t.sessionIds || []).map((id) => {
-            const sess = data.sessions.find((x) => x.id === id);
-            if (!sess) return null;
-            const st = sessionStatus(data, sess, user.id);
-            return <div key={id} className="week-session"><span>{sess.title}</span><Badge tone={st.key === 'approved' ? 'green' : 'muted'}>{st.key === 'approved' ? 'Approved' : st.label}</Badge></div>;
-          })}</div>}
-        </div>
-        {tab !== 'done' && t.kind !== 'weekly' && <Button size="sm" onClick={() => complete(t.id)}>Done</Button>}
-        {t.kind === 'weekly' && (weekDone(t) ? <Badge tone="green">Completed</Badge> : <small className="muted">Finish {(t.sessionIds || []).length > 1 ? 'both sessions' : 'this session'}</small>)}
-        {tab === 'done' && t.kind !== 'weekly' && <Badge tone="green">Completed</Badge>}
-      </div>)}
-    </div> : <Empty title="No tasks here" />}</Card>
+    {levelTasks.length ? <>
+      <Card className="row between" style={{ gap: '1rem' }}>
+        <div><strong>{level?.title || 'Your level'} · Level tasks</strong><div className="muted">{levelTasks.filter(isDone).length} / {levelTasks.length} completed</div></div>
+        <div className="progress-track" style={{ flex: 1, maxWidth: 260, marginTop: 0 }}><span style={{ width: `${levelTasks.length ? Math.round((levelTasks.filter(isDone).length / levelTasks.length) * 100) : 0}%` }} /></div>
+      </Card>
+      {weeks.map((w) => {
+        const list = levelTasks.filter((t) => (t.week || 1) === w);
+        const first = list[0];
+        return <Card key={w}>
+          <SectionTitle title={`Week ${w} — ${first?.topic || ''}`} action={<Badge tone="blue">{list.filter(isDone).length}/{list.length}</Badge>} />
+          {first?.grammar && <div className="muted" style={{ fontSize: '.82rem', marginBottom: '.6rem' }} dir="ltr">{first.grammar}</div>}
+          <div className="stack">
+            {list.map((t) => {
+              const done = isDone(t);
+              const open = expanded === t.id;
+              return <div key={t.id} className={`task-item ${done ? 'is-done' : ''}`}>
+                <div className="task-item-head">
+                  <button className={`task-check ${done ? 'checked' : ''}`} onClick={() => toggle(t)} aria-label={done ? 'Mark as not done' : 'Mark as done'}>{done ? '✓' : ''}</button>
+                  <button className="task-item-title" onClick={() => setExpanded(open ? null : t.id)}>
+                    <span className="task-badge">{t.badge || t.kind}</span>
+                    <strong>{t.title}</strong>
+                    <span className="task-caret">{open ? '⌃' : '⌄'}</span>
+                  </button>
+                </div>
+                {open && <div className="task-instructions" dir="ltr">
+                  {(t.instructions || []).map((ins, i) => <div key={i} className="task-ins"><span className="task-ins-num">{i + 1}.</span><span>{ins}</span></div>)}
+                </div>}
+              </div>;
+            })}
+          </div>
+        </Card>;
+      })}
+    </> : <Card><Empty icon="🗂️" title={`No tasks for ${level?.title || 'your level'} yet`} hint="Level tasks appear here as soon as they are added for your level." /></Card>}
+    {otherTasks.length > 0 && <Card>
+      <SectionTitle title="Other tasks" />
+      <div className="stack">{otherTasks.map((t) => <div key={t.id} className="row between section-card">
+        <div><strong>{t.title}</strong>{t.dueAt && <div className="muted">{fmtDate(t.dueAt)} · {t.kind}</div>}</div>
+        {isDone(t) ? <Badge tone="green">Completed</Badge> : <Button size="sm" onClick={() => toggle(t)}>Done</Button>}
+      </div>)}</div>
+    </Card>}
   </div>;
 }
 
 export function NotificationsPage() {
   const { user, data, put } = useApp();
   if (!user) return null;
-  const list = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const list = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id || n.targetId === user.levelId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  async function markRead(n: any) {
+    if (n.read) return;
+    if (user!.role === 'admin') await put('notifications', { ...n, read: true });
+    else await put('notificationReads', { id: `${user!.id}-${n.id}`, studentId: user!.id, notificationId: n.id, read: true });
+  }
   return <div className="stack">
     <div><h1>Notifications</h1><p className="muted">Notifications on the site are always available. Device notifications need your permission.</p></div>
     <Card>{list.length ? <div className="stack">{list.map((n) => <div key={n.id} className={`section-card ${!n.read ? 'done' : ''}`}>
       <div className="row between"><strong>{n.title}</strong>{!n.read && <Badge tone="green">New</Badge>}</div>
       <p className="muted" style={{ margin: '.4rem 0' }}>{n.body}</p>
       <div className="row"><small className="muted">{fmtDate(n.createdAt)}</small>
-        <Button size="sm" variant="ghost" onClick={() => { if (!n.read) put('notifications', { ...n, read: true }); if (n.href) go(n.href.replace('#', '')); }}>Open</Button>
+        <Button size="sm" variant="ghost" onClick={async () => { await markRead(n); if (n.href) go(n.href.replace('#', '')); }}>Open</Button>
       </div>
     </div>)}</div> : <Empty title="No notifications" />}</Card>
   </div>;
@@ -796,7 +822,7 @@ export function LeaderboardPage() {
     <Tabs tabs={[{ id: 'weekly', label: 'Weekly' }, { id: 'monthly', label: 'Monthly' }, { id: 'total', label: 'All time' }]} active={period} onChange={setPeriod} />
     {!data.settings.leaderboard.enabled ? <Card><Empty icon="🔒" title="The leaderboard is currently disabled" hint="The admin decided to hide it temporarily." /></Card> : <Card>
       {board.length ? <div className="stack">{board.map((b, i) => <div key={b.id} className={`row between section-card ${b.id === user.id ? 'done' : ''}`}>
-        <div className="row"><span className="node-num">{i + 1}</span><strong>{b.name}</strong>{b.id === user.id && <Badge tone="green">You</Badge>}</div>
+        <div className="row"><span className="node-num">{i + 1}</span><span className="champ-avatar">{b.avatar || b.name.charAt(0)}</span><strong>{b.name}</strong>{b.id === user.id && <Badge tone="green">You</Badge>}</div>
         <strong className="green">{b.points} points</strong>
       </div>)}</div> : <Empty title="No participants yet" />}
     </Card>}
@@ -804,16 +830,29 @@ export function LeaderboardPage() {
   </div>;
 }
 
+export const AVATARS = ['🦁', '🐯', '🦊', '🐼', '🐨', '🦄', '🐬', '🦅', '🌟', '🚀', '🎯', '⚡', '🌈', '🎧', '⚽', '📚'];
+
 export function ProfilePage() {
-  const { user, data, resetDemo, demo } = useApp();
+  const { user, data, resetDemo, demo, saveProfile } = useApp();
+  const [savingAvatar, setSavingAvatar] = useState('');
   if (!user) return null;
   const level = data.levels.find((l) => l.id === user.levelId);
   const certs = data.certificates.filter((c) => c.studentId === user.id && c.status === 'active');
   const recent = data.scores.filter((s) => s.studentId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 8);
+  async function pickAvatar(a: string) {
+    setSavingAvatar(a);
+    try { await saveProfile({ avatar: a }); } finally { setSavingAvatar(''); }
+  }
   return <div className="stack">
     <div><h1>My profile</h1></div>
-    <Card className="row" style={{ gap: '1rem' }}><span className="avatar" style={{ width: 56, height: 56, fontSize: '1.3rem' }}>{user.name.charAt(0)}</span>
+    <Card className="row" style={{ gap: '1rem' }}><span className="avatar" style={{ width: 56, height: 56, fontSize: '1.3rem' }}>{user.avatar || user.name.charAt(0)}</span>
       <div><h2>{user.name}</h2><div className="muted">{user.email}</div><div className="row" style={{ marginTop: '.4rem' }}><Badge tone="green">{level?.title || '—'}</Badge><Badge>Max: {data.levels.find((l) => l.id === user.maxLevelId)?.title || '—'}</Badge></div></div>
+    </Card>
+    <Card>
+      <SectionTitle title="Choose your avatar" action={savingAvatar ? <span className="muted">Saving…</span> : undefined} />
+      <div className="avatar-grid">
+        {AVATARS.map((a) => <button key={a} className={`avatar-pick ${user.avatar === a ? 'is-on' : ''}`} onClick={() => pickAvatar(a)} aria-label={`Avatar ${a}`}>{a}</button>)}
+      </div>
     </Card>
     <div className="grid g3"><Stat label="Total points" value={totalScore(data, user.id)} tone="green" /><Stat label="Certificates" value={certs.length} /><Stat label="Saved words" value={data.savedWords.filter((w) => w.studentId === user.id).length} /></div>
     <Card><SectionTitle title="Score history" />

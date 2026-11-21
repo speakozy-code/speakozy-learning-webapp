@@ -68,6 +68,12 @@ export async function sbSignOut() {
   if (sb) await sb.auth.signOut();
 }
 
+export async function sbSaveMyProfile(updates: { avatar?: string; name?: string }): Promise<void> {
+  if (!sb) return;
+  const { error } = await sb.rpc('save_my_profile', { p_updates: updates });
+  if (error) throw error;
+}
+
 export async function sbLoadDoc(): Promise<any> {
   if (!sb) return {};
   const { data: auth } = await sb.auth.getUser();

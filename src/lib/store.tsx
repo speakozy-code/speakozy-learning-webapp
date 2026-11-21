@@ -3,7 +3,7 @@ import type { AppData, User } from '../types';
 import { seedData } from './seed';
 import { uid, today, addScoreOnce, buildStudentAccount } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
-import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbCurrentAuth, sbEnsureProfile } from './supabase';
+import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbCurrentAuth, sbEnsureProfile, sbSaveMyProfile } from './supabase';
 import { englishify } from './translate';
 
 const KEY = 'speakozy-demo-v11';
@@ -33,6 +33,7 @@ type Ctx = {
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (u: User | null) => void;
+  saveProfile: (updates: { avatar?: string; name?: string }) => Promise<void>;
   put: (collectionName: string, value: any) => Promise<void>;
   remove: (collectionName: string, id: string) => Promise<void>;
   putSettings: (s: AppData['settings']) => Promise<void>;
@@ -142,6 +143,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }
 
+  async function saveProfile(updates: { avatar?: string; name?: string }) {
+    if (!user) return;
+    if (demo) {
+      const d = readDemo();
+      const me = d.users.find((u) => u.id === user.id);
+      if (me) { Object.assign(me, updates); saveDemo(d); setData(d); setUser({ ...me }); }
+      return;
+    }
+    if (CLOUD === 'supabase') {
+      await sbSaveMyProfile(updates);
+      await refresh();
+      const loaded = await sbLoadAll(['users']);
+      const me = (loaded.users || []).find((u: any) => u.id === user.id);
+      if (me) setUser(me as User);
+      return;
+    }
+    await fbWrite('users', user.id, { ...user, ...updates });
+    setUser({ ...user, ...updates });
+  }
+
   async function put(collectionName: string, value: any) {
     const id = value.id || uid();
     const record = { ...value, id };
@@ -205,5 +226,5 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }
 
-  return <AppCtx.Provider value={{ user, ready, demo, data, login, signup, logout, setUser, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
+  return <AppCtx.Provider value={{ user, ready, demo, data, login, signup, logout, setUser, saveProfile, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
 }

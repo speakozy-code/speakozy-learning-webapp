@@ -38,7 +38,7 @@ export function Layout({ current, children }: { current: string; children: React
   if (!user) return <>{children}</>;
   const admin = user.role === 'admin';
   const nav = admin ? adminNav : studentNav;
-  const notes = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const notes = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id || n.targetId === user.levelId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const unread = notes.filter((n) => !n.read).length;
   const level = data.levels.find((l) => l.id === user.levelId) || data.levels[0];
   const pct = !admin && level ? engagementProgress(data, level.id, user.id) : 0;
@@ -58,7 +58,7 @@ export function Layout({ current, children }: { current: string; children: React
       </a>; })}
     </nav>
     <div className="side-foot">
-      <div className="who"><span className="avatar">{user.name.charAt(0)}</span><span>{user.name}<br /><small>{admin ? 'Academy Manager' : 'Student'}</small></span></div>
+      <div className="who"><span className="avatar">{user.avatar || user.name.charAt(0)}</span><span>{user.name}<br /><small>{admin ? 'Academy Manager' : 'Student'}</small></span></div>
       <button className="btn btn-ghost btn-sm" style={{ width: '100%' }} onClick={() => { logout(); go('/'); }}><LogOut size={14} /> Log Out</button>
     </div>
   </aside>;
@@ -74,7 +74,7 @@ export function Layout({ current, children }: { current: string; children: React
     <div className="topbar">
       <button className="icon-btn" onClick={() => setOpen(true)} aria-label="Menu"><Menu size={18} /></button>
       <div className="auth-brand" style={{ color: 'var(--ink)' }}><span className="brand-dot" /> SPEAKOZY</div>
-      <span className="avatar">{user.name.charAt(0)}</span>
+      <span className="avatar">{user.avatar || user.name.charAt(0)}</span>
     </div>
     <div className="shell">{side}<main className="main" id="app-main"><div className="content-bar">
       <div className="content-bar-row">
@@ -98,7 +98,7 @@ export function Layout({ current, children }: { current: string; children: React
         <div className="row between"><strong>{n.title}</strong>{!n.read && <Badge tone="green">New</Badge>}</div>
         <p className="muted" style={{ margin: '.4rem 0' }}>{n.body}</p>
         <div className="row"><small className="muted">{fmtDate(n.createdAt)}</small>
-          <Button size="sm" variant="ghost" onClick={() => { if (!n.read) put('notifications', { ...n, read: true }); if (n.href) { setBell(false); go(n.href.replace('#', '')); } }}>Open</Button>
+          <Button size="sm" variant="ghost" onClick={async () => { if (!n.read) { if (admin) await put('notifications', { ...n, read: true }); else await put('notificationReads', { id: `${user.id}-${n.id}`, studentId: user.id, notificationId: n.id, read: true }); } if (n.href) { setBell(false); go(n.href.replace('#', '')); } }}>Open</Button>
         </div>
       </div>)}</div> : <div className="empty">No notifications</div>}
     </Modal>

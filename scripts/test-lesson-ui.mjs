@@ -6,6 +6,7 @@ import { youglishWidgetQuery } from '../src/lib/youglish.ts';
 import { fromApi, fromWiktionary, parseWiktionaryExtras } from '../src/lib/dictionaryProvider.ts';
 import { wordQuizItems, sessionQuizItems } from '../src/lib/sessionQuizzes.ts';
 import { buildStudentAccount } from '../src/lib/domain.ts';
+import { LEVEL_TASKS } from '../src/lib/levelTasks.ts';
 
 let pass = 0;
 const t = (name, fn) => { fn(); pass++; console.log('ok -', name); };
@@ -100,6 +101,14 @@ t('admin grants student access by email only, no password', () => {
   assert.equal(u.plan, 'growth');
   assert.throws(() => buildStudentAccount({ name: '', email: 'a@b.co', levelId: 'l1', maxLevelId: 'l1' }));
   assert.throws(() => buildStudentAccount({ name: 'A', email: 'nope', levelId: 'l1', maxLevelId: 'l1' }));
+});
+
+t('E2 level tasks: 16 tasks across 4 weeks with instructions', () => {
+  assert.equal(LEVEL_TASKS.length, 16);
+  assert.ok(LEVEL_TASKS.every((x) => x.targetType === 'level' && x.targetId === 'l2'));
+  assert.deepEqual([...new Set(LEVEL_TASKS.map((x) => x.week))].sort(), [1, 2, 3, 4]);
+  assert.ok(LEVEL_TASKS.every((x) => (x.instructions || []).length >= 1));
+  assert.ok(LEVEL_TASKS.every((x) => x.badge && x.topic && x.grammar));
 });
 
 console.log(`\n${pass} lesson-ui checks passed`);

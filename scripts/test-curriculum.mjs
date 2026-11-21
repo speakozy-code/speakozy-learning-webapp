@@ -58,7 +58,7 @@ t('seed exposes the imported curriculum to the app', () => {
   assert.equal(d.sessions.length, C.sessions.length);
   assert.equal(d.dictionary.length, C.dictionary.length);
   assert.ok(d.grammarNotes.length > 50);
-  assert.ok(d.tasks.some(t => t.kind === 'weekly'));
+  assert.equal(d.tasks.filter(t => t.targetType === 'level' && t.targetId === 'l2').length, 16);
 });
 
 console.log(`\n${pass} curriculum checks passed`);
