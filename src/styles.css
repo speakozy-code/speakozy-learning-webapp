@@ -141,7 +141,7 @@ tbody tr:last-child td{border-bottom:0}
   .side{position:fixed;z-index:80;right:0;top:0;bottom:0;width:270px;transform:translateX(105%);transition:.22s;box-shadow:-8px 0 30px rgba(0,0,0,.2)}
   .side.open{transform:none}
   .topbar{display:flex;position:sticky;top:0;z-index:60;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:.75rem 1rem;align-items:center;justify-content:space-between}
-  .main{padding:0 1rem 6rem;height:calc(100% - 0px)}
+  .main{padding:0 1rem 9rem;height:calc(100% - 0px)}
   .content-bar{position:static}
   .mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);z-index:70;justify-content:space-around;padding:.45rem .2rem env(safe-area-inset-bottom)}
   .mobile-nav a,.mobile-nav button{display:grid;gap:.15rem;place-items:center;font-size:.68rem;color:var(--muted);background:none;border:0;flex:1;cursor:pointer}
@@ -492,7 +492,8 @@ body { font-family: 'Jua', var(--font-arabic); }
 
 .side-onboard{background:rgba(18,206,144,.08);border:1px solid rgba(18,206,144,.25);border-radius:12px;padding:.7rem}
 .side-onboard .avatar{width:36px;height:36px;font-size:.9rem}
-.float-wa{position:fixed;bottom:9.2rem;left:1rem;z-index:85;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#05281c;text-decoration:none;font-size:1.2rem;box-shadow:var(--shadow)}
+.float-wa{position:fixed;bottom:9.2rem;left:1rem;z-index:85;display:flex;align-items:center;gap:.35rem;padding:.5rem .8rem;border-radius:999px;background:var(--green);color:#05281c;text-decoration:none;font-size:.82rem;font-weight:800;box-shadow:var(--shadow)}
+.wa-top{white-space:nowrap}
 @media(max-width:980px){.float-wa{bottom:6.2rem}}
 
 @media(max-width:980px){
@@ -510,8 +511,8 @@ body { font-family: 'Jua', var(--font-arabic); }
 }
 
 @media(max-width:600px){
-  .to-top{bottom:5.4rem;left:.7rem;width:38px;height:38px}
-  .float-wa{bottom:8.4rem;right:.7rem;width:38px;height:38px}
+  .to-top{bottom:8.5rem;left:.7rem;width:38px;height:38px}
+  .float-wa{bottom:8.5rem;right:.7rem;left:auto;width:auto;height:auto;padding:.45rem .7rem;font-size:.75rem}
   .content-bar-row{flex-wrap:wrap;row-gap:.5rem}
   .user-chip{padding:.15rem}
   .user-chip-name{display:none}

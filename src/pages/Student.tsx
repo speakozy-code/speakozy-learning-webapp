@@ -4,6 +4,7 @@ import { Card, Button, Badge, Progress, Stat, SectionTitle, Empty, Tabs, Field, 
 import { sessionStatus, levelProgress, engagementProgress, sessionOpen, levelFullyOpen, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, uid, today, levelLabel, cefrOf } from '../lib/domain';
 import { go } from '../App';
 import { lookupWord, allCached, type LookupEntry } from '../lib/dictionaryProvider';
+import { WORD_MEANINGS } from '../lib/wordMeanings';
 import { grammarFor } from '../lib/grammar/index.ts';
 import { overviewOutline, sourceTranscript, letsTalk, voicePrompts } from '../lib/lessonBrief';
 import { wordQuizItems, sessionQuizItems } from '../lib/sessionQuizzes';
@@ -203,7 +204,8 @@ export function SessionPage({ sessionId }: any) {
         try {
           const hit = await lookupWord(w.word, data.dictionary);
           if (!alive) return;
-          const en = hit?.definitions?.[0] || (hit?.meaning && /^[A-Za-z]/.test(hit.meaning) ? hit.meaning : '');
+          const en = hit?.definitions?.find((d: string) => !/[\u0600-\u06FF]/.test(d))
+            || (hit?.meaning && /^[A-Za-z]/.test(hit.meaning) && !/[\u0600-\u06FF]/.test(hit.meaning) ? hit.meaning : '');
           if (en) setDefs((d) => ({ ...d, [w.word]: en }));
         } catch {}
       }
@@ -214,8 +216,7 @@ export function SessionPage({ sessionId }: any) {
   if (!user) return null;
   if (!s) return <Empty title="السيشن مش موجودة" hint="يمكن اتشالت أو الرابط غلط." />;
   const locked = !sessionOpen(user, s, data.levels);
-  const lv = data.levels.find((l) => l.id === s.levelId);
-  const enMaterial = !!lv && (lv.order > 3 || ['l8','l9','l10','l4','l5','l6','l7','l11','l12','l13','l14'].includes(lv.id));
+  const enMaterial = true;
   const done = data.progress.filter((p) => p.studentId === user.id && p.sessionId === s.id).map((p) => p.sectionId);
   const qs = data.questions.filter((q) => q.sessionId === s.id);
   const grammarQs = qs.filter((q) => q.scope === 'grammar');
@@ -364,7 +365,7 @@ export function SessionPage({ sessionId }: any) {
     </Card> : <>
       {tab === 'vocabulary' && (words.length > 0 ? <div className="stack">
         <div className="vocab-grid">{words.map((w, n) => {
-        const def = defs[w.word] || w.definitions?.[0] || '';
+        const def = defs[w.word] || WORD_MEANINGS[w.word?.toLowerCase()?.trim()]?.definition || '';
         const example = (w.examples || [])[0] || '';
         const known = wordDone(w.word);
         return <article key={w.id} className={`vocab-card ${known ? 'is-done' : ''}`}>
@@ -379,7 +380,7 @@ export function SessionPage({ sessionId }: any) {
           </div>
           <div className="vocab-word en" dir="ltr">{w.word}</div>
           {w.phonetic && <div className="vocab-phonetic en" dir="ltr">/{w.phonetic}/</div>}
-          <div className="vocab-meaning" dir="rtl">{w.arabic || w.meaning}</div>
+          {!enMaterial && <div className="vocab-meaning" dir="rtl">{w.arabic || w.meaning}</div>}
           {def && <div className="vocab-def en" dir="ltr">{def}</div>}
           {example && <div className="vocab-example en" dir="ltr">“{example}”</div>}
           <div className="youglish-row">
@@ -944,7 +945,7 @@ export function MaterialsPage() {
   const level = data.levels.find((l) => l.id === levelId) || current;
   const sessions = data.sessions.filter((s) => s.levelId === level?.id).sort((a, b) => a.order - b.order);
   const partial = level ? (!admin && !levelFullyOpen(user, level, data.levels)) : false;
-  const en = !!level && (level.order > 3 || ['l8','l9','l10','l4','l5','l6','l7','l11','l12','l13','l14'].includes(level.id));
+  const en = true;
   const L = en ? { title:'Materials', hint:'Pick a level from the list. All levels are available for browsing.', level:'Level', words:'words', ready:'Ready', locked:'Locked', open:'Open lesson', none:'No materials in this level', noneHint:'Materials will appear here once lessons are added.', lesson:'Lesson', pdf:'Open PDF', dl:'Download' } :
     { title:'الماتيريال', hint:'اختار مستوى من القائمة — كل المستويات متاحة للتصفح.', level:'المستوى', words:'كلمة', ready:'جاهز', locked:'مقفول', open:'افتح الدرس', none:'مفيش ماتيريال في المستوى ده', noneHint:'الماتيريال هتظهر هنا أول ما الدروس تتضاف.', lesson:'الدرس', pdf:'افتح PDF ↗', dl:'نزّل PDF ⬇' };
   return <div className="stack" dir={en ? 'ltr' : undefined}>

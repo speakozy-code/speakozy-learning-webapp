@@ -104,16 +104,18 @@ const PLACEHOLDER = /see example/i;
 const hasArabic = (s: string) => /[\u0600-\u06FF]/.test(s || '');
 
 export function enrichWord(entry: any): any {
-  const meaning = String(entry?.meaning || '');
-  const needs = PLACEHOLDER.test(meaning) || (!hasArabic(meaning) && !hasArabic(entry?.arabic || ''));
-  if (!needs) return entry;
-  const key = String(entry.word).toLowerCase().trim();
+  const key = String(entry?.word || '').toLowerCase().trim();
   const hit = WORD_MEANINGS[key];
-  if (!hit) return entry;
-  return {
-    ...entry,
-    meaning: hit.arabic,
-    arabic: hit.arabic,
-    definitions: [hit.definition],
-  };
+  if (hit) {
+    const meaning = String(entry?.meaning || '');
+    const needs = PLACEHOLDER.test(meaning) || (!hasArabic(meaning) && !hasArabic(entry?.arabic || ''));
+    return {
+      ...entry,
+      meaning: needs ? hit.arabic : (entry.arabic || hit.arabic),
+      arabic: entry.arabic || hit.arabic,
+      definitions: [hit.definition],
+    };
+  }
+  const clean = (entry?.definitions || []).filter((d: string) => !hasArabic(d));
+  return clean.length === (entry?.definitions || []).length ? entry : { ...entry, definitions: clean };
 }

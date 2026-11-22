@@ -9,7 +9,10 @@ export type ShadowVideo = { title: string; youtubeId: string };
 
 export const SHADOWING_VIDEOS: Record<string, ShadowVideo[]> = {
   l1: [], l2: [], l3: [], l8: [], l9: [], l10: [],
-  l4: [{ title: 'Shadowing 1 — Inter 1', youtubeId: 'GFT1-b9vN-E' }], l5: [], l6: [], l7: [], l11: [],
+  l4: [
+    { title: 'Shadowing — Inter 1 (Ahmed)', youtubeId: 'UuL_wHXFxkM' },
+    { title: 'Shadowing 1 — Inter 1', youtubeId: 'GFT1-b9vN-E' },
+  ], l5: [], l6: [], l7: [], l11: [],
 };
 
 export const youtubeEmbed = (id: string) => `https://www.youtube-nocookie.com/embed/${id}`;

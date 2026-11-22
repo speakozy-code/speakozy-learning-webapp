@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import {
   Home, Map, FolderOpen, BookOpen, ListChecks, User,
   LayoutDashboard, Users, Layers, FileText, PenLine, ClipboardList,
-  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, Gift, MessageSquareHeart,
+  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, Gift, MessageSquareHeart, MessageCircle,
 } from 'lucide-react';
 import { useApp } from '../lib/store';
 import { go } from '../App';
 import { Modal, Button, Badge, fmtDate } from './UI';
 import { engagementProgress, totalScore } from '../lib/domain';
+
+const WA_LINK = 'https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83%20%D9%81%D9%8A%20%D9%83%D9%88%D8%B1%D8%B3%20%D8%B3%D8%A8%D9%8A%D9%83%D9%88%D8%B2%D9%8A';
 
 const studentNav = [
   { path: '/', label: 'الرئيسية', ic: Home },
@@ -93,6 +95,7 @@ export function Layout({ current, children }: { current: string; children: React
           {admin && <span className="muted">لوحة الأدمن</span>}
         </div>
         {!admin && <strong className="sticky-points">{points} pts</strong>}
+        {!admin && <a className="btn btn-primary btn-sm wa-top" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب"><MessageCircle size={14} /> واتساب</a>}
         {bellButton}
         <button className="user-chip" onClick={() => setProfileMenu((m) => !m)} aria-label="الملف الشخصي"><span className="avatar">{user.avatar || user.name.charAt(0)}</span></button>
       </div>
@@ -103,7 +106,7 @@ export function Layout({ current, children }: { current: string; children: React
     </div>{children}</main></div>
     {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 75 }} />}
     {mobile}
-    <a className="float-wa" href="https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83" target="_blank" rel="noreferrer" aria-label="واتساب">💬</a>
+    <a className="float-wa" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب" title="تواصل معانا على واتساب"><MessageCircle size={16} /><span>واتساب</span></a>
     <button className="to-top" onClick={() => { const main = document.querySelector('.main'); if (main) main.scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="العودة لأعلى">↑</button>
     <Modal open={bell} title="الإشعارات" onClose={() => setBell(false)}>
       {notes.length ? <div className="stack">{notes.map((n) => <div key={n.id} className="section-card">
