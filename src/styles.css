@@ -371,9 +371,11 @@ body { font-family: 'Jua', var(--font-arabic); }
 
 /* Lesson brief (overview) */
 .brief-path{display:flex;flex-wrap:wrap;gap:.5rem}
-.brief-jump{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--line);background:#12223a;color:var(--ink);border-radius:999px;padding:.45rem .85rem;cursor:pointer;font-weight:700;font-size:.85rem}
+.brief-jump{display:inline-flex;align-items:center;gap:.4rem;border:1px solid rgba(255,255,255,.18);background:rgba(18,206,144,.14);color:#eaf3ff;border-radius:999px;padding:.45rem .85rem;cursor:pointer;font-weight:700;font-size:.85rem}
 .brief-jump:hover{border-color:var(--green);color:var(--green)}
-.brief-card{background:linear-gradient(150deg,#12223a,#101a2c);border:1px solid var(--line);border-radius:16px;padding:1.1rem 1.2rem}
+.brief-card{background:linear-gradient(150deg,#12223a,#101a2c);border:1px solid var(--line);border-radius:16px;padding:1.1rem 1.2rem;color:#d5e3f4}
+.brief-card h2,.brief-card h3{color:#fff}
+.brief-card .muted{color:#9fb3cc}
 .brief-kicker{font-size:.7rem;letter-spacing:1px;text-transform:uppercase;color:var(--green);font-weight:800;margin-bottom:.35rem}
 .brief-list{margin:.5rem 0 0;padding-inline-start:1.1rem;display:grid;gap:.4rem;line-height:1.7;color:#d5e3f4}
 .brief-source{border:1px dashed var(--line);border-radius:12px;padding:.8rem 1rem;background:rgba(255,255,255,.02)}
@@ -390,7 +392,7 @@ body { font-family: 'Jua', var(--font-arabic); }
 .yg-host{height:100%;min-height:160px;max-width:100%}
 .yg-frame iframe{width:100%!important;border:0}
 .yg-dock .ygContainer{flex:1 1 auto;min-height:160px;width:100%;overflow:hidden;background:#000;position:relative}
-.brief-summary{line-height:1.8;margin:.4rem 0 0}
+.brief-summary{line-height:1.8;margin:.4rem 0 0;color:#d5e3f4}
 .dict-suggest{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.65rem}
 .dict-suggest-item{border:1px solid var(--line);background:#12223a;color:var(--ink);border-radius:999px;padding:.28rem .7rem;cursor:pointer;font-weight:700;font-size:.82rem}
 .dict-suggest-item:hover{border-color:var(--green);color:var(--green)}
@@ -519,3 +521,20 @@ body { font-family: 'Jua', var(--font-arabic); }
 .content-bar-row{justify-content:flex-start}
 .user-chip{order:5}
 .profile-menu{inset-inline-start:auto;inset-inline-end:1rem}
+/* Grammar topics */
+.grammar-topic{border-inline-start:4px solid var(--green)}
+.grammar-kicker{font-size:.72rem;font-weight:800;letter-spacing:.08em;color:var(--green-dark);margin-bottom:.35rem}
+.grammar-formula{display:block;padding:.55rem .85rem;margin:.2rem 0 .7rem;border-radius:10px;background:rgba(18,206,144,.1);color:var(--green-dark);font-weight:800;line-height:1.6}
+.grammar-explain{line-height:2;margin:.2rem 0 .9rem;color:var(--ink)}
+.grammar-label{font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:.2rem 0 .4rem}
+.grammar-examples{display:flex;flex-direction:column;gap:.4rem;margin-bottom:.9rem}
+.grammar-example{display:flex;align-items:center;gap:.55rem;text-align:left;width:100%;padding:.55rem .8rem;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.04);cursor:pointer;color:var(--ink);transition:border-color 140ms ease,background 140ms ease,transform 140ms ease}
+.grammar-example:hover{border-color:var(--green);background:rgba(18,206,144,.08);transform:translateX(2px)}
+.grammar-example svg{color:var(--green);flex:none}
+.grammar-mistakes{display:flex;flex-direction:column;gap:.5rem}
+.grammar-mistake{display:grid;gap:.25rem;padding:.55rem .8rem;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.gm-wrong,.gm-right{display:flex;align-items:center;gap:.5rem}
+.gm-wrong{color:var(--danger)}.gm-wrong s{opacity:.85}
+.gm-right{color:var(--green-dark);font-weight:800}
+.yg-play{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .8rem;border-radius:999px;border:1px solid rgba(18,206,144,.4);background:rgba(18,206,144,.1);color:var(--green-dark);font-size:.8rem;font-weight:800;cursor:pointer;transition:background 140ms ease}
+.yg-play:hover{background:rgba(18,206,144,.22)}

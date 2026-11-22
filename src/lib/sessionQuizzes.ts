@@ -1,164 +1,54 @@
-type GrammarSlide = { title: string; rule: string; examples: string[]; detail?: string };
+import { grammarQuestions, shuffle, type GeneratedQuestion } from './grammarQuiz.ts';
+import type { GrammarTopic } from './grammar/types.ts';
 
-export interface QuizItem {
-  id: string;
-  scope: 'word' | 'grammar';
-  type: 'mcq' | 'fill' | 'truefalse';
-  prompt: string;
-  options: string[];
-  correct: string;
-  points: number;
-}
+export type QuizItem = GeneratedQuestion;
+export interface WordLike { word: string; type?: string; examples?: string[]; definitions?: string[] }
 
-type WordLike = {
-  word: string;
-  arabic?: string;
-  meaning?: string;
-  type?: string;
-  examples?: string[];
-  definitions?: string[];
-};
+const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const hasArabic = (s: string) => /[\u0600-\u06FF]/.test(s);
+const matchCase = (like: string, w: string) => (like[0] === like[0].toLowerCase() ? w[0].toLowerCase() + w.slice(1) : w[0].toUpperCase() + w.slice(1));
 
-function esc(word: string) {
-  return word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function pick<T>(list: T[], n: number, seed: number): T[] {
-  const copy = list.slice();
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.abs((seed * (i + 3) * 1103515245 + 12345) % (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy.slice(0, n);
-}
-
-function uniqueOptions(correct: string, extras: string[], n = 4) {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const x of [correct, ...extras]) {
-    const t = String(x || '').trim();
-    const key = t.toLowerCase();
-    if (!t || seen.has(key)) continue;
-    seen.add(key);
-    out.push(t);
-    if (out.length >= n) break;
-  }
-  return out.length >= 2 ? out : [];
-}
-
-function bodySentence(body: string, word: string): string | undefined {
-  if (!body) return undefined;
-  const re = new RegExp(`[^.!?\\n]*\\b${esc(word)}\\b[^.!?\\n]*[.!?]`, 'gi');
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(body))) {
-    const t = m[0].trim();
-    if (t.length > 20 && t.length < 160 && !/[|🎯]/.test(t)) return t;
-  }
-  return undefined;
-}
-
-export function wordQuizItems(words: WordLike[], sessionId: string, body = ''): QuizItem[] {
-  const list = (words || []).filter((w) => w && w.word);
-  const bank = list.map((w) => w.word);
+/** English-only word questions: fill the gap in a real example, else match an English definition. */
+export function wordQuizItems(words: WordLike[], sessionId: string, pool: WordLike[] = []): QuizItem[] {
+  const list = (words || []).filter((w) => w && w.word && !hasArabic(w.word));
   const items: QuizItem[] = [];
-  const usedPrompts = new Set<string>();
-  list.forEach((w, i) => {
-    const example = (w.examples || []).find((ex) => new RegExp(`\\b${esc(w.word)}\\b`, 'i').test(ex || '') && !/[|🎯]/.test(ex || '')) || bodySentence(body, w.word);
-    let prompt: string;
+  for (const w of list) {
+    const re = new RegExp(`(^|[^\\w])(${esc(w.word)})(?=[^\\w]|$)`, 'i');
+    const example = (w.examples || []).find((ex) => re.test(ex || '') && !hasArabic(ex) && ex.trim().split(/\s+/).length >= 5);
+    const inSession = list.filter((x) => x.word.toLowerCase() !== w.word.toLowerCase());
+    const elsewhere = pool.filter((x) => x.word.toLowerCase() !== w.word.toLowerCase() && !hasArabic(x.word) && !inSession.some((y) => y.word === x.word));
+    const sameType = (xs: WordLike[]) => xs.filter((x) => w.type && x.type === w.type);
+    // topic words first (one of the same part of speech, the rest different so only one answer fits), then any word
+    const ordered = [
+      ...shuffle(sameType(inSession), sessionId + w.word).slice(0, 1),
+      ...shuffle(inSession.filter((x) => !sameType(inSession).includes(x)), sessionId + w.word + 'x'),
+      ...shuffle(sameType(inSession).slice(1), sessionId + w.word + 'y'),
+      ...shuffle(sameType(elsewhere).concat(elsewhere), sessionId + w.word + 'z'),
+    ];
+    const distractors = [...new Set(ordered.map((x) => x.word.toLowerCase()))].slice(0, 3);
+    if (distractors.length < 2) continue;
     if (example) {
-      prompt = example.replace(new RegExp(`\\b${esc(w.word)}\\b`, 'i'), '____');
-    } else {
-      const def = (w.definitions || []).find((d) => d && /[a-zA-Z]/.test(d));
-      if (!def) return;
-      prompt = `Which word means: ${def.slice(0, 140)}`;
+      const m = example.match(re)!;
+      const shown = m[2];
+      const options = shuffle([shown, ...distractors.map((d) => matchCase(shown, d))], sessionId + w.word + 'o');
+      items.push({ id: `wq-${sessionId}-${w.word.toLowerCase()}`, scope: 'word', type: 'mcq', prompt: example.replace(re, `$1____`), options, correct: shown, points: 10 });
+      continue;
     }
-    if (usedPrompts.has(prompt.toLowerCase())) return;
-    const distractors = pick(
-      bank.filter((x) => x.toLowerCase() !== w.word.toLowerCase()).concat(['book', 'play', 'go', 'have', 'need']),
-      3,
-      w.word.length + i,
-    );
-    const options = uniqueOptions(w.word, distractors);
-    if (options.length < 2) return;
-    usedPrompts.add(prompt.toLowerCase());
-    items.push({
-      id: `wq-${sessionId}-${w.word.toLowerCase()}-fill`,
-      scope: 'word',
-      type: 'mcq',
-      prompt,
-      options,
-      correct: w.word,
-      points: 10,
-    });
-  });
-  return items.slice(0, 8);
-}
-
-export function grammarQuizItems(slides: GrammarSlide[], sessionId: string, existingPrompts: string[] = []): QuizItem[] {
-  const taken = new Set(existingPrompts.map((x) => x.toLowerCase()));
-  const items: QuizItem[] = [];
-  const pool = ['is', 'are', 'was', 'were', 'have', 'had', 'do', 'did'];
-  for (const slide of slides || []) {
-    for (const ex of (slide.examples || []).slice(0, 2)) {
-      if (/[|🎯]/.test(ex) || ex.split(/\s+/).length < 4) continue;
-      const tokens = ex.split(/\s+/);
-      const idx = tokens.findIndex((tok) => /^(am|is|are|was|were|have|has|had|do|does|did)$/i.test(tok.replace(/[.,!?;:]/g, '')) || /(ed|ing)$/i.test(tok.replace(/[.,!?;:]/g, '')));
-      if (idx < 0) continue;
-      const raw = tokens[idx];
-      const clean = raw.replace(/[.,!?;:]/g, '');
-      const prompt = `Complete: ${tokens.map((t, i) => i === idx ? '____' : t).join(' ')}`;
-      if (taken.has(prompt.toLowerCase())) continue;
-      const options = uniqueOptions(clean, pool.filter((x) => x.toLowerCase() !== clean.toLowerCase()));
-      if (options.length < 2) continue;
-      taken.add(prompt.toLowerCase());
-      items.push({
-        id: `gq-${sessionId}-${slide.title.toLowerCase().replace(/\s+/g, '-')}-${items.length}`,
-        scope: 'grammar',
-        type: 'mcq',
-        prompt,
-        options,
-        correct: clean,
-        points: 10,
-      });
-      if (items.length >= 5) return items;
-    }
-    if (slide.rule && items.length < 5 && !/[|🎯]/.test(slide.title || '')) {
-      const prompt = `True or false: ${slide.title} — ${slide.rule.slice(0, 140)}`;
-      if (!taken.has(prompt.toLowerCase())) {
-        taken.add(prompt.toLowerCase());
-        items.push({
-          id: `gq-${sessionId}-${slide.title.toLowerCase().replace(/\s+/g, '-')}-tf`,
-          scope: 'grammar',
-          type: 'truefalse',
-          prompt,
-          options: ['True', 'False'],
-          correct: 'True',
-          points: 10,
-        });
-      }
-    }
+    const def = (w.definitions || []).find((d) => d && d.length < 110 && !hasArabic(d) && !re.test(d));
+    if (!def) continue;
+    const options = shuffle([w.word, ...distractors.map((d) => matchCase(w.word, d))], sessionId + w.word + 'd');
+    items.push({ id: `wq-${sessionId}-${w.word.toLowerCase()}`, scope: 'word', type: 'mcq', prompt: `Which word matches this meaning? ${def.replace(/^\(\w+\)\s*/, '')}`, options, correct: w.word, points: 10 });
   }
-  return items.slice(0, 5);
+  return items;
 }
 
-export function sessionQuizItems(words: WordLike[], slides: GrammarSlide[], sessionId: string, body = ''): QuizItem[] {
-  const wordQs = wordQuizItems(words, sessionId, body);
-  const grammarAll = grammarQuizItems(slides, sessionId, wordQs.map((q) => q.prompt));
-  const grammarMcq = grammarAll.filter((q) => q.type === 'mcq');
-  const grammarTf = grammarAll.filter((q) => q.type === 'truefalse').map((q) => ({ ...q, type: 'mcq' as const, options: ['True', 'False'] }));
-  const out: QuizItem[] = [];
-  const used = new Set<string>();
-  const add = (q: QuizItem) => {
-    const key = q.prompt.toLowerCase();
-    if (used.has(key) || out.length >= 9) return;
-    used.add(key);
-    out.push({ ...q, id: `${q.id}-s${out.length}` });
-  };
-  wordQs.slice(0, 5).forEach(add);
-  grammarMcq.slice(0, 3).forEach(add);
-  grammarTf.slice(0, 1).forEach(add);
-  wordQs.slice(5).forEach(add);
-  grammarMcq.slice(3).forEach(add);
-  grammarTf.slice(1).forEach(add);
-  return out.slice(0, 9);
+/** Nine English questions (no repeats): words first, topped up with grammar. */
+export function sessionQuizItems(words: WordLike[], topics: GrammarTopic[], sessionId: string, pool: WordLike[] = []): QuizItem[] {
+  const wq = shuffle(wordQuizItems(words, sessionId, pool), sessionId + 'w');
+  const gq = grammarQuestions(sessionId, topics, 5);
+  const wantG = Math.min(gq.length, Math.max(3, 9 - wq.length));
+  const wantW = Math.min(wq.length, 9 - wantG);
+  const picked = [...wq.slice(0, wantW), ...gq.slice(0, 9 - wantW)];
+  return shuffle(picked, sessionId + 'all');
+
 }

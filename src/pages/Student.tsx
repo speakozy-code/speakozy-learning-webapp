@@ -4,12 +4,13 @@ import { Card, Button, Badge, Progress, Stat, SectionTitle, Empty, Tabs, Field, 
 import { sessionStatus, levelProgress, engagementProgress, sessionOpen, levelFullyOpen, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, uid, today, levelLabel, cefrOf } from '../lib/domain';
 import { go } from '../App';
 import { lookupWord, allCached, type LookupEntry } from '../lib/dictionaryProvider';
-import { grammarSlides } from '../lib/lessonContent';
+import { grammarFor } from '../lib/grammar/index.ts';
 import { overviewOutline, sourceTranscript, letsTalk, voicePrompts } from '../lib/lessonBrief';
-import { wordQuizItems, grammarQuizItems, sessionQuizItems } from '../lib/sessionQuizzes';
+import { wordQuizItems, sessionQuizItems } from '../lib/sessionQuizzes';
+import { grammarQuestions } from '../lib/grammarQuiz.ts';
 import { YOUGLISH_ACCENTS } from '../lib/youglish';
 import { YouGlishDock } from '../components/YouGlishDock';
-import { Play, Volume2, Star, Check, BookOpen } from 'lucide-react';
+import { Play, Volume2, Star, Check, BookOpen, X } from 'lucide-react';
 
 const statusTone: Record<string, string> = { locked: 'muted', available: 'blue', progress: 'amber', done: 'blue', review: 'amber', approved: 'green' };
 const phon = (p?: string) => {
@@ -225,16 +226,17 @@ export function SessionPage({ sessionId }: any) {
   const pct = totalParts ? Math.round(done.filter((d) => d.startsWith(`${s.id}-`) || d.startsWith('word:')).length / totalParts * 100) : 0;
   const customNotes = (data.grammarNotes || []).filter((n) => n.sessionId === s.id).sort((a, b) => a.order - b.order)
     .map((n) => ({ title: n.title, rule: n.rule, examples: n.examples, detail: n.detail || '' }));
-  const slides = [...grammarSlides(s), ...customNotes];
+  const topics = grammarFor(s.id);
+  const slides: any[] = [...topics.map((t) => ({ title: t.title, rule: t.formula, detail: t.ar, examples: t.examples, mistakes: t.mistakes })), ...customNotes];
   const outline = overviewOutline(s);
   const talk = letsTalk(s);
   const voices = voicePrompts(s);
   const transcript = sourceTranscript(s);
-  const generatedWordQs = wordQuizItems(words, s.id, transcript).filter((q) => !qs.some((x) => x.prompt === q.prompt));
+  const generatedWordQs = wordQuizItems(words, s.id, data.dictionary).filter((q) => !qs.some((x) => x.prompt === q.prompt));
   const wordQs = generatedWordQs;
-  const generatedGrammarQs = grammarQuizItems(slides, s.id, grammarQs.map((q) => q.prompt)).filter((q) => q.type === 'mcq');
+  const generatedGrammarQs = grammarQuestions(s.id, topics, 5);
   const grammarAll = generatedGrammarQs.length ? generatedGrammarQs : grammarQs;
-  const quizNine = sessionQuizItems(words, slides, s.id, transcript);
+  const quizNine = sessionQuizItems(words, topics, s.id, data.dictionary);
   const allWordsStudied = words.length > 0 && words.every((w) => wordDone(w.word));
   const writingLines = writing.split(/\n/).map((x) => x.trim()).filter(Boolean).length;
   const tabs = [
@@ -406,26 +408,25 @@ export function SessionPage({ sessionId }: any) {
         </Card>}
       </div> : <Empty title="مفيش كلمات في السيشن دي" hint="الكلمات هتظهر هنا أول ما تتضاف للديكشنري." />)}
       {tab === 'grammar' && <>
-        {slides.length ? <Card className="slides-card">
-          <div className="between"><div><h3>سلايدات الجرامر</h3><small className="muted">فكرة واحدة في كل مرة — استخدم الأسهم عشان تتنقل في الدرس.</small></div><Badge tone="blue">{slideIdx + 1} / {slides.length}</Badge></div>
-          <div className="slide-stage" key={`${s.id}-${slideIdx}`}>
-            <div className="slide-kicker">GRAMMAR · {slideIdx + 1}</div>
-            <h2>{slides[slideIdx].title}</h2>
-            {slides[slideIdx].rule && <p className="slide-rule" dir="auto">{slides[slideIdx].rule}</p>}
-            {slides[slideIdx].detail && <p className="slide-detail" dir="rtl">{slides[slideIdx].detail}</p>}
-            {slides[slideIdx].examples.length > 0 && <div className="slide-examples">
-              <div className="slide-examples-label">أمثلة</div>
-              {slides[slideIdx].examples.map((ex, i) => <div key={i} className="slide-example en" dir="ltr">{ex}</div>)}
-            </div>}
-          </div>
-          <div className="slides-nav">
-            <Button variant="ghost" size="sm" onClick={() => setSlideIdx((i) => Math.max(0, i - 1))} disabled={slideIdx === 0}>→ السابق</Button>
-            <div className="slide-dots">{slides.map((_, i) => <button key={i} className={`slide-dot ${i === slideIdx ? 'active' : ''}`} onClick={() => setSlideIdx(i)} aria-label={`سلايد ${i + 1}`} />)}</div>
-            <Button size="sm" onClick={() => setSlideIdx((i) => Math.min(slides.length - 1, i + 1))} disabled={slideIdx === slides.length - 1}>التالي ←</Button>
-          </div>
-        </Card> : <Empty title="مفيش سلايدات جرامر لسه" hint="ملاحظات الجرامر للسيشن دي هتظهر هنا على شكل سلايدات." />}
+        {slides.length ? <div className="stack">{slides.map((t: any, i: number) => <Card key={`${s.id}-${i}`} className="grammar-topic">
+          <div className="grammar-kicker">GRAMMAR · {i + 1} / {slides.length}</div>
+          <h2 className="en" dir="ltr">{t.title}</h2>
+          {t.rule && <div className="grammar-formula en" dir="ltr">{t.rule}</div>}
+          {t.detail && <p className="grammar-explain" dir="rtl">{t.detail}</p>}
+          {t.examples?.length > 0 && <div className="grammar-examples">
+            <div className="grammar-label">أمثلة</div>
+            {t.examples.map((ex: string, k: number) => <button key={k} type="button" className="grammar-example en" dir="ltr" onClick={() => speak(ex)} title="استمع"><Volume2 size={16} aria-hidden="true" /><span>{ex}</span></button>)}
+          </div>}
+          {t.mistakes?.length > 0 && <div className="grammar-mistakes">
+            <div className="grammar-label">أخطاء شائعة</div>
+            {t.mistakes.map(([wrong, right]: [string, string], k: number) => <div key={k} className="grammar-mistake en" dir="ltr">
+              <div className="gm-wrong"><X size={15} aria-hidden="true" /><s>{wrong}</s></div>
+              <div className="gm-right"><Check size={15} aria-hidden="true" /><span>{right}</span></div>
+            </div>)}
+          </div>}
+        </Card>)}</div> : <Empty title="مفيش جرامر لسه" hint="ملاحظات الجرامر للسيشن دي هتظهر هنا." />}
         {grammarAll.length > 0 && <Card className="grammar-training">
-          <div className="between"><div><h3>تدريب الجرامر</h3><small className="muted">الممارسة بعد السلايدات.</small></div><Badge tone="green">{grammarAll.length} questions</Badge></div>
+          <div className="between"><div><h3>تدريب الجرامر</h3><small className="muted">الممارسة بعد الشرح.</small></div><Badge tone="green">{grammarAll.length} questions</Badge></div>
           <div className="stack" style={{ marginTop: '.8rem' }}>{grammarAll.map((q, i) => <div key={q.id} className="exercise-item">
             <div className="between"><strong>{i + 1}. {q.prompt}</strong>{grammarResult && <Badge tone={grammarResult.marks[q.id] ? 'green' : 'red'}>{grammarResult.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
             <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${grammarAnswers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={grammarAnswers[q.id] === o} onChange={() => setGrammarAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
@@ -498,7 +499,7 @@ export function QuizPage({ sessionId }: any) {
   const [result, setResult] = useState<any>(null);
   const s = data.sessions.find((x) => x.id === sessionId);
   const words = data.dictionary.filter((w) => (w.sessionIds || []).includes(sessionId));
-  const qs = s ? sessionQuizItems(words, grammarSlides(s), s.id, (s.sections || []).map((x: any) => x.body || '').join('\n')) : [];
+  const qs = s ? sessionQuizItems(words, grammarFor(s.id), s.id, data.dictionary) : [];
   if (!user) return null;
   if (!s) return <Empty title="السيشن مش موجودة" />;
   if (!qs.length) return <Empty title="مفيش أسئلة للسيشن دي" hint="راجع خريطة المستويات." />;

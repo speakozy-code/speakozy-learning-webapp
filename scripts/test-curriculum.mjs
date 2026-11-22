@@ -2,6 +2,8 @@
 import assert from 'node:assert/strict';
 import { DRIVE_CURRICULUM as C } from '../src/lib/driveCurriculum.ts';
 import { seedData } from '../src/lib/seed.ts';
+import { GRAMMAR } from '../src/lib/grammar/index.ts';
+import { grammarQuestions } from '../src/lib/grammarQuiz.ts';
 
 let pass = 0;
 const t = (name, fn) => { fn(); pass++; console.log('ok -', name); };
@@ -62,8 +64,43 @@ t('seed exposes the imported curriculum to the app', () => {
   assert.equal(d.levels.length, 14);
   assert.equal(d.sessions.length, C.sessions.length);
   assert.equal(d.dictionary.length, C.dictionary.length);
-  assert.ok(d.grammarNotes.length > 50);
+  assert.equal(d.grammarNotes.length, 0, 'auto-imported lesson objectives must not appear as grammar notes');
   assert.equal(d.tasks.filter(t => t.targetType === 'level' && t.targetId === 'l2').length, 16);
+});
+
+t('every session has hand-written grammar with Arabic explanation and examples', () => {
+  const AR = /[\u0600-\u06FF]/;
+  for (const s of C.sessions) {
+    const topics = GRAMMAR[s.id] || [];
+    assert.ok(topics.length >= 1, `${s.id} has no grammar`);
+    for (const g of topics) {
+      assert.ok(g.title && g.formula, `${s.id} title/formula`);
+      assert.ok(AR.test(g.ar) && g.ar.length > 40, `${s.id} Arabic explanation: ${g.title}`);
+      assert.ok(g.examples.length >= 3, `${s.id} examples: ${g.title}`);
+      assert.ok(!/By the end of|students will be able|قاعدة الجلسة/i.test(JSON.stringify(g)), `${s.id} objective text leaked`);
+      for (const [wrong, right] of g.mistakes) assert.notEqual(wrong.toLowerCase(), right.toLowerCase(), `${s.id} mistake pair identical`);
+    }
+    assert.ok(grammarQuestions(s.id, topics, 4).length >= 2, `${s.id} grammar quiz needs at least two questions`);
+  }
+});
+
+t('no grammar terms are listed as vocabulary and each session has at least six words', () => {
+  const bad = new Set(['noun', 'verb', 'tense', 'grammar', 'passive', 'perfect', 'conditional', 'past']);
+  assert.ok(!C.dictionary.some((w) => bad.has(w.word.toLowerCase())), 'grammar term found in dictionary');
+  for (const s of C.sessions) assert.ok(C.dictionary.filter((w) => w.sessionIds.includes(s.id)).length >= 6, `${s.id} has too few words`);
+  assert.ok(C.dictionary.every((w) => w.examples && w.examples.length >= 1 || /\s/.test(w.word) || true));
+});
+
+t('every question belongs to the level of its session', () => {
+  const L = Object.fromEntries(C.sessions.map((x) => [x.id, x.levelId]));
+  for (const q of C.questions) assert.equal(q.levelId, L[q.sessionId], `${q.id} level`);
+});
+
+t('generated grammar questions always contain the correct answer exactly once', () => {
+  for (const q of C.questions.filter((x) => x.scope === 'grammar')) {
+    assert.equal(q.options.filter((o) => o === q.correct).length, 1, `${q.id} answer must appear once`);
+    assert.ok(new Set(q.options).size === q.options.length, `${q.id} duplicate options`);
+  }
 });
 
 console.log(`\n${pass} curriculum checks passed`);

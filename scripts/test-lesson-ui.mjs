@@ -7,6 +7,7 @@ import { fromApi, fromWiktionary, parseWiktionaryExtras } from '../src/lib/dicti
 import { wordQuizItems, sessionQuizItems } from '../src/lib/sessionQuizzes.ts';
 import { buildStudentAccount } from '../src/lib/domain.ts';
 import { LEVEL_TASKS } from '../src/lib/levelTasks.ts';
+import { GRAMMAR } from '../src/lib/grammar/index.ts';
 
 let pass = 0;
 const t = (name, fn) => { fn(); pass++; console.log('ok -', name); };
@@ -35,14 +36,13 @@ t('YouGlish widget query stays on the same page player', () => {
 t('word quizzes are English fill-in MCQ, never Arabic meanings', () => {
   const s = C.sessions[0];
   const words = C.dictionary.filter((w) => (w.sessionIds || []).includes(s.id));
-  const body = (s.sections || []).map((x) => x.body || '').join('\n');
-  const qs = wordQuizItems(words, s.id, body);
+  const qs = wordQuizItems(words, s.id, C.dictionary);
   assert.ok(qs.length >= 3, `got ${qs.length}`);
   for (const q of qs) {
     assert.equal(q.scope, 'word');
     assert.equal(q.type, 'mcq');
-    assert.ok(q.prompt.includes('____') || q.prompt.startsWith('Which word means:'), q.prompt);
-    assert.ok(q.options.length >= 2);
+    assert.ok(q.prompt.includes('____') || /^Which word matches this meaning\?/.test(q.prompt), q.prompt);
+    assert.ok(q.options.length >= 3);
     assert.ok(q.options.includes(q.correct));
     assert.ok(!/[\u0600-\u06FF]/.test(q.prompt + q.options.join(' ') + q.correct), q.prompt);
   }
@@ -67,19 +67,20 @@ t('Wiktionary page extras yield transcript and synonyms', () => {
   assert.equal(parseWiktionaryExtras(withQualifier).phonetic, '/ˌsɛɹ.ənˈdɪp.ɪ.ti/');
 });
 
-t('session quiz is nine English questions on words and grammar', () => {
-  const s = C.sessions[2];
-  const words = C.dictionary.filter((w) => (w.sessionIds || []).includes(s.id));
-  const body = (s.sections || []).map((x) => x.body || '').join('\n');
-  const qs = sessionQuizItems(words, [{ title: 'Past Simple', rule: 'finished actions', examples: ['I visited my grandparents last weekend.'] }], s.id, body);
-  assert.equal(qs.length, 9);
-  assert.equal(new Set(qs.map((q) => q.prompt.toLowerCase())).size, qs.length);
-  assert.ok(qs.filter((q) => q.scope === 'word').length >= 4);
-  assert.ok(qs.filter((q) => q.scope === 'grammar').length >= 2);
-  for (const q of qs) {
-    assert.equal(q.type, 'mcq');
-    assert.ok(q.options.includes(String(q.correct)));
-    assert.ok(!/[\u0600-\u06FF]/.test(q.prompt + q.options.join('')));
+t('session quiz is nine English questions on words and grammar, with no repeats', () => {
+  for (const id of ['l1-s2', 'l3-s3', 'l6-s1', 'l9-s4']) {
+    const words = C.dictionary.filter((w) => (w.sessionIds || []).includes(id));
+    const qs = sessionQuizItems(words, GRAMMAR[id], id, C.dictionary);
+    assert.equal(qs.length, 9, `${id} got ${qs.length}`);
+    assert.ok(qs.filter((q) => q.scope === 'word').length >= 3, `${id} words`);
+    assert.ok(qs.filter((q) => q.scope === 'grammar').length >= 3, `${id} grammar`);
+    assert.equal(new Set(qs.map((q) => q.prompt + q.correct)).size, qs.length, `${id} repeated questions`);
+    for (const q of qs) {
+      assert.equal(q.type, 'mcq');
+      assert.equal(q.options.filter((o) => o === q.correct).length, 1, `${id} answer once: ${q.prompt}`);
+      assert.ok(!/[\u0600-\u06FF]/.test(q.prompt + q.options.join('')));
+      assert.ok(!/In this lesson we use/.test(q.prompt));
+    }
   }
 });
 
