@@ -103,7 +103,7 @@ export function Layout({ current, children }: { current: string; children: React
     </div>{children}</main></div>
     {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 75 }} />}
     {mobile}
-    <a className="float-wa" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب" title="تواصل معانا على واتساب"><MessageCircle size={16} /><span>واتساب</span></a>
+    <a className="float-wa" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب" title="تواصل معانا على واتساب"><MessageCircle size={20} /></a>
     <button className="to-top" onClick={() => { const main = document.querySelector('.main'); if (main) main.scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="العودة لأعلى">↑</button>
     <Modal open={bell} title="الإشعارات" onClose={() => setBell(false)}>
       {notes.length ? <div className="stack">{notes.map((n) => <div key={n.id} className="section-card">
