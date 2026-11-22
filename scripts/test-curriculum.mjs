@@ -63,7 +63,7 @@ t('seed exposes the imported curriculum to the app', () => {
   const d = seedData();
   assert.equal(d.levels.length, 14);
   assert.equal(d.sessions.length, C.sessions.length);
-  assert.equal(d.dictionary.length, C.dictionary.length);
+  assert.equal(d.dictionary.length, C.dictionary.length + 26, 'Drive-reviewed words replace mismatched session vocabulary');
   assert.equal(d.grammarNotes.length, 0, 'auto-imported lesson objectives must not appear as grammar notes');
   assert.equal(d.tasks.filter(t => t.targetType === 'level' && t.targetId === 'l2').length, 16);
 });

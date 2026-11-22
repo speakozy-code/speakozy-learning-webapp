@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const layout = readFileSync('src/components/Layout.tsx', 'utf8');
+const css = readFileSync('src/styles.css', 'utf8');
+const student = readFileSync('src/pages/Student.tsx', 'utf8');
+assert.match(layout, /className="float-wa"/);
+assert.doesNotMatch(layout.slice(layout.indexOf('<div className="topbar">'), layout.indexOf('</div>', layout.indexOf('<div className="topbar">'))), /whatsapp-float|واتساب/i);
+assert.match(css, /\.to-top\{position:fixed;bottom:9\.2rem;left:/);
+assert.match(css, /\.float-wa\{position:fixed;bottom:5rem;left:/);
+assert.match(css, /\.float-wa\{bottom:5rem;left:\.7rem;right:auto/);
+for (const label of ['Objectives','Vocabulary','Grammar','Summary']) assert.ok(student.includes(label), `missing ${label}`);
+console.log('requested material UI checks passed');

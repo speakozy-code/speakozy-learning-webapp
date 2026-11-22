@@ -463,29 +463,29 @@ export function SessionPage({ sessionId }: any) {
       </div>}
       {tab === 'overview' && <div className="stack" dir={enMaterial ? 'ltr' : undefined}>
         <Card className="brief-card">
-          <div className="brief-kicker">الدرس</div>
+          <div className="brief-kicker">Lesson</div>
           <h2 className="en" dir="ltr">{outline.title}</h2>
           {outline.topic && <p className="muted en" dir="ltr">{outline.topic}</p>}
         </Card>
         <article className="brief-card">
-          <div className="brief-kicker">الأهداف</div>
-          <h3>الأهداف</h3>
+          <div className="brief-kicker">Objectives</div>
+          <h3>Objectives</h3>
           <ul className="brief-list">{outline.objectives.map((item, i) => <li key={i} className="en" dir="ltr">{item}</li>)}</ul>
         </article>
         <article className="brief-card">
-          <div className="brief-kicker">الكلمات</div>
-          <h3>الكلمات</h3>
+          <div className="brief-kicker">Vocabulary</div>
+          <h3>Vocabulary</h3>
           <p className="brief-summary en" dir="ltr">{outline.wordsAbout}</p>
-          <button className="brief-jump" style={{ marginTop: '.7rem' }} onClick={() => setTab('vocabulary')}>افتح الكلمات</button>
+          <button className="brief-jump" style={{ marginTop: '.7rem' }} onClick={() => setTab('vocabulary')}>Open vocabulary</button>
         </article>
         <article className="brief-card">
-          <div className="brief-kicker">الجرامر</div>
-          <h3>الجرامر</h3>
+          <div className="brief-kicker">Grammar</div>
+          <h3>Grammar</h3>
           <p className="brief-summary en" dir="ltr">{outline.grammarAbout}</p>
-          <button className="brief-jump" style={{ marginTop: '.7rem' }} onClick={() => setTab('grammar')}>افتح الجرامر</button>
+          <button className="brief-jump" style={{ marginTop: '.7rem' }} onClick={() => setTab('grammar')}>Open grammar</button>
         </article>
         <Card className="brief-card kind-summary">
-          <div className="brief-kicker">الملخص</div>
+          <div className="brief-kicker">Summary</div>
           <p className="brief-summary en" dir="ltr">{outline.summary}</p>
         </Card>
       </div>}

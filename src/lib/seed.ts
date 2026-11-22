@@ -1,5 +1,6 @@
 import type { AppData } from '../types';
 import { DRIVE_CURRICULUM as D } from './driveCurriculum.ts';
+import { SOURCE_SESSION_REPAIRS, SOURCE_WORDS_BY_SESSION, replaceSessionSections } from './sourceSessionRepairs.ts';
 import { LEVEL_TASKS } from './levelTasks.ts';
 
 // Full curriculum imported from the Speakozy Google Drive decks (E1 → Upper 1).
@@ -7,9 +8,23 @@ import { LEVEL_TASKS } from './levelTasks.ts';
 // presentation text, generated exercises, quiz questions, grammar slides and a
 // word list enriched with definition, part of speech, IPA and audio.
 const LEVELS = (D as any).levels as AppData['levels'];
-const SESSIONS = (D as any).sessions as AppData['sessions'];
+const SESSIONS = ((D as any).sessions as AppData['sessions']).map((session) => {
+  const repair = SOURCE_SESSION_REPAIRS[session.id];
+  const sections = replaceSessionSections(session.id, session.sections);
+  return { ...session, ...(repair ? { title: repair.title, topic: repair.topic } : {}), ...(sections ? { sections } : {}) };
+});
 const QUESTIONS = (D as any).questions as AppData['questions'];
-const DICTIONARY = (D as any).dictionary as AppData['dictionary'];
+const repairedIds = new Set(Object.keys(SOURCE_WORDS_BY_SESSION));
+const DICTIONARY = [
+  ...((D as any).dictionary as AppData['dictionary']).flatMap((word) => {
+    const remaining = (word.sessionIds || []).filter((id) => !repairedIds.has(id));
+    return remaining.length ? [{ ...word, sessionIds: remaining }] : (word.sessionIds || []).some((id) => repairedIds.has(id)) ? [] : [word];
+  }),
+  ...Object.entries(SOURCE_WORDS_BY_SESSION).flatMap(([sessionId, words]) => words.map((word, index) => ({
+    id: `drive-reviewed-${sessionId}-${index + 1}`, word: word.word, meaning: word.arabic, arabic: word.arabic,
+    type: word.type, definitions: word.definitions, examples: word.examples, source: 'manual', sessionIds: [sessionId],
+  } as AppData['dictionary'][number]))),
+];
 const NOTES = (D as any).grammarNotes as AppData['grammarNotes'];
 
 export function seedData(): AppData {
