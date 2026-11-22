@@ -86,7 +86,6 @@ export function Layout({ current, children }: { current: string; children: React
       <div className="content-bar-row">
         {profileMenu && <div className="profile-menu">
           <button onClick={() => { setProfileMenu(false); go('/profile'); }}>تعديل الملف الشخصي</button>
-          {!admin && user.subscribed === false && <a href="https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83" target="_blank" rel="noreferrer">اشترك في الكورس</a>}
           <button onClick={() => { setProfileMenu(false); go('/trial'); }}>تفاصيل الكورس</button>
           <button onClick={() => { setProfileMenu(false); logout(); go('/'); }}>تسجيل الخروج / دخول حساب تاني</button>
         </div>}
@@ -95,13 +94,11 @@ export function Layout({ current, children }: { current: string; children: React
           {admin && <span className="muted">لوحة الأدمن</span>}
         </div>
         {!admin && <strong className="sticky-points">{points} pts</strong>}
-        {!admin && <a className="btn btn-primary btn-sm wa-top" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب"><MessageCircle size={14} /> واتساب</a>}
         {bellButton}
         <button className="user-chip" onClick={() => setProfileMenu((m) => !m)} aria-label="الملف الشخصي"><span className="avatar">{user.avatar || user.name.charAt(0)}</span></button>
       </div>
       {!admin && user.subscribed === false && <div className="sub-notice" dir="rtl">
         <span>أنت غير مشترك بالكورس، تواصل معنا للتفاصيل والاشتراك</span>
-        <a className="btn btn-primary btn-sm" href="https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83%20%D9%81%D9%8A%20%D8%A7%D9%84%D9%83%D9%88%D8%B1%D8%B3" target="_blank" rel="noreferrer">واتساب</a>
       </div>}
     </div>{children}</main></div>
     {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 75 }} />}

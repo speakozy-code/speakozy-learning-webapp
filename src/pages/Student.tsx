@@ -241,11 +241,11 @@ export function SessionPage({ sessionId }: any) {
   const allWordsStudied = words.length > 0 && words.every((w) => wordDone(w.word));
   const writingLines = writing.split(/\n/).map((x) => x.trim()).filter(Boolean).length;
   const tabs = [
-    { id: 'overview', label: 'نظرة عامة' },
-    { id: 'vocabulary', label: `الكلمات${words.length ? ` (${words.length})` : ''}` },
-    { id: 'grammar', label: 'الجرامر' },
-    { id: 'practice', label: 'الممارسة' },
-    { id: 'quiz', label: 'كويز (9)' },
+    { id: 'overview', label: 'Overview' },
+    { id: 'vocabulary', label: `Words${words.length ? ` (${words.length})` : ''}` },
+    { id: 'grammar', label: 'Grammar' },
+    { id: 'practice', label: 'Practice' },
+    { id: 'quiz', label: 'Quiz (9)' },
   ];
   async function mark(sectionId: string) {
     if (locked || done.includes(sectionId)) return;
@@ -380,7 +380,7 @@ export function SessionPage({ sessionId }: any) {
           </div>
           <div className="vocab-word en" dir="ltr">{w.word}</div>
           {w.phonetic && <div className="vocab-phonetic en" dir="ltr">/{w.phonetic}/</div>}
-          {!enMaterial && <div className="vocab-meaning" dir="rtl">{w.arabic || w.meaning}</div>}
+          {(w.arabic || w.meaning) && <div className="vocab-meaning" dir="rtl">{w.arabic || w.meaning}</div>}
           {def && <div className="vocab-def en" dir="ltr">{def}</div>}
           {example && <div className="vocab-example en" dir="ltr">“{example}”</div>}
           <div className="youglish-row">
@@ -398,7 +398,7 @@ export function SessionPage({ sessionId }: any) {
       })}</div>
         {!allWordsStudied && words.length > 0 && <div className="note">علّم كل الكلمات إنها اتذاكرت عشان يفتح كويز الكلمات.</div>}
         {allWordsStudied && wordQs.length > 0 && <Card className="grammar-training">
-          <div className="between"><div><h3>كويز الكلمات</h3><small className="muted">راجع الكلمات الجديدة بتاعة السيشن دي.</small></div><Badge tone="green">{wordQs.length} questions</Badge></div>
+          <div className="between"><div><h3>Words Quiz</h3><small className="muted">راجع الكلمات الجديدة بتاعة السيشن دي.</small></div><Badge tone="green">{wordQs.length} questions</Badge></div>
           <div className="stack" style={{ marginTop: '.8rem' }}>{wordQs.map((q, i) => <div key={q.id} className="exercise-item">
             <div className="between"><strong>{i + 1}. {q.prompt}</strong>{wordResult && <Badge tone={wordResult.marks[q.id] ? 'green' : 'red'}>{wordResult.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
             {q.options.length ? <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${wordAnswers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={wordAnswers[q.id] === o} onChange={() => setWordAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
@@ -415,11 +415,11 @@ export function SessionPage({ sessionId }: any) {
           {t.rule && <div className="grammar-formula en" dir="ltr">{t.rule}</div>}
           {t.detail && <p className="grammar-explain" dir="rtl">{t.detail}</p>}
           {t.examples?.length > 0 && <div className="grammar-examples">
-            <div className="grammar-label">أمثلة</div>
+            <div className="grammar-label">Examples</div>
             {t.examples.map((ex: string, k: number) => <button key={k} type="button" className="grammar-example en" dir="ltr" onClick={() => speak(ex)} title="استمع"><Volume2 size={16} aria-hidden="true" /><span>{ex}</span></button>)}
           </div>}
           {t.mistakes?.length > 0 && <div className="grammar-mistakes">
-            <div className="grammar-label">أخطاء شائعة</div>
+            <div className="grammar-label">Common Mistakes</div>
             {t.mistakes.map(([wrong, right]: [string, string], k: number) => <div key={k} className="grammar-mistake en" dir="ltr">
               <div className="gm-wrong"><X size={15} aria-hidden="true" /><s>{wrong}</s></div>
               <div className="gm-right"><Check size={15} aria-hidden="true" /><span>{right}</span></div>
@@ -427,7 +427,7 @@ export function SessionPage({ sessionId }: any) {
           </div>}
         </Card>)}</div> : <Empty title="مفيش جرامر لسه" hint="ملاحظات الجرامر للسيشن دي هتظهر هنا." />}
         {grammarAll.length > 0 && <Card className="grammar-training">
-          <div className="between"><div><h3>تدريب الجرامر</h3><small className="muted">الممارسة بعد الشرح.</small></div><Badge tone="green">{grammarAll.length} questions</Badge></div>
+          <div className="between"><div><h3>Grammar Practice</h3><small className="muted">الممارسة بعد الشرح.</small></div><Badge tone="green">{grammarAll.length} questions</Badge></div>
           <div className="stack" style={{ marginTop: '.8rem' }}>{grammarAll.map((q, i) => <div key={q.id} className="exercise-item">
             <div className="between"><strong>{i + 1}. {q.prompt}</strong>{grammarResult && <Badge tone={grammarResult.marks[q.id] ? 'green' : 'red'}>{grammarResult.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
             <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${grammarAnswers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={grammarAnswers[q.id] === o} onChange={() => setGrammarAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
@@ -438,11 +438,11 @@ export function SessionPage({ sessionId }: any) {
       </>}
       {tab === 'practice' && <div className="stack">
         <Card className="activity-card">
-          <SectionTitle title="يلا نتكلم" action={<Badge tone="blue">{talk.length || voices.length}</Badge>} />
+          <SectionTitle title="Speaking Practice" action={<Badge tone="blue">{talk.length || voices.length}</Badge>} />
           {(talk.length ? talk : ['اتكلم عن الدرس ده باستخدام الكلمات الجديدة.']).map((q, i) => <div key={i} className="req-item" style={{ marginTop: '.5rem' }}><span className="req-check">{i + 1}</span><span dir="ltr" className="en">{q}</span></div>)}
         </Card>
         <Card className="activity-card">
-          <SectionTitle title="فويس نوتس" action={<Badge>WhatsApp</Badge>} />
+          <SectionTitle title="Voice Notes" action={<Badge>WhatsApp</Badge>} />
           <p className="muted">جاوب على السؤالين دول بفويس نوتس على واتساب.</p>
           {voices.slice(0, 2).map((q, i) => <div key={i} className="section-card" style={{ marginTop: '.7rem' }}>
             <strong>{i + 1}. <span className="en" dir="ltr">{q}</span></strong>
@@ -452,7 +452,7 @@ export function SessionPage({ sessionId }: any) {
           </div>)}
         </Card>
         <Card>
-          <SectionTitle title="كتابة" />
+          <SectionTitle title="Writing Practice" />
           <p className="muted">لخّص اللي فهمته من الدرس ده في 6 سطور على الأقل.</p>
           <textarea value={writing} onChange={(e) => setWriting(e.target.value)} placeholder={'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6'} disabled={locked} />
           <div className="row" style={{ marginTop: '.6rem' }}>
@@ -521,7 +521,7 @@ export function QuizPage({ sessionId }: any) {
   }
 
   if (result) return <Card className="stack">
-    <h2>الكويز خلص</h2>
+    <h2>Quiz Complete</h2>
     <div className={result.pending ? 'note' : 'result-good'}>
       <strong>Automated score: {result.auto} out of {result.max}</strong>
       {result.pending > 0 && <div>There are {result.pending} written answers to be reviewed by the admin. Final approval isn't immediate.</div>}
@@ -531,7 +531,7 @@ export function QuizPage({ sessionId }: any) {
 
   return <div className="stack">
     <div className="row"><button className="icon-btn" onClick={() => go(`/session/${s.id}`)}>→ السيشن</button></div>
-    <Card><h1>كويز: <span className="en" dir="ltr">{s.title}</span></h1><p className="muted">9 أسئلة. كمّل كل جملة بالكلمة الصح.</p></Card>
+    <Card><h1>Session Quiz: <span className="en" dir="ltr">{s.title}</span></h1><p className="muted">9 أسئلة. كمّل كل جملة بالكلمة الصح.</p></Card>
     {qs.map((q, i) => <Card key={q.id}>
       <div className="row between"><strong dir="ltr" className="en" style={{textAlign:"left"}}>{i + 1}. {q.prompt}</strong><Badge>{q.points} نقاط</Badge></div>
       <div style={{ marginTop: '.8rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${answers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={answers[q.id] === o} onChange={() => setAnswers((a) => ({ ...a, [q.id]: o }))} style={{ width: 'auto' }} /> <span className="en" dir="ltr">{o}</span></label>)}</div>
