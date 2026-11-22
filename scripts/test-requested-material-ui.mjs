@@ -35,3 +35,21 @@ for (const heading of ['Examples', 'Common Mistakes', 'Grammar Practice', 'Quiz 
   assert.match(student.slice(Math.max(0, at - 100), at + heading.length + 50), /dir="ltr"/);
 }
 console.log('contextual dictionary and LTR regression checks passed');
+
+const verifiedDriveTranslations = {
+  'dict-l1-s1-great': 'بخير', 'dict-l1-s1-nice': 'سعيد بلقائك',
+  'dict-l1-s4-mobile': 'محمول', 'dict-l1-s7-clean': 'ينظف',
+  'dict-l1-s3-japanese': 'ياباني', 'dict-l1-s3-south-korean': 'كوري جنوبي',
+  'dict-l2-s4-look-for': 'يبحث عن', 'dict-l2-s5-clean-up': 'ينظّف',
+  'dict-l2-s5-home-sweet-home': 'ما أجمل العودة إلى البيت', 'dict-l2-s6-suit': 'يناسبك',
+  'dict-l3-s1-book': 'يحجز', 'dict-l3-s1-change': 'يغيّر', 'dict-l3-s1-early': 'مبكرًا',
+  'dict-l3-s3-return': 'ذهاب وعودة', 'dict-l3-s4-false': 'خطأ', 'dict-l3-s4-true': 'صحيح',
+  'dict-l4-s2-travel': 'السفر', 'dict-l4-s5-online': 'على الإنترنت',
+  'dict-l4-s7-change': 'تغيّر', 'dict-l4-s7-conserve': 'يحافظ على', 'dict-l4-s7-save': 'يوفّر',
+  'dict-l9-s7-suit': 'يناسبك', 'dict-l10-s5-cut-in': 'يتخطّى الطابور',
+  'dict-l11-s2-intrinsic': 'داخلي',
+};
+for (const [id, arabic] of Object.entries(verifiedDriveTranslations)) {
+  assert.equal(entry(id).arabic, arabic, `Drive-context translation mismatch for ${id}`);
+}
+console.log(`${Object.keys(verifiedDriveTranslations).length} Drive-context vocabulary corrections verified`);
