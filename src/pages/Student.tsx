@@ -460,12 +460,12 @@ export function SessionPage({ sessionId }: any) {
         <Card className="activity-card">
           <SectionTitle title="Speaking Practice" action={<Badge tone="blue">{talk.length} questions</Badge>} />
           <p className="muted" dir="rtl">أسئلة مفتوحة للتدريب — اتكلم بصوت عالي، ولو عايز رأي المدرّس ابعت إجابتك على أي سؤال للجروب.</p>
-          {talk.map((q, i) => <div key={i} className="req-item" style={{ marginTop: '.5rem', gap: '.5rem', flexWrap: 'wrap' }}><span className="req-check">{i + 1}</span><span dir="ltr" className="en" style={{ flex: 1 }}>{q}</span><a className="btn btn-ghost btn-sm" dir="rtl" href={waGroupShare(`فويس نوت Speakozy — ${s.title}\n${i + 1}. ${q}`)} target="_blank" rel="noreferrer">ابعت إجابتك للجروب</a></div>)}
+          {talk.map((q, i) => <div key={i} className="req-item" style={{ marginTop: '.5rem', gap: '.5rem', flexWrap: 'wrap' }}><span className="req-check">{i + 1}</span><span dir="ltr" className="en" style={{ flex: 1 }}>{q}</span><a className="btn btn-ghost btn-sm" dir="rtl" href={waGroupShare(`فويس نوت Speakozy — ${s.title}\n${i + 1}. ${q}`)} target="_blank" rel="noreferrer">ابعت إجابتك على واتساب</a></div>)}
         </Card>
         <Card className="activity-card">
           <SectionTitle title="Voice Notes" action={<Badge>اختياري</Badge>} />
-          <p className="muted" dir="rtl">اختار أي سؤال من الأسئلة اللي فوق، سجّل إجابتك بصوتك، وابعتها على جروب الواتساب علشان المدرّس يسمعها.</p>
-          <a className="btn btn-primary btn-sm" href={waGroupShare(`فويس نوت Speakozy — ${s.title}`)} target="_blank" rel="noreferrer">افتح الواتساب وابعت للجروب</a>
+          <p className="muted" dir="rtl">اختار أي سؤال من الأسئلة اللي فوق، سجّل إجابتك بصوتك، وابعتها على واتساب Speakozy علشان المدرّس يسمعها.</p>
+          <a className="btn btn-primary btn-sm" href={waGroupShare(`فويس نوت Speakozy — ${s.title}`)} target="_blank" rel="noreferrer">افتح الواتساب وابعت</a>
         </Card>
       </div>}
       {tab === 'overview' && <div className="stack" dir="ltr">
