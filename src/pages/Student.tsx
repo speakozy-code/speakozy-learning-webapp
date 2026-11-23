@@ -12,6 +12,8 @@ import { grammarQuestions } from '../lib/grammarQuiz.ts';
 import { YOUGLISH_ACCENTS } from '../lib/youglish';
 import { YouGlishDock } from '../components/YouGlishDock';
 import { notificationPermission, requestNotifications } from '../lib/pwa';
+import { TALK_QUESTIONS } from '../lib/content/talk';
+import { getBank } from '../lib/questionBank';
 import { Play, Volume2, Star, Check, BookOpen, X } from 'lucide-react';
 
 const statusTone: Record<string, string> = { locked: 'muted', available: 'blue', progress: 'amber', done: 'blue', review: 'amber', approved: 'green' };
@@ -238,14 +240,13 @@ export function SessionPage({ sessionId }: any) {
   const topics = grammarFor(s.id);
   const slides: any[] = [...topics.map((t) => ({ title: t.title, rule: t.formula, detail: t.ar, examples: t.examples, mistakes: t.mistakes })), ...customNotes];
   const outline = overviewOutline(s);
-  const talk = speakingQuestions(s, words.map((w) => w.word));
+  const bank = getBank(data).get(s.id);
+  const talk = bank?.speaking || [];
   const voices = voicePrompts(s);
   const transcript = sourceTranscript(s);
-  const generatedWordQs = wordQuizItems(words, s.id, data.dictionary).filter((q) => !qs.some((x) => x.prompt === q.prompt));
-  const wordQs = generatedWordQs;
-  const generatedGrammarQs = grammarQuestions(s.id, topics, GRAMMAR_QUIZ_SIZE);
-  const grammarAll = generatedGrammarQs.length ? generatedGrammarQs : grammarQs;
-  const sessionQuiz = sessionQuizItems(words, topics, s.id, data.dictionary);
+  const wordQs = bank?.words || [];
+  const grammarAll = bank?.grammar?.length ? bank.grammar : grammarQs;
+  const sessionQuiz = bank?.session || [];
   const allWordsStudied = words.length > 0 && words.every((w) => wordDone(w.word));
   const writingLines = writing.split(/\n/).map((x) => x.trim()).filter(Boolean).length;
   const tabs = [
@@ -499,7 +500,7 @@ export function QuizPage({ sessionId }: any) {
   const [result, setResult] = useState<any>(null);
   const s = data.sessions.find((x) => x.id === sessionId);
   const words = data.dictionary.filter((w) => (w.sessionIds || []).includes(sessionId));
-  const qs = s ? sessionQuizItems(words, grammarFor(s.id), s.id, data.dictionary) : [];
+  const qs = s ? (getBank(data).get(s.id)?.session || []) : [];
   if (!user) return null;
   if (!s) return <Empty title="السيشن مش موجودة" />;
   if (!qs.length) return <Empty title="مفيش أسئلة للسيشن دي" hint="راجع خريطة المستويات." />;
@@ -719,6 +720,7 @@ export function WordsPage() {
   const [flipped, setFlipped] = useState(false);
   const [q, setQ] = useState('');
   const [skipped, setSkipped] = useState<string[]>([]);
+  const [adding, setAdding] = useState<{ word: string; meaning: string; example: string } | null>(null);
   if (!user) return null;
   const saved = data.savedWords.filter((w) => w.studentId === user.id);
   const now = new Date().toISOString();
@@ -733,8 +735,22 @@ export function WordsPage() {
     await put('savedWords', { ...card, review: grade === 'again', nextReview: next });
     setFlipped(false);
   }
+  async function addOwn() {
+    if (!adding || !adding.word.trim() || !adding.meaning.trim()) return;
+    const word = adding.word.trim();
+    if (saved.some((w) => w.word.toLowerCase() === word.toLowerCase())) { setAdding(null); return; }
+    await put('savedWords', { studentId: user!.id, word, meaning: adding.meaning.trim(), transcript: adding.example.trim() || undefined, review: true, createdAt: today(), nextReview: today() });
+    setAdding(null);
+  }
   return <div className="stack">
     <div><h1>الكلمات</h1><p className="muted">راجع كلماتك المحفوظة بكروت. اقلب الكارت، وبعدين قيّم نفسك: لسه بنساها، صعبة، كويسة، أو سهلة.</p></div>
+    <div><Button size="sm" onClick={() => setAdding({ word: '', meaning: '', example: '' })}>+ ضيف كلمة بنفسك</Button></div>
+    <Modal open={!!adding} title="ضيف كلمة" onClose={() => setAdding(null)}>
+      <Field label="الكلمة بالإنجليزي"><input dir="ltr" value={adding?.word || ''} onChange={(e) => setAdding({ ...adding!, word: e.target.value })} placeholder="e.g. reliable" /></Field>
+      <Field label="المعنى بالعربي"><input dir="rtl" value={adding?.meaning || ''} onChange={(e) => setAdding({ ...adding!, meaning: e.target.value })} /></Field>
+      <Field label="جملة مثال (اختياري)"><input dir="ltr" value={adding?.example || ''} onChange={(e) => setAdding({ ...adding!, example: e.target.value })} /></Field>
+      <Button onClick={addOwn} disabled={!adding?.word.trim() || !adding?.meaning.trim()}>ضيف للكروت</Button>
+    </Modal>
     <div className="grid g3">
       <Stat label="كلمات محفوظة" value={saved.length} />
       <Stat label="مستحقة للمراجعة" value={due.length} tone="green" />
@@ -749,6 +765,7 @@ export function WordsPage() {
         {flipped
           ? <>
             <div className="result-good" dir="rtl" style={{ margin: '1rem 0' }}>{card.meaning}</div>
+            {card.transcript && <div className="muted en" dir="ltr" style={{ marginBottom: '.8rem' }}>{card.transcript}</div>}
             <div className="row" style={{ justifyContent: 'center' }}>
               <Button variant="danger" onClick={() => rate('again')}>لسه بنساها</Button>
               <Button variant="ghost" onClick={() => rate('hard')}>صعبة</Button>
@@ -763,6 +780,7 @@ export function WordsPage() {
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="دوّر في كلماتك" aria-label="دوّر في كلماتك" style={{ marginBottom: '.8rem' }} />
       {list.length ? <div className="saved-grid">{list.map((w) => <div key={w.id} className={`saved-card ${w.review ? 'needs-review' : ''}`}>
         <div className="saved-word en" dir="ltr">{w.word}</div>
+        {w.transcript && <div className="saved-transcript en" dir="ltr">{w.transcript}</div>}
         <div className="saved-meaning" dir="rtl">{w.meaning}</div>
         <div className="saved-actions">
           <button className="icon-btn" title="اسمع النطق" onClick={() => speakWord(w.word)}>🔊</button>
@@ -773,13 +791,6 @@ export function WordsPage() {
   </div>;
 }
 
-const TALK_QUESTIONS: Record<string, string[]> = {
-  A1: ['What is your name and where are you from?', 'What do you do every morning?', 'Describe your family in a few sentences.', 'What is your favorite food? Why?', 'What do you like to do on the weekend?', 'Describe your room.'],
-  A2: ['Tell me about your best friend.', 'What did you do last weekend?', 'What is your daily routine like?', 'Describe your favorite place in your city.', 'What are you going to do next week?', 'Which do you prefer, summer or winter? Why?'],
-  B1: ['Tell me about a memorable trip you took.', 'What are the advantages and disadvantages of working from home?', 'Describe a person who has influenced you.', 'How has technology changed the way we study?', 'What would you do if you won a lot of money?', 'Talk about a problem you solved recently.'],
-  B2: ['Do you think social media does more harm than good? Explain.', 'Describe a decision that changed your life.', 'How important is it to learn a second language today?', 'What makes a good leader?', 'If you could change one thing about your country, what would it be?', 'Talk about a time you failed and what you learned.'],
-  C1: ['To what extent should governments regulate artificial intelligence?', 'Is success mostly talent or hard work? Defend your view.', 'How do cultural differences shape the way people communicate?', 'Is it ethical to prioritize economic growth over the environment?', 'Discuss a belief you once held that you have since changed.'],
-};
 
 /** يلا نتكلم: سؤال محادثة عشوائي على حسب مستوى الطالب. */
 export function YallaNetkellemPage() {

@@ -12,6 +12,10 @@ export const SHADOWING_VIDEOS: Record<string, ShadowVideo[]> = {
   l4: [
     { title: 'Shadowing 2 — Inter 1', youtubeId: 'UuL_wHXFxkM' },
     { title: 'Shadowing 1 — Inter 1', youtubeId: 'GFT1-b9vN-E' },
+    { title: 'Shadowing 3 — Inter 1', youtubeId: 'TZKNdUd4Rcg' },
+    { title: 'Shadowing 4 — Inter 1', youtubeId: '-9bEBGalrKQ' },
+    { title: 'Shadowing 5 — Inter 1', youtubeId: 'eFLAjD2Jt_w' },
+    { title: 'Shadowing 6 — Inter 1', youtubeId: '_hahvDy_eC4' },
   ], l5: [], l6: [], l7: [], l11: [],
 };
 

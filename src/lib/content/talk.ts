@@ -1,0 +1,8 @@
+// Questions for the "يلا نتكلم" page, by CEFR band. They are part of the site-wide question registry (no repeats).
+export const TALK_QUESTIONS: Record<string, string[]> = {
+  A1: ['What is your name and where are you from?', 'What do you do every morning?', 'Describe your family in a few sentences.', 'What is your favorite food? Why?', 'What do you like to do on the weekend?', 'Describe your room.'],
+  A2: ['Tell me about your best friend.', 'What did you do last weekend?', 'What is your daily routine like?', 'Describe your favorite place in your city.', 'What are you going to do next week?', 'Which do you prefer, summer or winter? Why?'],
+  B1: ['Tell me about a memorable trip you took.', 'What are the advantages and disadvantages of working from home?', 'Describe a person who has influenced you.', 'How has technology changed the way we study?', 'What would you do if you won a lot of money?', 'Talk about a problem you solved recently.'],
+  B2: ['Do you think social media does more harm than good? Explain.', 'Describe a decision that changed your life.', 'How important is it to learn a second language today?', 'What makes a good leader?', 'If you could change one thing about your country, what would it be?', 'Talk about a time you failed and what you learned.'],
+  C1: ['To what extent should governments regulate artificial intelligence?', 'Is success mostly talent or hard work? Defend your view.', 'How do cultural differences shape the way people communicate?', 'Is it ethical to prioritize economic growth over the environment?', 'Discuss a belief you once held that you have since changed.'],
+};

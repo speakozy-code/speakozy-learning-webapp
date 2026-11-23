@@ -126,8 +126,8 @@ t('daily tasks: 4 per week = next 2 topics x 2 questions, tied to level, topic a
   }
   assert.ok(tasks.every((x) => x.targetType === 'level' && x.week >= 1 && x.topic && x.instructions.length === 1 && x.instructions[0].trim()));
   assert.equal(new Set(tasks.map((x) => x.id)).size, tasks.length);
-  assert.ok(tasks.filter((x) => x.source === 'deck').every((x) => /\?$/.test(x.instructions[0])), 'deck questions are real questions');
-  assert.ok(tasks.every((x) => x.source === 'deck' || x.badge.includes('General')), 'generated questions are flagged');
+  assert.ok(tasks.filter((x) => x.source === 'authored').every((x) => x.instructions[0].length > 25), 'authored task questions are real prompts');
+  assert.ok(tasks.every((x) => x.source === 'authored' || x.badge.includes('General')), 'generated questions are flagged');
   assert.ok(!tasks.some((x) => x.levelId === 'l12' || ['l12', 'l13', 'l14'].includes(x.targetId)), 'empty levels get no tasks');
 });
 

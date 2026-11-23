@@ -526,7 +526,7 @@ body { font-family: 'Jua', var(--font-arabic); }
 .grammar-topic{border-inline-start:4px solid var(--green)}
 .grammar-kicker{font-size:.72rem;font-weight:800;letter-spacing:.08em;color:var(--green-dark);margin-bottom:.35rem}
 .grammar-formula{display:block;padding:.55rem .85rem;margin:.2rem 0 .7rem;border-radius:10px;background:rgba(18,206,144,.1);color:var(--green-dark);font-weight:800;line-height:1.6}
-.grammar-explain{line-height:2;margin:.2rem 0 .9rem;color:var(--ink)}
+.grammar-explain{white-space:pre-line;line-height:2;margin:.2rem 0 .9rem;color:var(--ink)}
 .grammar-label{font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:.2rem 0 .4rem}
 .grammar-examples{display:flex;flex-direction:column;gap:.4rem;margin-bottom:.9rem}
 .grammar-example{display:flex;align-items:center;gap:.55rem;text-align:left;width:100%;padding:.55rem .8rem;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.04);cursor:pointer;color:var(--ink);transition:border-color 140ms ease,background 140ms ease,transform 140ms ease}
