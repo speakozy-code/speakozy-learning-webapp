@@ -14,6 +14,39 @@ const SHADOW_PLAYLISTS = [
 const PODCAST_CHANNELS = ['5104992', '5562189', '468568', '574393', '4832025', '1018980', '4956820', '4827692', '4580807', '483309'];
 const ENGLISH_PODCASTS = ['1325176', '2046285', '3995961', '2269226', '2918889'];
 
+// أهم قنوات تعلّم الإنجليزي عالميًا (الرابط بحث يوتيوب باسم القناة).
+const TOP_CHANNELS: [string, string][] = [
+  ['BBC Learning English', 'دروس قصيرة وأخبار مبسّطة بإنجليزي بريطاني'],
+  ['English with Lucy', 'جرامر ونطق وتعبيرات بأسلوب ممتع'],
+  ["Rachel's English", 'أفضل قناة لتحسين النطق الأمريكي'],
+  ['engVid', 'مدرّسين كتير وشرح لكل المستويات'],
+  ['Speak English with Mr Duncan', 'من أقدم القنوات — إنجليزي بطيء وواضح'],
+  ['Espresso English', 'جرامر وتعبيرات وحوارات قصيرة'],
+  ['VOA Learning English', 'أخبار وقصص بإنجليزي مبسّط وسرعة بطيئة'],
+  ['English with Jennifer', 'شرح جرامر ومحادثة خطوة بخطوة'],
+  ['EnglishClass101', 'دروس مقسّمة بالمستويات ومحادثات جاهزة'],
+  ['Real English', 'ناس حقيقية بتتكلم في مواقف يومية'],
+];
+// مواقع تدريب وأسئلة.
+const SITES: [string, string, string][] = [
+  ['British Council LearnEnglish', 'https://learnenglish.britishcouncil.org', 'تمارين جرامر وكلمات وتحديد مستوى مجاني'],
+  ['UsingEnglish Quizzes', 'https://www.usingenglish.com/quizzes/', 'حوالي 300 كويز جرامر وكلمات بتصحيح فوري'],
+  ['BBC Learning English', 'https://www.bbc.co.uk/learningenglish', 'دروس وتمارين وبودكاست قصير'],
+  ['Cambridge English', 'https://www.cambridgeenglish.org/learning-english/', 'ألعاب وتمارين وتحضير للاختبارات'],
+  ['EnglishClub', 'https://www.englishclub.com', 'دروس جرامر وتعبيرات ومنتدى'],
+  ['Easy World of English', 'https://www.easyworldofenglish.com', 'جرامر وكتابة ونطق من البداية للمتقدم'],
+  ["Randall's ESL Cyber Listening Lab", 'https://www.esl-lab.com', 'تمارين استماع مع أسئلة'],
+  ['WordReference Forums', 'https://forum.wordreference.com', 'اسأل أي سؤال عن معنى أو استخدام كلمة'],
+];
+const TIPS = [
+  'اسمع إنجليزي كل يوم 20 دقيقة على الأقل (بودكاست أو فيديو)، وركّز على اللي بتفهمه بنسبة 70% تقريبًا.',
+  'اتكلم بصوت عالي كل يوم: شادوينج، وسجّل صوتك وقارنه بالأصل.',
+  'راجع الكلمات بنظام المراجعة المتباعدة بدل ما تحفظها مرة واحدة.',
+  'اكتب فقرة قصيرة كل يوم عن يومك وغلّط براحتك — الغلط هو التعلّم.',
+  'اتعلم الكلمة في جملة مش لوحدها، وكرّر الجملة بصوتك.',
+  'خليك ثابت: 20 دقيقة كل يوم أحسن من ساعتين مرة في الأسبوع.',
+];
+const searchUrl = (q: string) => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
 const playlistUrl = (id: string) => `https://www.youtube.com/playlist?list=${id}`;
 const castboxUrl = (id: string) => `https://castbox.fm/vc/${id}`;
 
@@ -35,6 +68,27 @@ export default function ResourcesPage() {
       <div className="video-frame"><iframe src={youtubeEmbed(SHADOW_VIDEO)} title="Shadowing resource" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>
       <p className="muted" style={{ marginBottom: '.4rem' }}>بلاي ليستات شادوينج على يوتيوب:</p>
       <LinkGrid items={SHADOW_PLAYLISTS} label="Playlist" href={playlistUrl} />
+    </Card>
+
+    <Card>
+      <SectionTitle title="أهم 10 قنوات لتعلّم الإنجليزي" action={<Badge tone="red">يوتيوب</Badge>} />
+      <div className="grid g2">{TOP_CHANNELS.map(([name, why], i) => <a key={name} className="section-card" href={searchUrl(name)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <div className="row between"><strong dir="ltr" className="en">{i + 1}. {name}</strong><Badge tone="blue">افتح ↗</Badge></div>
+        <p className="muted" style={{ margin: '.3rem 0 0' }}>{why}</p>
+      </a>)}</div>
+    </Card>
+
+    <Card>
+      <SectionTitle title="مواقع أسئلة وتدريب" action={<Badge tone="green">مجانية</Badge>} />
+      <div className="grid g2">{SITES.map(([name, url, why]) => <a key={name} className="section-card" href={url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <div className="row between"><strong dir="ltr" className="en">{name}</strong><Badge tone="blue">افتح ↗</Badge></div>
+        <p className="muted" style={{ margin: '.3rem 0 0' }}>{why}</p>
+      </a>)}</div>
+    </Card>
+
+    <Card>
+      <SectionTitle title="ازاي تطوّر إنجليزيتك" action={<Badge tone="amber">نصايح</Badge>} />
+      <ol className="muted" style={{ lineHeight: 2, paddingInlineStart: '1.2rem', margin: 0 }}>{TIPS.map((x) => <li key={x}>{x}</li>)}</ol>
     </Card>
 
     <Card>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Inbox, FolderOpen, Clapperboard, Dices, PartyPopper, Puzzle, CaseSensitive, BookOpen } from 'lucide-react';
 
 export function Card({ children, className = '', ...rest }: any) {
   return <div className={`card ${className}`} {...rest}>{children}</div>;
@@ -18,8 +19,10 @@ export function Stat({ label, value, sub, tone }: any) {
 export function SectionTitle({ title, action }: any) {
   return <div className="section-title"><h2>{title}</h2>{action}</div>;
 }
+const EMPTY_ICONS: Record<string, any> = { '📭': Inbox, '🗂️': FolderOpen, '🗂': FolderOpen, '📂': FolderOpen, '🎬': Clapperboard, '🎲': Dices, '🎉': PartyPopper, '🧩': Puzzle, '🔤': CaseSensitive, '📖': BookOpen };
 export function Empty({ icon = '📭', title, hint }: any) {
-  return <div className="empty"><div className="empty-icon">{icon}</div><h3>{title}</h3>{hint && <p>{hint}</p>}</div>;
+  const Icon = typeof icon === 'string' ? EMPTY_ICONS[icon] : null;
+  return <div className="empty"><div className="empty-icon">{Icon ? <Icon size={28} strokeWidth={1.8} /> : icon}</div><h3>{title}</h3>{hint && <p>{hint}</p>}</div>;
 }
 export function Loading({ label = 'بنحمّل...' }: any) {
   return <div className="loading"><span className="spinner" /> {label}</div>;

@@ -31,6 +31,13 @@ function readDemo(): AppData {
 function withDailyNotes(d: AppData, user: any): AppData {
   if (!user || user.role !== 'student') return d;
   const notes = dailyNotifications(user.id, user.levelId);
+  // spaced repetition: remind the student when saved words are due for review
+  const nowIso = new Date().toISOString();
+  const dueCount = (d.savedWords || []).filter((w: any) => w.studentId === user.id && (!w.nextReview || w.nextReview <= nowIso)).length;
+  if (dueCount > 0) {
+    const day = nowIso.slice(0, 10);
+    notes.push({ id: `daily-srs-${user.id}-${day}`, targetId: user.id, title: 'مراجعة الكلمات', body: `عندك ${dueCount} كلمة مستحقة للمراجعة دلوقتي — راجعها قبل ما تنساها.`, href: '#/words', read: false, createdAt: nowIso });
+  }
   const ids = new Set(notes.map((n) => n.id));
   return { ...d, notifications: [...notes, ...((d.notifications || []).filter((n: any) => !ids.has(n.id)))] };
 }

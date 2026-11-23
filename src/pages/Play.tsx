@@ -3,6 +3,7 @@ import { useApp } from '../lib/store';
 import { Card, Button, Badge, Empty, Tabs, SectionTitle } from '../components/UI';
 import { waGroupShare } from '../lib/subscription';
 import type { AppData } from '../types';
+import { Gamepad2, Target, BookOpen, Puzzle, CaseSensitive, Lightbulb, RefreshCw } from 'lucide-react';
 
 type W = AppData['dictionary'][number];
 const hasAr = (x: string) => /[؀-ۿ]/.test(x);
@@ -69,7 +70,7 @@ function GuessWord({ words }: { words: W[] }) {
       <h3 className="en" style={{ margin: '.4rem 0', lineHeight: 1.6 }}>{r.clue}</h3>
       {r.blank && <p className="en muted" style={{ margin: '.3rem 0' }}>“{r.blank}”</p>}
     </div>
-    {!answered && !hint && <div className="row" dir="rtl"><Button size="sm" variant="ghost" onClick={() => setHint(true)}>💡 تلميح بالعربي</Button></div>}
+    {!answered && !hint && <div className="row" dir="rtl"><Button size="sm" variant="ghost" onClick={() => setHint(true)}><Lightbulb size={14} /> تلميح بالعربي</Button></div>}
     {(hint || answered) && <div className="note" dir="rtl">المعنى بالعربي: {r.word.arabic || r.word.meaning}</div>}
     <div className="play-opts" dir="ltr">
       {r.options.map((o) => <button key={o} type="button" className={`play-opt en ${answered ? (o === r.word.word ? 'ok' : o === picked ? 'bad' : '') : ''}`} onClick={() => choose(o)}>{o}</button>)}
@@ -100,7 +101,7 @@ function ThreeWords({ words, levelTitle }: { words: W[]; levelTitle: string }) {
   const long = count >= 20;
   return <Card className="stack">
     <div className="between"><div><h3 style={{ margin: 0 }}>3 Words 1 Story</h3><small className="muted">اكتب قصة قصيرة بالإنجليزي فيها الـ 3 كلمات دي.</small></div>
-      <Button size="sm" variant="ghost" onClick={() => { setThree(draw()); setStory(''); setChecked(false); }}>🔄 كلمات جديدة</Button></div>
+      <Button size="sm" variant="ghost" onClick={() => { setThree(draw()); setStory(''); setChecked(false); }}><RefreshCw size={14} /> كلمات جديدة</Button></div>
     <div className="play-words" dir="ltr">
       {three.map((w, k) => <span key={w.word} className={`play-word en ${checked && used[k] ? 'used' : ''}`}>{w.word}{checked && (used[k] ? ' ✓' : ' ✗')}</span>)}
     </div>
@@ -116,21 +117,92 @@ function ThreeWords({ words, levelTitle }: { words: W[]; levelTitle: string }) {
   </Card>;
 }
 
+const arOf = (w: W) => (w.arabic || w.meaning || '').split(/[،,;/]/)[0].replace(/\(.*?\)/g, '').trim();
+const playableAr = (words: W[]) => words.filter((w) => { const a = arOf(w); return hasAr(a) && a.length <= 18; });
+
+/** Match each English word with its Arabic meaning. */
+function MatchGame({ words }: { words: W[] }) {
+  const deal = () => shuffle(playableAr(words)).slice(0, 6);
+  const [pairs, setPairs] = useState<W[]>(deal);
+  const [arOrder, setArOrder] = useState<string[]>(() => shuffle(pairs.map((w) => w.word)));
+  const [left, setLeft] = useState('');
+  const [done, setDone] = useState<string[]>([]);
+  const [wrong, setWrong] = useState('');
+  const [tries, setTries] = useState(0);
+  if (playableAr(words).length < 6) return <Empty icon="🧩" title="الكلمات في المستوى ده لسه مش كفاية للعبة" hint="جرّب مستوى تاني." />;
+  const restart = () => { const p = deal(); setPairs(p); setArOrder(shuffle(p.map((w) => w.word))); setLeft(''); setDone([]); setWrong(''); setTries(0); };
+  const pickRight = (word: string) => {
+    if (!left || done.includes(word)) return;
+    setTries((n) => n + 1);
+    if (left === word) { setDone((d) => [...d, word]); setLeft(''); setWrong(''); }
+    else { setWrong(word); setTimeout(() => setWrong(''), 600); }
+  };
+  const finished = done.length === pairs.length;
+  return <Card className="stack">
+    <div className="between"><div><h3 style={{ margin: 0 }}>وصّل الكلمة بمعناها</h3><small className="muted">اضغط كلمة إنجليزي وبعدين معناها بالعربي.</small></div>
+      <Badge tone="green">{done.length} / {pairs.length}</Badge></div>
+    <div className="grid g2">
+      <div className="stack" dir="ltr">{pairs.map((w) => <button key={w.word} type="button" disabled={done.includes(w.word)} className={`play-opt en ${done.includes(w.word) ? 'ok' : left === w.word ? 'bad' : ''}`} style={left === w.word ? { outline: '2px solid var(--green, #22c55e)' } : undefined} onClick={() => setLeft(w.word)}>{w.word}</button>)}</div>
+      <div className="stack" dir="rtl">{arOrder.map((word) => { const w = pairs.find((x) => x.word === word)!; return <button key={word} type="button" disabled={done.includes(word)} className={`play-opt ${done.includes(word) ? 'ok' : wrong === word ? 'bad' : ''}`} onClick={() => pickRight(word)}>{arOf(w)}</button>; })}</div>
+    </div>
+    {finished && <div className="result-good" dir="rtl">ممتاز! وصّلت الكل في {tries} محاولة {tries === pairs.length ? '— من غير غلطة 🎉' : ''}</div>}
+    <div className="row"><Button variant={finished ? 'primary' : 'ghost'} onClick={restart}>{finished ? 'العب تاني' : 'كلمات جديدة'}</Button></div>
+  </Card>;
+}
+
+/** Build the word from its shuffled letters, with the Arabic meaning as the clue. */
+function ScrambleGame({ words }: { words: W[] }) {
+  const deal = () => shuffle(playableAr(words).filter((w) => w.word.length >= 4 && w.word.length <= 9)).slice(0, 8);
+  const mix = (w: string) => { let s = shuffle(w.split('')); for (let k = 0; k < 5 && s.join('') === w; k++) s = shuffle(w.split('')); return s; };
+  const [rounds, setRounds] = useState<W[]>(deal);
+  const [i, setI] = useState(0);
+  const [letters, setLetters] = useState<string[]>(() => rounds[0] ? mix(rounds[0].word) : []);
+  const [used, setUsed] = useState<number[]>([]);
+  const [score, setScore] = useState(0);
+  const [result, setResult] = useState<'' | 'ok' | 'bad'>('');
+  if (rounds.length < 4) return <Empty icon="🔤" title="الكلمات في المستوى ده لسه مش كفاية للعبة" hint="جرّب مستوى تاني." />;
+  const w = rounds[i];
+  const answer = used.map((k) => letters[k]).join('');
+  const start = (n: number, list = rounds) => { setI(n); setLetters(list[n] ? mix(list[n].word) : []); setUsed([]); setResult(''); };
+  const check = () => { const ok = answer.toLowerCase() === w.word.toLowerCase(); setResult(ok ? 'ok' : 'bad'); if (ok) setScore((s) => s + 1); };
+  const restart = () => { const r = deal(); setRounds(r); setScore(0); start(0, r); };
+  if (i >= rounds.length) return <Card className="stack" style={{ textAlign: 'center' }}>
+    <h2>خلصت الجولة 🎉</h2><div className="result-good" dir="ltr"><strong>{score} / {rounds.length}</strong></div>
+    <div className="row" style={{ justifyContent: 'center' }}><Button onClick={restart}>العب تاني</Button></div>
+  </Card>;
+  return <Card className="stack">
+    <div className="between"><Badge tone="blue">كلمة {i + 1} / {rounds.length}</Badge><Badge tone="green">النتيجة {score}</Badge></div>
+    <div className="section-card" dir="rtl" style={{ textAlign: 'center' }}><div className="muted" style={{ fontSize: '.8rem' }}>رتّب الحروف علشان تكوّن الكلمة اللي معناها:</div><h2 style={{ margin: '.3rem 0' }}>{arOf(w)}</h2></div>
+    <div dir="ltr" className="row" style={{ justifyContent: 'center', minHeight: '3rem', gap: '.4rem' }}>
+      {used.length ? used.map((k, n) => <span key={n} className="play-word en">{letters[k]}</span>) : <span className="muted">اضغط على الحروف بالترتيب…</span>}
+    </div>
+    <div dir="ltr" className="row" style={{ justifyContent: 'center', flexWrap: 'wrap', gap: '.4rem' }}>
+      {letters.map((c, k) => <button key={k} type="button" className="play-opt en" style={{ minWidth: '2.6rem' }} disabled={used.includes(k) || !!result} onClick={() => setUsed((u) => [...u, k])}>{c}</button>)}
+    </div>
+    {result === 'ok' && <div className="result-good" dir="rtl">✓ صح!</div>}
+    {result === 'bad' && <div className="result-bad" dir="rtl" style={{ padding: '.4rem .7rem' }}>✗ الإجابة الصح: <span dir="ltr" className="en">{w.word}</span></div>}
+    <div className="row between" dir="rtl">
+      <div className="row"><Button size="sm" variant="ghost" onClick={() => setUsed([])} disabled={!!result || !used.length}>مسح</Button><Button size="sm" variant="ghost" onClick={() => setUsed((u) => u.slice(0, -1))} disabled={!!result || !used.length}>⌫</Button></div>
+      {result ? <Button onClick={() => start(i + 1)}>{i + 1 >= rounds.length ? 'شوف النتيجة' : 'الكلمة الجاية'}</Button> : <Button onClick={check} disabled={used.length !== letters.length}>تحقق</Button>}
+    </div>
+  </Card>;
+}
+
 export default function PlayPage() {
   const { user, data } = useApp();
   const levels = [...data.levels].sort((a, b) => a.order - b.order);
   const [level, setLevel] = useState(user?.levelId || levels[0]?.id);
-  const [game, setGame] = useState<'guess' | 'story'>('guess');
+  const [game, setGame] = useState<'guess' | 'story' | 'match' | 'scramble'>('guess');
   const words = useMemo(() => levelWords(data, level), [data.dictionary, data.sessions, level]);
   if (!user) return null;
   const lv = levels.find((l) => l.id === level);
   return <div className="stack">
-    <div><h1>🎮 العب واتعلم</h1><p className="muted">العب واتعلم كلمات مستواك — اختار اللعبة والمستوى وابدأ.</p></div>
-    <Tabs tabs={[{ id: 'guess', label: '🎯 خمّن الكلمة' }, { id: 'story', label: '📖 3 Words 1 Story' }]} active={game} onChange={(g) => setGame(g as 'guess' | 'story')} />
+    <div><h1><Gamepad2 size={22} /> العب واتعلم</h1><p className="muted">العب واتعلم كلمات مستواك — اختار اللعبة والمستوى وابدأ.</p></div>
+    <Tabs tabs={[{ id: 'guess', label: <span className="tab-ic"><Target size={15} /> خمّن الكلمة</span> }, { id: 'story', label: <span className="tab-ic"><BookOpen size={15} /> 3 Words 1 Story</span> }, { id: 'match', label: <span className="tab-ic"><Puzzle size={15} /> وصّل الكلمة</span> }, { id: 'scramble', label: <span className="tab-ic"><CaseSensitive size={15} /> رتّب الحروف</span> }]} active={game} onChange={(g) => setGame(g as any)} />
     <Card>
       <SectionTitle title="اختار مستواك" action={<Badge tone="blue">{words.length} كلمة</Badge>} />
       <Tabs tabs={levels.map((l) => ({ id: l.id, label: l.title }))} active={level} onChange={setLevel} />
     </Card>
-    {game === 'guess' ? <GuessWord key={`g-${level}`} words={words} /> : <ThreeWords key={`s-${level}`} words={words} levelTitle={lv?.title || ''} />}
+    {game === 'guess' ? <GuessWord key={`g-${level}`} words={words} /> : game === 'story' ? <ThreeWords key={`s-${level}`} words={words} levelTitle={lv?.title || ''} /> : game === 'match' ? <MatchGame key={`m-${level}`} words={words} /> : <ScrambleGame key={`x-${level}`} words={words} />}
   </div>;
 }
