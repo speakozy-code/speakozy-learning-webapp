@@ -1,3 +1,4 @@
+import { SubscribeButtons } from '../components/Upsell';
 import React from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, SectionTitle } from '../components/UI';
@@ -47,7 +48,7 @@ export default function TrialPage() {
         <Play size={34} />
         <strong>السيشن التجريبية هتضاف هنا قريبًا</strong>
         <span className="muted">ابعتلنا على واتساب وهنبعتلك لينك التجربة أول بأول.</span>
-        <a className="btn btn-primary btn-sm" href={WA} target="_blank" rel="noreferrer"><MessageCircle size={14} /> واتساب</a>
+        <SubscribeButtons size="sm" />
       </div>}
     </Card>
 

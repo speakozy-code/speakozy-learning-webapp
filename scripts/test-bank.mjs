@@ -86,4 +86,30 @@ t('every grammar topic of every lesson has a detailed explanation (4 parts)', ()
   }
 });
 
+import { isSubscribed, FREE_SHADOWING_VIDEOS, FREE_YALLA_PER_LEVEL } from '../src/lib/subscription.ts';
+import { SHADOWING_VIDEOS } from '../src/lib/videoSlots.ts';
+import { lessonOverview } from '../src/lib/overview.ts';
+import { whyWrong } from '../src/lib/reasons.ts';
+t('subscription: admin and subscribed see everything, unsubscribed are limited', () => {
+  assert.equal(isSubscribed({ role: 'student', subscribed: false }), false);
+  assert.equal(isSubscribed({ role: 'student', subscribed: true }), true);
+  assert.equal(isSubscribed({ role: 'admin' }), true);
+  assert.equal(FREE_SHADOWING_VIDEOS, 1); assert.equal(FREE_YALLA_PER_LEVEL, 5);
+  for (const list of Object.values(TALK_QUESTIONS)) assert.ok(list.length >= FREE_YALLA_PER_LEVEL);
+});
+t('shadowing: Inter 1 has 6 videos, Inter 2 has 6 videos, ids unique', () => {
+  assert.equal(SHADOWING_VIDEOS.l4.length, 6); assert.equal(SHADOWING_VIDEOS.l5.length, 6);
+  const ids = Object.values(SHADOWING_VIDEOS).flat().map((v) => v.youtubeId);
+  assert.equal(new Set(ids).size, ids.length);
+});
+t('overview: objectives and summary come from the lesson content', () => {
+  const s = C.sessions[0]; const o = lessonOverview(s.title, GRAMMAR[s.id] || [], C.dictionary.filter((w) => (w.sessionIds || []).includes(s.id)));
+  assert.ok(o.objectives.length >= 3 && o.summary.length > 60);
+});
+t('wrong grammar answers get an Arabic reason with the rule', () => {
+  const s = C.sessions[0]; const q = bank.get(s.id).grammar[0];
+  const why = whyWrong(q, s.id, C.dictionary);
+  assert.ok(/[\u0600-\u06FF]/.test(why) && why.includes(String(q.correct)));
+});
+
 console.log(`\n${pass} bank checks passed`);

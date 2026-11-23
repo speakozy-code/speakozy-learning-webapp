@@ -16,7 +16,14 @@ export const SHADOWING_VIDEOS: Record<string, ShadowVideo[]> = {
     { title: 'Shadowing 4 — Inter 1', youtubeId: '-9bEBGalrKQ' },
     { title: 'Shadowing 5 — Inter 1', youtubeId: 'eFLAjD2Jt_w' },
     { title: 'Shadowing 6 — Inter 1', youtubeId: '_hahvDy_eC4' },
-  ], l5: [], l6: [], l7: [], l11: [],
+  ], l5: [
+    { title: 'Shadowing 1 — Inter 2', youtubeId: 'FnoH3QPNS7Q' },
+    { title: 'Shadowing 2 — Inter 2', youtubeId: 'WGAX2eStbwc' },
+    { title: 'Shadowing 3 — Inter 2', youtubeId: 'h4rJhUPcOH8' },
+    { title: 'Shadowing 4 — Inter 2', youtubeId: 'b2ITUZNOGH8' },
+    { title: 'Shadowing 5 — Inter 2', youtubeId: 'NSQHvoCnxXM' },
+    { title: 'Shadowing 6 — Inter 2', youtubeId: 'JjTLTwtRpos' },
+  ], l6: [], l7: [], l11: [],
 };
 
 export const youtubeEmbed = (id: string) => `https://www.youtube-nocookie.com/embed/${id}`;

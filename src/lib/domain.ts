@@ -103,7 +103,7 @@ export function totalScore(data: AppData, studentId: string) {
 export function leaderboard(data: AppData) {
   if (!data.settings.leaderboard.enabled) return [];
   return data.users
-    .filter((u) => u.role === 'student' && u.active && !data.settings.leaderboard.hidden.includes(u.id))
+    .filter((u) => u.role === 'student' && u.active && u.subscribed !== false && !data.settings.leaderboard.hidden.includes(u.id))
     .map((u) => {
       const parts = u.name.trim().split(/\s+/);
       const name = data.settings.leaderboard.nameMode === 'first' ? parts[0] : parts[0] + ' ' + (parts[1] || '').charAt(0) + '.';

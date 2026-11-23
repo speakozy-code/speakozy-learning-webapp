@@ -1,3 +1,4 @@
+import { ConsentBanner } from './components/ConsentBanner';
 import React, { useEffect, useState } from 'react';
 import { useApp } from './lib/store';
 import { Loading, Toast, useToast } from './components/UI';
@@ -45,8 +46,8 @@ export default function App() {
   if (recovering) return <ResetPassword onDone={() => { setRecovering(false); window.location.hash = '#/'; window.location.reload(); }} />;
   if (!ready) return <Loading label="بنجهز Speakozy..." />;
   if (!user) {
-    if (route === '/trial') return <><TrialPage />{toast.node}</>;
-    return <><Login />{toast.node}</>;
+    if (route === '/trial') return <><TrialPage />{toast.node}<ConsentBanner /></>;
+    return <><Login />{toast.node}<ConsentBanner /></>;
   }
 
   const parts = route.split('/').filter(Boolean);
@@ -91,5 +92,5 @@ export default function App() {
       default: page = <StudentDashboard />;
     }
   }
-  return <><Layout current={route}><ErrorBoundary key={route}>{page}</ErrorBoundary></Layout>{toast.node}</>;
+  return <><Layout current={route}><ErrorBoundary key={route}>{page}</ErrorBoundary></Layout>{toast.node}<ConsentBanner /></>;
 }
