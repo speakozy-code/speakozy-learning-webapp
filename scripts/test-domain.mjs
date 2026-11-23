@@ -1,6 +1,8 @@
 // اختبارات منطق المجال - تعمل مباشرة على ملف TypeScript بفضل type stripping في Node الحديث
 import assert from 'node:assert/strict';
 import { gradeQuestion, sessionStatus, levelProgress, canOpenLevel, sessionOpen, totalScore, leaderboard, addScoreOnce, uid, proportionalScore, scoreRule } from '../src/lib/domain.ts';
+import { priorFor } from '../src/lib/review.ts';
+import { levelFullyOpen } from '../src/lib/domain.ts';
 import { readFileSync } from 'node:fs';
 
 let pass = 0;
@@ -96,6 +98,27 @@ t('نفس النشاط لا يتحسب مرتين (اعتماد التاسك)', 
   assert.equal(addScoreOnce(d, { studentId: 'a', source: 'task', points: 5, refId: 'task-approved-t1' }), true);
   assert.equal(addScoreOnce(d, { studentId: 'a', source: 'task', points: 5, refId: 'task-approved-t1' }), false);
   assert.equal(d.scores.length, 1);
+});
+
+
+t('مراجعة الكويز: محاولة واحدة وتظهر الإجابات والغلطات', () => {
+  const qs = [{ id: 'q1', points: 10, correct: 'a' }, { id: 'q2', points: 10, correct: 'b' }];
+  const data = { attempts: [
+    { studentId: 's1', questionId: 'q1', answer: 'a', autoScore: 10, status: 'approved' },
+    { studentId: 's1', questionId: 'q2', answer: 'x', autoScore: 0, status: 'rejected' },
+    { studentId: 's2', questionId: 'q1', answer: 'z', autoScore: 0, status: 'rejected' },
+  ] };
+  const p = priorFor(data, 's1', qs, (q) => [q.id]);
+  assert.equal(p.score, 10); assert.equal(p.max, 20);
+  assert.equal(p.marks.q1, true); assert.equal(p.marks.q2, false); assert.equal(p.answers.q2, 'x');
+  assert.equal(priorFor(data, 's3', qs, (q) => [q.id]), null);
+});
+
+t('نطاق الليفلات: كل اللي بين أول وآخر ليفل مفتوح للمشترك', () => {
+  const lv = [1, 2, 3, 4, 5].map((o) => ({ id: 'l' + o, order: o }));
+  const u = { role: 'student', subscribed: true, levelId: 'l1', maxLevelId: 'l4' };
+  assert.deepEqual(lv.map((l) => levelFullyOpen(u, l, lv)), [true, true, true, true, false]);
+  assert.equal(levelFullyOpen({ ...u, subscribed: false }, lv[1], lv), false);
 });
 
 console.log(`\n${pass} tests passed`);

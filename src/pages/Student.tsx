@@ -16,6 +16,7 @@ import { TALK_QUESTIONS } from '../lib/content/talk';
 import { getBank } from '../lib/questionBank';
 import { lessonOverview } from '../lib/overview';
 import { whyWrong } from '../lib/reasons';
+import { priorFor, correctText } from '../lib/review';
 import { UpsellModal, SubscribeButtons } from '../components/Upsell';
 import { isSubscribed, FREE_YALLA_PER_LEVEL, FREE_TASK_WEEKS, waGroupShare } from '../lib/subscription';
 import { Play, Volume2, Star, Check, BookOpen, X } from 'lucide-react';
@@ -265,6 +266,15 @@ export function SessionPage({ sessionId }: any) {
   const transcript = sourceTranscript(s);
   const wordQs = bank?.words || [];
   const grammarAll = bank?.grammar?.length ? bank.grammar : grammarQs;
+  // one attempt only: when the student comes back, show their saved answers with the mistakes
+  const priorWord = priorFor(data, user.id, wordQs as any, (q) => [`wordquiz:${s.id}:${q.id}`]);
+  const priorGrammar = priorFor(data, user.id, grammarAll as any, (q) => [`gq:${s.id}:${q.id}`, practiceId('grammar', s.id, Number(String(q.id).split('-').pop()) || 1)]);
+  const wordTaken = !!priorWord || !!wordResult;
+  const grammarTaken = !!priorGrammar || !!grammarResult;
+  const wAns = priorWord && !wordResult ? priorWord.answers : wordAnswers;
+  const gAns = priorGrammar && !grammarResult ? priorGrammar.answers : grammarAnswers;
+  const wRes = wordResult || (priorWord ? { marks: priorWord.marks, score: priorWord.score, max: priorWord.max } : null);
+  const gRes = grammarResult || (priorGrammar ? { marks: priorGrammar.marks, score: priorGrammar.score, max: priorGrammar.max } : null);
   const sessionQuiz = bank?.session || [];
   const allWordsStudied = words.length > 0 && words.every((w) => wordDone(w.word));
   const writingLines = writing.split(/\n/).map((x) => x.trim()).filter(Boolean).length;
@@ -310,7 +320,7 @@ export function SessionPage({ sessionId }: any) {
     }
   }
   async function submitGrammar() {
-    if (locked || !grammarAll.length) return;
+    if (locked || !grammarAll.length || grammarTaken) return;
     let score = 0, max = 0;
     const marks: Record<string, boolean> = {};
     const jobs: Promise<any>[] = [];
@@ -318,7 +328,7 @@ export function SessionPage({ sessionId }: any) {
       const g = gradeQuestion(q as any, grammarAnswers[q.id] || '');
       marks[q.id] = g.score > 0;
       score += g.score; max += q.points;
-      jobs.push(put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: practiceId('grammar', s!.id, Number(String(q.id).split('-').pop()) || 1), answer: grammarAnswers[q.id] || '', autoScore: g.score, maxScore: q.points, status: g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending', createdAt: today() }));
+      jobs.push(put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: `gq:${s!.id}:${q.id}`, answer: grammarAnswers[q.id] || '', autoScore: g.score, maxScore: q.points, status: g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending', createdAt: today() }));
     }
     setGrammarResult({ marks, score, max }); // show the result immediately, save in the background
     const gPts = proportionalScore(score, max, scoreRule(data.settings.scoreRules, 'grammarQuiz'));
@@ -327,7 +337,7 @@ export function SessionPage({ sessionId }: any) {
     await Promise.allSettled(jobs);
   }
   async function submitWordQuiz() {
-    if (locked || !wordQs.length) return;
+    if (locked || !wordQs.length || wordTaken) return;
     let score = 0, max = 0;
     const marks: Record<string, boolean> = {};
     const jobs: Promise<any>[] = [];
@@ -428,14 +438,15 @@ export function SessionPage({ sessionId }: any) {
         {!allWordsStudied && words.length > 0 && <div className="note">علّم كل الكلمات إنها اتذاكرت عشان يفتح كويز الكلمات.</div>}
         {allWordsStudied && wordQs.length > 0 && <Card className="grammar-training ltr-scope">
           <div className="between"><div><h3 dir="ltr">Words Quiz</h3><small className="muted" dir="rtl">راجع الكلمات الجديدة بتاعة السيشن دي.</small></div><Badge tone="green">{wordQs.length} questions</Badge></div>
+          {wordTaken && <div className="note" dir="rtl" style={{ marginTop: '.6rem' }}>الكويز ده اتحل قبل كده (محاولة واحدة) — دي إجاباتك والغلطات متعلّم عليها.</div>}
           <div className="stack" style={{ marginTop: '.8rem' }}>{wordQs.map((q, i) => <div key={q.id} className="exercise-item">
-            <div className="between"><strong>{i + 1}. {q.prompt}</strong>{wordResult && <Badge tone={wordResult.marks[q.id] ? 'green' : 'red'}>{wordResult.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
-            {wordResult && !wordResult.marks[q.id] && <div className="why-box" dir="rtl">{whyWrong(q as any, s.id, data.dictionary)}</div>}
-            {q.options.length ? <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${wordAnswers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={wordAnswers[q.id] === o} onChange={() => setWordAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
-              : <input value={wordAnswers[q.id] || ''} onChange={(e) => setWordAnswers((a) => ({ ...a, [q.id]: e.target.value }))} placeholder="اكتب الكلمة الناقصة…" disabled={locked} dir="ltr" />}
+            <div className="between"><strong>{i + 1}. {q.prompt}</strong>{wRes && <Badge tone={wRes.marks[q.id] ? 'green' : 'red'}>{wRes.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
+            {wRes && !wRes.marks[q.id] && <div className="why-box" dir="rtl">{whyWrong(q as any, s.id, data.dictionary)}</div>}
+            {q.options.length ? <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${wAns[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={wAns[q.id] === o} onChange={() => setWordAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked || wordTaken} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
+              : <input value={wAns[q.id] || ''} onChange={(e) => setWordAnswers((a) => ({ ...a, [q.id]: e.target.value }))} placeholder="اكتب الكلمة الناقصة…" disabled={locked || wordTaken} dir="ltr" />}
           </div>)}</div>
-          <Button style={{ marginTop: '.8rem' }} onClick={submitWordQuiz} disabled={locked || !wordQs.every((q) => (wordAnswers[q.id] || '').trim())}>صحح إجابات الكلمات</Button>
-          {wordResult && <div className="result-good" style={{ marginTop: '.6rem' }}>Word score: {wordResult.score} / {wordResult.max}</div>}
+          {!wordTaken && <Button style={{ marginTop: '.8rem' }} onClick={submitWordQuiz} disabled={locked || wordTaken || !wordQs.every((q) => (wAns[q.id] || '').trim())}>صحح إجابات الكلمات</Button>}
+          {wRes && <div className="result-good" style={{ marginTop: '.6rem' }}>Word score: {wRes.score} / {wRes.max}</div>}
         </Card>}
       </div> : <Empty title="مفيش كلمات في السيشن دي" hint="الكلمات هتظهر هنا أول ما تتضاف للديكشنري." />)}
       {tab === 'grammar' && <>
@@ -458,13 +469,14 @@ export function SessionPage({ sessionId }: any) {
         </Card>)}</div> : <Empty title="مفيش جرامر لسه" hint="ملاحظات الجرامر للسيشن دي هتظهر هنا." />}
         {grammarAll.length > 0 && <Card className="grammar-training ltr-scope">
           <div className="between"><div><h3 dir="ltr">Grammar Practice</h3><small className="muted" dir="rtl">الممارسة بعد الشرح.</small></div><Badge tone="green">{grammarAll.length} questions</Badge></div>
+          {grammarTaken && <div className="note" dir="rtl" style={{ marginTop: '.6rem' }}>الكويز ده اتحل قبل كده (محاولة واحدة) — دي إجاباتك والغلطات متعلّم عليها.</div>}
           <div className="stack" style={{ marginTop: '.8rem' }}>{grammarAll.map((q, i) => <div key={q.id} className="exercise-item">
-            <div className="between"><strong>{i + 1}. {q.prompt}</strong>{grammarResult && <Badge tone={grammarResult.marks[q.id] ? 'green' : 'red'}>{grammarResult.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
-            {grammarResult && !grammarResult.marks[q.id] && <div className="why-box" dir="rtl">{whyWrong(q as any, s.id, data.dictionary)}</div>}
-            <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${grammarAnswers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={grammarAnswers[q.id] === o} onChange={() => setGrammarAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
+            <div className="between"><strong>{i + 1}. {q.prompt}</strong>{gRes && <Badge tone={gRes.marks[q.id] ? 'green' : 'red'}>{gRes.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
+            {gRes && !gRes.marks[q.id] && <div className="why-box" dir="rtl">{whyWrong(q as any, s.id, data.dictionary)}</div>}
+            <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${gAns[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={gAns[q.id] === o} onChange={() => setGrammarAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked || grammarTaken} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
           </div>)}</div>
-          <Button style={{ marginTop: '.8rem' }} onClick={submitGrammar} disabled={locked || !grammarAll.every((q) => grammarAnswers[q.id])}>صحح إجابات الجرامر</Button>
-          {grammarResult && <div className="result-good" style={{ marginTop: '.6rem' }}>Grammar score: {grammarResult.score} / {grammarResult.max}</div>}
+          {!grammarTaken && <Button style={{ marginTop: '.8rem' }} onClick={submitGrammar} disabled={locked || grammarTaken || !grammarAll.every((q) => gAns[q.id])}>صحح إجابات الجرامر</Button>}
+          {gRes && <div className="result-good" style={{ marginTop: '.6rem' }}>Grammar score: {gRes.score} / {gRes.max}</div>}
         </Card>}
       </>}
       {tab === 'practice' && <div className="stack ltr-scope" dir="ltr">
@@ -505,8 +517,11 @@ export function QuizPage({ sessionId }: any) {
   if (!user) return null;
   if (!s) return <Empty title="السيشن مش موجودة" />;
   if (!qs.length) return <Empty title="مفيش أسئلة للسيشن دي" hint="راجع خريطة المستويات." />;
+  // one attempt only: coming back shows the saved answers with the mistakes
+  const prior = priorFor(data, user.id, qs as any, (q) => [q.id]);
 
   async function submit() {
+    if (prior) return;
     let auto = 0, max = 0, pending = 0;
     const jobs: Promise<any>[] = [];
     const marks: Record<string, boolean> = {};
@@ -519,25 +534,39 @@ export function QuizPage({ sessionId }: any) {
       marks[q.id] = g.score > 0;
       jobs.push(put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: q.id, answer: ans, autoScore: g.score, maxScore: q.points, status, createdAt: today() }));
     }
-    setResult({ auto, max, pending, marks });
+    setResult({ auto, max, pending, marks, answers: { ...answers } });
     const qPts = proportionalScore(auto, max, scoreRule(data.settings.scoreRules, 'sessionQuiz'));
     if (qPts > 0) jobs.push(grantScore(user!.id, 'quiz', qPts, `sessionquiz-${s!.id}-${user!.id}`));
     jobs.push(log('quiz-submit', s!.title));
     await Promise.allSettled(jobs);
   }
 
-  if (result) return <Card className="stack">
-    <h2 dir="ltr">Quiz Complete</h2>
-    <div className={result.pending ? 'note' : 'result-good'}>
-      <strong>Automated score: {result.auto} out of {result.max}</strong>
-      {result.pending > 0 && <div>There are {result.pending} written answers to be reviewed by the admin. Final approval isn't immediate.</div>}
-    </div>
-    {qs.filter((q) => result.marks && result.marks[q.id] === false).map((q) => <div key={q.id} className="exercise-item ltr-scope">
-      <strong dir="ltr" className="en">{q.prompt}</strong>
-      <div className="why-box" dir="rtl">{`إجابتك: ${answers[q.id] || '—'}\n${whyWrong(q as any, s.id, data.dictionary)}`}</div>
-    </div>)}
-    <div className="row"><Button onClick={() => go(`/session/${s.id}`)}>رجوع للسيشن</Button><Button variant="ghost" onClick={() => go('/roadmap')}>الخريطة</Button></div>
-  </Card>;
+  const view = result || (prior ? { auto: prior.score, max: prior.max, pending: Object.values(prior.pending).filter(Boolean).length, marks: prior.marks, answers: prior.answers } : null);
+  if (view) return <div className="stack">
+    <Card className="stack">
+      <h2 dir="ltr">{result ? 'Quiz Complete' : 'Your Quiz Review'}</h2>
+      <div className={view.pending ? 'note' : 'result-good'}>
+        <strong>Score: {view.auto} out of {view.max}</strong>
+        {view.pending > 0 && <div>There are {view.pending} written answers to be reviewed by the admin.</div>}
+      </div>
+      {!result && <div className="note" dir="rtl">الكويز ده اتحل قبل كده (محاولة واحدة) — دي إجاباتك والغلطات متعلّم عليها.</div>}
+      <div className="row"><Button onClick={() => go(`/session/${s.id}`)}>رجوع للسيشن</Button><Button variant="ghost" onClick={() => go('/roadmap')}>الخريطة</Button></div>
+    </Card>
+    {qs.map((q, i) => {
+      const ok = view.marks[q.id];
+      return <Card key={q.id} className="ltr-scope">
+        <div className="between"><strong dir="ltr" className="en" style={{ textAlign: 'left' }}>{i + 1}. {q.prompt}</strong><Badge tone={ok ? 'green' : 'red'}>{ok ? '✓ Correct' : '✗ Wrong'}</Badge></div>
+        <div style={{ marginTop: '.6rem' }}>{q.options.map((o) => {
+          const mine = view.answers[q.id] === o;
+          const right = correctText(q as any).toLowerCase() === o.toLowerCase();
+          return <div key={o} className={`quiz-opt ${mine ? 'selected' : ''}`} style={{ borderColor: right ? 'var(--green, #22c55e)' : mine ? 'var(--red, #ef4444)' : undefined }}>
+            <span className="en" dir="ltr">{o}</span>{right && ' ✓'}{mine && !right && ' ✗ (إجابتك)'}{mine && right && ' (إجابتك)'}
+          </div>;
+        })}</div>
+        {!ok && <div className="why-box" dir="rtl">{`إجابتك: ${view.answers[q.id] || '—'}\n${whyWrong(q as any, s.id, data.dictionary)}`}</div>}
+      </Card>;
+    })}
+  </div>;
 
   return <div className="stack">
     <div className="row"><button className="icon-btn" onClick={() => go(`/session/${s.id}`)}>→ السيشن</button></div>
@@ -838,14 +867,17 @@ export function YallaNetkellemPage() {
 export function TasksPage() {
   const { user, data, put, remove, grantScore } = useApp();
   if (!user) return null;
-  const mine = data.tasks.filter((t) => t.active && (t.targetType === 'all' || (t.targetType === 'student' && t.targetId === user.id) || (t.targetType === 'level' && t.targetId === user.levelId)));
+  // levels opened for this student (from the first to the last allowed level); everyone else: their own level only
+  const rangeLevels = [...data.levels].sort((a, b) => a.order - b.order).filter((l) => l.id === user.levelId || levelFullyOpen(user, l, data.levels));
+  const rangeIds = new Set(rangeLevels.map((l) => l.id));
+  const mine = data.tasks.filter((t) => t.active && (t.targetType === 'all' || (t.targetType === 'student' && t.targetId === user.id) || (t.targetType === 'level' && rangeIds.has(t.targetId || ''))));
   const doneIds = data.taskCompletions.filter((c) => c.studentId === user.id).map((c) => c.taskId);
   const isDone = (t: any) => doneIds.includes(t.id);
   const statusOf = (t: any) => data.taskCompletions.find((c) => c.studentId === user.id && c.taskId === t.id)?.status || (isDone(t) ? 'approved' : '');
   const statusBadge = (t: any) => { const st = statusOf(t); return st === 'pending' ? <Badge tone="amber">بانتظار المدرّس</Badge> : st === 'rejected' ? <Badge tone="red">اتردّ — جرّب تاني</Badge> : st === 'approved' ? <Badge tone="green">معتمد</Badge> : null; };
   const levelTasks = mine.filter((t) => (t.instructions || []).length > 0).sort((a, b) => (a.order || 0) - (b.order || 0));
   const otherTasks = mine.filter((t) => !(t.instructions || []).length);
-  const weeks = [...new Set(levelTasks.map((t) => t.week || 1))].sort((a, b) => a - b);
+  const groups = rangeLevels.map((l) => ({ l, tasks: levelTasks.filter((t) => (t.targetId || user.levelId) === l.id) })).filter((g) => g.tasks.length);
   const level = data.levels.find((l) => l.id === user.levelId);
   const [upsell, setUpsell] = useState(false);
   const taskLocked = (t: any) => !isSubscribed(user) && (t.week || 1) > FREE_TASK_WEEKS;
@@ -869,14 +901,15 @@ export function TasksPage() {
       <Stat label="الباقي" value={mine.filter((t) => !isDone(t)).length} />
     </div>
     {levelTasks.length ? <>
+    {groups.map(({ l: lvl, tasks: lt }) => <React.Fragment key={lvl.id}>
       <Card className="row between" style={{ gap: '1rem' }}>
-        <div><strong>{level?.title || 'مستواك'} · Level tasks</strong><div className="muted">{levelTasks.filter(isDone).length} / {levelTasks.length} completed</div></div>
-        <div className="progress-track" style={{ flex: 1, maxWidth: 260, marginTop: 0 }}><span style={{ width: `${levelTasks.length ? Math.round((levelTasks.filter(isDone).length / levelTasks.length) * 100) : 0}%` }} /></div>
+        <div><strong>{lvl.title} · Level tasks</strong><div className="muted">{lt.filter(isDone).length} / {lt.length} completed</div></div>
+        <div className="progress-track" style={{ flex: 1, maxWidth: 260, marginTop: 0 }}><span style={{ width: `${lt.length ? Math.round((lt.filter(isDone).length / lt.length) * 100) : 0}%` }} /></div>
       </Card>
-      {weeks.map((w) => {
-        const list = levelTasks.filter((t) => (t.week || 1) === w);
+      {[...new Set(lt.map((x) => x.week || 1))].sort((x, y) => x - y).map((w) => {
+        const list = lt.filter((t) => (t.week || 1) === w);
         const topicNames = [...new Set(list.map((t) => t.topic || ''))];
-        return <Card key={w}>
+        return <Card key={`${lvl.id}-${w}`}>
           <SectionTitle title={`Week ${w}`} action={<Badge tone="blue">{list.filter(isDone).length}/{list.length}</Badge>} />
           <div className="stack">
             {topicNames.map((topicName) => {
@@ -905,6 +938,7 @@ export function TasksPage() {
           </div>
         </Card>;
       })}
+    </React.Fragment>)}
     </> : <Card><Empty icon="🗂️" title={`مفيش تاسكات لـ ${level?.title || 'مستواك'} لسه`} hint="تاسكات المستوى هتظهر هنا أول ما تتضاف لمستواك." /></Card>}
     {otherTasks.length > 0 && <Card>
       <SectionTitle title="تاسكات تانية" />
@@ -1102,8 +1136,10 @@ export function LevelExamPage({ levelId }: any) {
   const level = data.levels.find((l) => l.id === levelId);
   const qs = data.questions.filter((q) => q.levelId === levelId && !q.admin);
   const locked = level ? !levelFullyOpen(user, level, data.levels) : false;
+  const prior = priorFor(data, user.id, qs as any, (q) => [`exam:${levelId}:${q.id}`]);
 
   async function submit() {
+    if (prior) return;
     let auto = 0, max = 0, pending = 0;
     const jobs: Promise<any>[] = [];
     const marks: Record<string, boolean> = {};
@@ -1116,14 +1152,26 @@ export function LevelExamPage({ levelId }: any) {
     }
     await grantScore(user!.id, 'levelQuiz', auto, `exam-${levelId}-${user!.id}`);
     await log('level-exam', `${level?.title || levelId} · ${auto}/${max}`);
-    setResult({ auto, max, pending });
+    setResult({ auto, max, pending, marks: Object.fromEntries(qs.map((q) => [q.id, gradeQuestion(q, answers[q.id] || '').score > 0])), answers: { ...answers }, pend: Object.fromEntries(qs.map((q) => [q.id, !gradeQuestion(q, answers[q.id] || '').auto])) });
   }
 
-  if (result) return <Card className="stack">
-    <h2>اختبار المستوى خلص</h2>
-    <div className={result.pending ? 'note' : 'result-good'}><strong>Score: {result.auto} out of {result.max}</strong>{result.pending > 0 && <div>{result.pending} written answers are waiting for admin review.</div>}</div>
-    <div className="row"><Button onClick={() => go('/roadmap')}>رجوع للخريطة</Button></div>
-  </Card>;
+  const view = result || (prior ? { auto: prior.score, max: prior.max, pending: Object.values(prior.pending).filter(Boolean).length, marks: prior.marks, answers: prior.answers, pend: prior.pending } : null);
+  if (view) return <div className="stack">
+    <Card className="stack">
+      <h2>{result ? 'اختبار المستوى خلص' : 'مراجعة اختبار المستوى'}</h2>
+      <div className={view.pending ? 'note' : 'result-good'}><strong>Score: {view.auto} out of {view.max}</strong>{view.pending > 0 && <div>{view.pending} written answers are waiting for admin review.</div>}</div>
+      {!result && <div className="note" dir="rtl">الاختبار ده اتحل قبل كده (محاولة واحدة) — دي إجاباتك والغلطات متعلّم عليها.</div>}
+      <div className="row"><Button onClick={() => go('/roadmap')}>رجوع للخريطة</Button></div>
+    </Card>
+    {qs.map((q, i) => {
+      const waiting = !!view.pend?.[q.id];
+      const ok = view.marks[q.id];
+      return <Card key={q.id}>
+        <div className="between"><strong>{i + 1}. {q.prompt}</strong>{waiting ? <Badge tone="amber">بانتظار المراجعة</Badge> : <Badge tone={ok ? 'green' : 'red'}>{ok ? '✓ Correct' : '✗ Wrong'}</Badge>}</div>
+        <div className="why-box" dir="rtl" style={{ marginTop: '.6rem' }}>{`إجابتك: ${view.answers[q.id] || '—'}`}{!waiting && !ok ? `\nالإجابة الصح: ${correctText(q as any)}` : ''}</div>
+      </Card>;
+    })}
+  </div>;
 
   return <div className="stack">
     <div className="row"><button className="icon-btn" onClick={() => go('/roadmap')}>→ الخريطة</button></div>
