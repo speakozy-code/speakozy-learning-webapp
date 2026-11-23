@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Home, Map, FolderOpen, BookOpen, ListChecks, User,
   LayoutDashboard, Users, Layers, FileText, PenLine, ClipboardList,
-  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, Gift, MessageSquareHeart, MessageCircle, Layers2, Mic2, Gamepad2, Library,
+  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, Gift, MessageSquareHeart, MessageCircle, Layers2, Mic2, Gamepad2, Library, Brain, ClipboardCheck, BellRing,
 } from 'lucide-react';
 import { useApp } from '../lib/store';
 import { go } from '../App';
@@ -20,7 +20,7 @@ const studentNav = [
   { path: '/roadmap', label: 'خريطة المستويات', ic: Map },
   { path: '/materials', label: 'الماتيريال', ic: FolderOpen },
   { path: '/dictionary', label: 'الديكشنري', ic: BookOpen },
-  { path: '/words', label: 'الكلمات', ic: Layers2 },
+  { path: '/words', label: 'الكلمات', ic: Brain },
   { path: '/yalla-netkellem', label: 'يلا نتكلم', ic: Mic2 },
   { path: '/tasks', label: 'التاسكات اليومية', ic: ListChecks },
   { path: '/shadowing', label: 'الشادوينج', ic: Headphones },
@@ -37,8 +37,8 @@ const adminNav = [
   { path: '/admin/content', label: 'المحتوى', ic: FileText },
   { path: '/admin/lesson', label: 'تعديل السيشنات', ic: PenLine },
   { path: '/admin/reviews', label: 'مراجعة النتائج', ic: Inbox },
-  { path: '/admin/task-reviews', label: 'مراجعة التاسكات', ic: ListChecks },
-  { path: '/admin/operations', label: 'التاسكات والإشعارات', ic: ListChecks },
+  { path: '/admin/task-reviews', label: 'مراجعة التاسكات', ic: ClipboardCheck },
+  { path: '/admin/operations', label: 'التاسكات والإشعارات', ic: BellRing },
   { path: '/admin/certificates', label: 'الشهادات', ic: Award },
   { path: '/admin/settings', label: 'الإعدادات', ic: Settings },
 ];
@@ -125,7 +125,7 @@ export function Layout({ current, children }: { current: string; children: React
     </div>{children}</main></div>
     {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 75 }} />}
     {mobile}
-    <div className="float-stack">
+    <div className={`float-stack${!admin && !isSubscribed(user) ? ' split' : ''}`}>
       {!admin && !isSubscribed(user) && <a className="float-pricing" href={PRICING_URL} target="_blank" rel="noreferrer">شوف الباقات</a>}
       <a className="float-wa" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب" title="تواصل معانا على واتساب"><MessageCircle size={20} /></a>
     </div>

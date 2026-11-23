@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { gradeQuestion, sessionStatus, levelProgress, canOpenLevel, sessionOpen, totalScore, leaderboard, addScoreOnce, uid, proportionalScore, scoreRule } from '../src/lib/domain.ts';
 import { priorFor } from '../src/lib/review.ts';
+import { schedule, dueWords } from '../src/lib/srs.ts';
 import { levelFullyOpen } from '../src/lib/domain.ts';
 import { readFileSync } from 'node:fs';
 
@@ -119,6 +120,22 @@ t('نطاق الليفلات: كل اللي بين أول وآخر ليفل مف
   const u = { role: 'student', subscribed: true, levelId: 'l1', maxLevelId: 'l4' };
   assert.deepEqual(lv.map((l) => levelFullyOpen(u, l, lv)), [true, true, true, true, false]);
   assert.equal(levelFullyOpen({ ...u, subscribed: false }, lv[1], lv), false);
+});
+
+
+t('المراجعة المتباعدة (Anki): الفاصل بيكبر والنسيان بيرجّع الكلمة بسرعة', () => {
+  const now = Date.UTC(2026, 0, 1);
+  const a = schedule({}, 'good', now);            // new card, Good → 1 day
+  assert.equal(a.interval, 1);
+  const b = schedule(a, 'good', now);             // second Good → grows by ease
+  assert.ok(b.interval >= 2 && b.reps === 2);
+  const c = schedule(b, 'easy', now);
+  assert.ok(c.interval > b.interval && c.ease > b.ease);
+  const lapse = schedule(c, 'again', now);        // forgot → back in 10 minutes, ease drops
+  assert.equal(lapse.interval, 0); assert.equal(lapse.lapses, 1); assert.ok(lapse.ease < c.ease);
+  assert.equal(new Date(lapse.nextReview).getTime() - now, 10 * 60000);
+  const iso = new Date(now).toISOString();
+  assert.equal(dueWords([{ nextReview: undefined }, { nextReview: '2025-12-31' }, { nextReview: '2026-02-01' }], iso).length, 2);
 });
 
 console.log(`\n${pass} tests passed`);

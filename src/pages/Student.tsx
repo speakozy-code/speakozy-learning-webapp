@@ -17,9 +17,10 @@ import { getBank } from '../lib/questionBank';
 import { lessonOverview } from '../lib/overview';
 import { whyWrong } from '../lib/reasons';
 import { priorFor, correctText } from '../lib/review';
+import { schedule, previewLabel, dueWords, type Grade } from '../lib/srs';
 import { UpsellModal, SubscribeButtons } from '../components/Upsell';
 import { isSubscribed, FREE_YALLA_PER_LEVEL, FREE_TASK_WEEKS, waGroupShare } from '../lib/subscription';
-import { Play, Volume2, Star, Check, BookOpen, X } from 'lucide-react';
+import { Play, Volume2, Star, Check, BookOpen, X, Trash2 } from 'lucide-react';
 
 const statusTone: Record<string, string> = { locked: 'muted', available: 'blue', progress: 'amber', done: 'blue', review: 'amber', approved: 'green' };
 const phon = (p?: string) => {
@@ -658,8 +659,8 @@ export function DictionaryPage() {
     }
   }
   async function markReview(w: any, known: boolean) {
-    const next = new Date(Date.now() + (known ? 3 : 1) * 86400000).toISOString();
-    await put('savedWords', { ...w, review: !known, nextReview: next });
+    const s = schedule(w, known ? 'good' : 'again');
+    await put('savedWords', { ...w, ...s, review: !known });
     setReviewIdx((i) => i + 1); setShowMeaning(false);
   }
   function pronounce(entry: any) {
@@ -710,7 +711,7 @@ export function DictionaryPage() {
 
     {wordOfDay && <Card className="word-day">
       <div className="between"><div><div className="muted">كلمة اليوم</div><h2 dir="ltr" className="en" style={{ fontSize: '1.7rem' }}>{wordOfDay.word}</h2><div>{wordOfDay.meaning} · {wordOfDay.type}</div></div>
-        <div className="row"><Button variant="ghost" onClick={() => speak(wordOfDay.word)}>🔊</Button><Button onClick={() => showWord(wordOfDay.word)}>افتح الكارت</Button></div>
+        <div className="row"><Button variant="ghost" onClick={() => speak(wordOfDay.word)}><Volume2 size={16} /></Button><Button onClick={() => showWord(wordOfDay.word)}>افتح الكارت</Button></div>
       </div>
     </Card>}
 
@@ -719,7 +720,7 @@ export function DictionaryPage() {
       {localResults.length ? <div className="stack">{localResults.map((d) => <div key={d.id} className="word-row">
         <button className="icon-btn" onClick={() => setDetail({ ...d, source: d.source || 'local' })}><strong className="en" dir="ltr">{d.word}</strong></button>
         <span className="muted" dir="rtl">{d.meaning}</span>
-        <div className="row"><Badge>{d.type}</Badge><button className="icon-btn" onClick={() => pronounce(d)}>🔊</button><Button size="sm" variant={isSaved(d.word) ? 'ghost' : 'primary'} onClick={() => toggle(d)}>{isSaved(d.word) ? '✓' : 'حفظ'}</Button></div>
+        <div className="row"><Badge>{d.type}</Badge><button className="icon-btn" onClick={() => pronounce(d)}><Volume2 size={16} /></button><Button size="sm" variant={isSaved(d.word) ? 'ghost' : 'primary'} onClick={() => toggle(d)}>{isSaved(d.word) ? '✓' : 'حفظ'}</Button></div>
       </div>)}</div> : <Empty icon="🔍" title="مفيش نتايج محلية" hint="هنجرّب المصدر العالمي تلقائيًا، أو تقدر تضيف الكلمة بنفسك." />}
     </Card>}
 
@@ -727,7 +728,7 @@ export function DictionaryPage() {
       {detail && <div className="stack">
         <div className="between"><div><h2 dir="ltr" className="en" style={{ fontSize: '1.9rem' }}>{detail.word}</h2>
           <div className="row"><Badge tone="green">{detail.type}</Badge>{detail.phonetic && <span className="muted" dir="ltr">{phon(detail.phonetic)}</span>}<Badge tone={detail.source === 'global' ? 'blue' : 'muted'}>{detail.source === 'global' ? 'الديكشنري العالمي' : detail.source === 'manual' ? 'إضافة يدوية' : 'من المنهج'}</Badge></div></div>
-          <Button variant="ghost" onClick={() => pronounce(detail)}>🔊 اسمع النطق</Button></div>
+          <Button variant="ghost" onClick={() => pronounce(detail)}><Volume2 size={16} /> اسمع النطق</Button></div>
         {detail.arabic && <div className="section-card"><h3>المعنى بالعربي</h3><p dir="rtl" style={{ fontSize: '1.15rem', margin: 0 }}>{detail.arabic}</p></div>}
         <div className="section-card"><h3>التعريف</h3><p className="en" dir="ltr" style={{ margin: 0 }}>{detail.definitions?.[0] || detail.meaning}</p></div>
         <div className="section-card"><h3>مثالين</h3>{easyExamples(detail).length ? easyExamples(detail).map((ex, i) => <div key={i} className="en" dir="ltr" style={{ textAlign: 'left', lineHeight: 1.9 }}>• {ex}</div>) : <p className="muted">مفيش أمثلة متاحة.</p>}</div>
@@ -767,15 +768,16 @@ export function WordsPage() {
   if (!user) return null;
   const saved = data.savedWords.filter((w) => w.studentId === user.id);
   const now = new Date().toISOString();
-  const due = saved.filter((w) => (w.review || !w.nextReview || w.nextReview <= now) && !skipped.includes(w.id));
+  // spaced repetition: a word is due when its next review time has come
+  const due = dueWords(saved, now).filter((w) => !skipped.includes(w.id)).sort((a, b) => (a.nextReview || '').localeCompare(b.nextReview || ''));
+  const nextUp = saved.map((w) => w.nextReview || '').filter((x) => x > now).sort()[0];
   const card = due[0];
   const list = saved.filter((w) => !q || (w.word + w.meaning).toLowerCase().includes(q.trim().toLowerCase()));
-  async function rate(grade: 'again' | 'hard' | 'good' | 'easy') {
+  async function rate(grade: Grade) {
     if (!card) return;
-    const days = { again: 0, hard: 1, good: 3, easy: 7 }[grade];
-    const next = new Date(Date.now() + days * 86400000).toISOString();
-    if (grade === 'again') setSkipped((s) => [...s, card.id]);
-    await put('savedWords', { ...card, review: grade === 'again', nextReview: next });
+    const s = schedule(card, grade);
+    if (grade === 'again') setSkipped((x) => [...x, card.id]);
+    await put('savedWords', { ...card, ...s, review: grade === 'again' });
     setFlipped(false);
   }
   async function addOwn() {
@@ -786,7 +788,7 @@ export function WordsPage() {
     setAdding(null);
   }
   return <div className="stack">
-    <div><h1>الكلمات</h1><p className="muted">راجع كلماتك المحفوظة بكروت. اقلب الكارت، وبعدين قيّم نفسك: لسه بنساها، صعبة، كويسة، أو سهلة.</p></div>
+    <div><h1>الكلمات</h1><p className="muted">راجع كلماتك بنظام المراجعة المتباعدة (زي Anki): كل ما تعرف الكلمة أكتر بتتأجل لمدة أطول، والكلمة اللي بتنساها بترجعلك بسرعة. هيجيلك إشعار لما يبقى فيه كلمات مستحقة.</p></div>
     <div><Button size="sm" onClick={() => setAdding({ word: '', meaning: '', example: '' })}>+ ضيف كلمة بنفسك</Button></div>
     <Modal open={!!adding} title="ضيف كلمة" onClose={() => setAdding(null)}>
       <Field label="الكلمة بالإنجليزي"><input dir="ltr" value={adding?.word || ''} onChange={(e) => setAdding({ ...adding!, word: e.target.value })} placeholder="e.g. reliable" /></Field>
@@ -797,27 +799,27 @@ export function WordsPage() {
     <div className="grid g3">
       <Stat label="كلمات محفوظة" value={saved.length} />
       <Stat label="مستحقة للمراجعة" value={due.length} tone="green" />
-      <Stat label="محتاجة تدريب" value={saved.filter((w) => w.review).length} />
+      <Stat label="لسه بتنساها" value={saved.filter((w) => w.review).length} />
     </div>
     <Tabs tabs={[{ id: 'review', label: `مراجعة (${due.length})` }, { id: 'all', label: `كل كلماتي (${saved.length})` }]} active={tab} onChange={setTab} />
     {tab === 'review' && <Card>
       {card ? <div className="flashcard">
         <div className="muted">باقي {due.length} كلمة للمراجعة</div>
         <h2 dir="ltr" className="en" style={{ fontSize: '2rem' }}>{card.word}</h2>
-        <Button variant="ghost" onClick={() => speakWord(card.word)}>🔊 اسمع</Button>
+        <Button variant="ghost" onClick={() => speakWord(card.word)}><Volume2 size={16} /> اسمع</Button>
         {flipped
           ? <>
             <div className="result-good" dir="rtl" style={{ margin: '1rem 0' }}>{card.meaning}</div>
             {card.transcript && <div className="muted en" dir="ltr" style={{ marginBottom: '.8rem' }}>{card.transcript}</div>}
             <div className="row" style={{ justifyContent: 'center' }}>
-              <Button variant="danger" onClick={() => rate('again')}>لسه بنساها</Button>
-              <Button variant="ghost" onClick={() => rate('hard')}>صعبة</Button>
-              <Button onClick={() => rate('good')}>كويسة</Button>
-              <Button variant="ghost" onClick={() => rate('easy')}>سهلة</Button>
+              <Button variant="danger" onClick={() => rate('again')}>لسه بنساها<small style={{ display: 'block', opacity: .8 }}>{previewLabel(card, 'again')}</small></Button>
+              <Button variant="ghost" onClick={() => rate('hard')}>صعبة<small style={{ display: 'block', opacity: .8 }}>{previewLabel(card, 'hard')}</small></Button>
+              <Button onClick={() => rate('good')}>كويسة<small style={{ display: 'block', opacity: .8 }}>{previewLabel(card, 'good')}</small></Button>
+              <Button variant="ghost" onClick={() => rate('easy')}>سهلة<small style={{ display: 'block', opacity: .8 }}>{previewLabel(card, 'easy')}</small></Button>
             </div>
           </>
           : <Button style={{ marginTop: '1rem' }} onClick={() => setFlipped(true)}>اقلب الكارت</Button>}
-      </div> : <Empty icon="🎉" title={saved.length ? 'خلصت مراجعة النهاردة' : 'لسه ما حفظتش كلمات'} hint={saved.length ? 'ارجع بكرة لباقي الكلمات.' : 'احفظ كلمات من الديكشنري أو من السيشنات وهتظهر هنا.'} />}
+      </div> : <Empty icon="🎉" title={saved.length ? 'خلصت مراجعة النهاردة' : 'لسه ما حفظتش كلمات'} hint={saved.length ? (nextUp ? `الكلمة الجاية هتتراجع ${new Date(nextUp).toLocaleString('ar-EG', { weekday: 'long', hour: 'numeric', minute: '2-digit' })} — هيجيلك إشعار.` : 'ارجع بكرة لباقي الكلمات.') : 'احفظ كلمات من الديكشنري أو من السيشنات وهتظهر هنا.'} />}
     </Card>}
     {tab === 'all' && <Card>
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="دوّر في كلماتك" aria-label="دوّر في كلماتك" style={{ marginBottom: '.8rem' }} />
@@ -826,8 +828,8 @@ export function WordsPage() {
         {w.transcript && <div className="saved-transcript en" dir="ltr">{w.transcript}</div>}
         <div className="saved-meaning" dir="rtl">{w.meaning}</div>
         <div className="saved-actions">
-          <button className="icon-btn" title="اسمع النطق" onClick={() => speakWord(w.word)}>🔊</button>
-          <button className="icon-btn danger" title="حذف" onClick={() => remove('savedWords', w.id)}>🗑</button>
+          <button className="icon-btn" title="اسمع النطق" onClick={() => speakWord(w.word)}><Volume2 size={16} /></button>
+          <button className="icon-btn danger" title="حذف" onClick={() => remove('savedWords', w.id)}><Trash2 size={16} /></button>
         </div>
       </div>)}</div> : <Empty title="مفيش كلمات" hint="احفظ كلمات من الديكشنري." />}
     </Card>}
@@ -857,7 +859,7 @@ export function YallaNetkellemPage() {
       <h2 dir="ltr" className="en" style={{ textAlign: 'center', lineHeight: 1.6 }}>{question}</h2>
       <div className="row" style={{ justifyContent: 'center', marginTop: '1rem' }}>
         <Button onClick={next}>سؤال جديد</Button>
-        <Button variant="ghost" onClick={() => speakWord(question)}>🔊 اسمع السؤال</Button>
+        <Button variant="ghost" onClick={() => speakWord(question)}><Volume2 size={16} /> اسمع السؤال</Button>
       </div>
     </Card>
     <UpsellModal open={upsell} onClose={() => setUpsell(false)} what="باقي أسئلة يلا نتكلم" />
@@ -868,19 +870,22 @@ export function TasksPage() {
   const { user, data, put, remove, grantScore } = useApp();
   if (!user) return null;
   // levels opened for this student (from the first to the last allowed level); everyone else: their own level only
-  const rangeLevels = [...data.levels].sort((a, b) => a.order - b.order).filter((l) => l.id === user.levelId || levelFullyOpen(user, l, data.levels));
-  const rangeIds = new Set(rangeLevels.map((l) => l.id));
-  const mine = data.tasks.filter((t) => t.active && (t.targetType === 'all' || (t.targetType === 'student' && t.targetId === user.id) || (t.targetType === 'level' && rangeIds.has(t.targetId || ''))));
+  const allLevels = [...data.levels].sort((a, b) => a.order - b.order);
+  const [sel, setSel] = useState('');
+  const selLevel = allLevels.find((l) => l.id === sel);
+  const selOpen = !!selLevel && (user.role === 'admin' || levelFullyOpen(user, selLevel, data.levels));
+  const mine = data.tasks.filter((t) => t.active && (t.targetType === 'all' || (t.targetType === 'student' && t.targetId === user.id) || (t.targetType === 'level' && (!sel || t.targetId === sel))));
   const doneIds = data.taskCompletions.filter((c) => c.studentId === user.id).map((c) => c.taskId);
   const isDone = (t: any) => doneIds.includes(t.id);
   const statusOf = (t: any) => data.taskCompletions.find((c) => c.studentId === user.id && c.taskId === t.id)?.status || (isDone(t) ? 'approved' : '');
   const statusBadge = (t: any) => { const st = statusOf(t); return st === 'pending' ? <Badge tone="amber">بانتظار المدرّس</Badge> : st === 'rejected' ? <Badge tone="red">اتردّ — جرّب تاني</Badge> : st === 'approved' ? <Badge tone="green">معتمد</Badge> : null; };
   const levelTasks = mine.filter((t) => (t.instructions || []).length > 0).sort((a, b) => (a.order || 0) - (b.order || 0));
   const otherTasks = mine.filter((t) => !(t.instructions || []).length);
-  const groups = rangeLevels.map((l) => ({ l, tasks: levelTasks.filter((t) => (t.targetId || user.levelId) === l.id) })).filter((g) => g.tasks.length);
+  const groups = selLevel ? [{ l: selLevel, tasks: levelTasks.filter((t) => (t.targetId || user.levelId) === selLevel.id) }].filter((g) => g.tasks.length) : [];
   const level = data.levels.find((l) => l.id === user.levelId);
   const [upsell, setUpsell] = useState(false);
-  const taskLocked = (t: any) => !isSubscribed(user) && (t.week || 1) > FREE_TASK_WEEKS;
+  // outside the student's opened levels (or not subscribed): only the first week is free
+  const taskLocked = (t: any) => (!isSubscribed(user) || (!!t.instructions?.length && !selOpen && user.role !== 'admin')) && (t.week || 1) > FREE_TASK_WEEKS;
   async function toggle(t: any) {
     if (taskLocked(t)) { setUpsell(true); return; }
     const existing = data.taskCompletions.find((c) => c.studentId === user!.id && c.taskId === t.id);
@@ -895,10 +900,17 @@ export function TasksPage() {
   return <div className="stack">
     <div><h1>تاسكاتي اليومية</h1><p className="muted">دي تاسكات يوميه علشان تتكلم كل يوم. هتسجّل ريكورد بتقرا أو بتجاوب على السؤال في تاسك اليوم وتبعته على جروب الواتساب.</p>
       <a className="btn btn-primary btn-sm" style={{ marginTop: '.6rem' }} href="https://wa.me/201091060951?text=%D8%A8%D8%B9%D8%AA%20%D8%AA%D8%A7%D8%B3%D9%83%20%D8%A7%D9%84%D9%8A%D9%88%D9%85" target="_blank" rel="noreferrer">واتساب</a></div>
+    <Card>
+      <Field label="الليفل بتاعك" hint="اختار الليفل بتاعك من القايمة علشان تظهرلك تاسكاته."><select value={sel} onChange={(e) => setSel(e.target.value)}>
+        <option value="">— اختار الليفل بتاعك —</option>
+        {allLevels.map((l) => <option key={l.id} value={l.id}>{levelLabel(l)}</option>)}
+      </select></Field>
+    </Card>
+    {!sel && <div className="note" dir="rtl">اختار الليفل بتاعك من القايمة اللي فوق علشان تظهرلك التاسكات اليومية بتاعته.</div>}
     <div className="grid g3">
-      <Stat label="إجمالي التاسكات" value={mine.length} />
-      <Stat label="خلصت" value={mine.filter(isDone).length} tone="green" />
-      <Stat label="الباقي" value={mine.filter((t) => !isDone(t)).length} />
+      <Stat label="إجمالي التاسكات" value={sel ? mine.length : 0} />
+      <Stat label="خلصت" value={sel ? mine.filter(isDone).length : 0} tone="green" />
+      <Stat label="الباقي" value={sel ? mine.filter((t) => !isDone(t)).length : 0} />
     </div>
     {levelTasks.length ? <>
     {groups.map(({ l: lvl, tasks: lt }) => <React.Fragment key={lvl.id}>
@@ -939,7 +951,7 @@ export function TasksPage() {
         </Card>;
       })}
     </React.Fragment>)}
-    </> : <Card><Empty icon="🗂️" title={`مفيش تاسكات لـ ${level?.title || 'مستواك'} لسه`} hint="تاسكات المستوى هتظهر هنا أول ما تتضاف لمستواك." /></Card>}
+    </> : sel ? <Card><Empty icon="🗂️" title={`مفيش تاسكات لـ ${selLevel?.title || 'مستواك'} لسه`} hint="تاسكات المستوى هتظهر هنا أول ما تتضاف لمستواك." /></Card> : null}
     {otherTasks.length > 0 && <Card>
       <SectionTitle title="تاسكات تانية" />
       <div className="stack">{otherTasks.map((t) => <div key={t.id} className="row between section-card">
@@ -1089,9 +1101,9 @@ export function MaterialsPage() {
   if (!user) return null;
   const admin = user.role === 'admin';
   const current = data.levels.find((l) => l.id === user.levelId) || levels[0];
-  const levelId = selected || user.levelId || levels[0]?.id;
-  const level = data.levels.find((l) => l.id === levelId) || current;
-  const sessions = data.sessions.filter((s) => s.levelId === level?.id).sort((a, b) => a.order - b.order);
+  const levelId = selected;
+  const level = data.levels.find((l) => l.id === levelId);
+  const sessions = data.sessions.filter((s) => !!level && s.levelId === level.id).sort((a, b) => a.order - b.order);
   const partial = level ? (!admin && !levelFullyOpen(user, level, data.levels)) : false;
   const en = true;
   const L = en ? { title:'Materials', hint:'Pick a level from the list. All levels are available for browsing.', level:'Level', words:'words', ready:'Ready', locked:'Locked', open:'Open lesson', none:'No materials in this level', noneHint:'Materials will appear here once lessons are added.', lesson:'Lesson', pdf:'Open PDF', dl:'Download' } :
@@ -1100,6 +1112,7 @@ export function MaterialsPage() {
     <div><h1>{L.title}</h1><p className="muted">{L.hint}</p></div>
     <Card>
       <Field label={L.level}><select value={levelId} onChange={(e) => setSelected(e.target.value)}>
+        <option value="">{en ? '— Pick your level —' : '— اختار الليفل بتاعك —'}</option>
         {levels.map((l) => {
           const full = admin || levelFullyOpen(user, l, data.levels);
           return <option key={l.id} value={l.id}>{levelLabel(l)}</option>;
@@ -1107,6 +1120,7 @@ export function MaterialsPage() {
       </select></Field>
       {level && <div className="row" style={{ marginTop: '.2rem' }}><Badge tone={partial ? 'muted' : 'green'}>{levelLabel(level)}</Badge><Badge tone="blue">{sessions.length} {en ? 'lessons' : 'دروس'}</Badge></div>}
     </Card>
+    {!level && <div className="note" dir="rtl">اختار الليفل بتاعك علشان تبدأ.</div>}
     {level && sessions.length ? <div className="grid g2">{sessions.map((s) => {
       const sessionLocked = !admin && !sessionOpen(user, s, data.levels);
       const wordCount = data.dictionary.filter((w) => (w.sessionIds || []).includes(s.id)).length;
@@ -1124,7 +1138,7 @@ export function MaterialsPage() {
           <Button size="sm" disabled={sessionLocked} onClick={() => go(`/session/${s.id}`)}>{sessionLocked ? L.locked : L.open}</Button>
         </div>
       </Card>;
-    })}</div> : <Empty icon="📂" title={L.none} hint={L.noneHint} />}
+    })}</div> : level ? <Empty icon="📂" title={L.none} hint={L.noneHint} /> : null}
   </div>;
 }
 
