@@ -6,8 +6,8 @@ import { go } from '../App';
 import { lookupWord, allCached, type LookupEntry } from '../lib/dictionaryProvider';
 import { WORD_MEANINGS } from '../lib/wordMeanings';
 import { grammarFor } from '../lib/grammar/index.ts';
-import { overviewOutline, sourceTranscript, letsTalk, voicePrompts } from '../lib/lessonBrief';
-import { wordQuizItems, sessionQuizItems } from '../lib/sessionQuizzes';
+import { overviewOutline, sourceTranscript, letsTalk, voicePrompts, speakingQuestions } from '../lib/lessonBrief';
+import { wordQuizItems, sessionQuizItems, SESSION_QUIZ_SIZE, GRAMMAR_QUIZ_SIZE } from '../lib/sessionQuizzes';
 import { grammarQuestions } from '../lib/grammarQuiz.ts';
 import { YOUGLISH_ACCENTS } from '../lib/youglish';
 import { YouGlishDock } from '../components/YouGlishDock';
@@ -237,14 +237,14 @@ export function SessionPage({ sessionId }: any) {
   const topics = grammarFor(s.id);
   const slides: any[] = [...topics.map((t) => ({ title: t.title, rule: t.formula, detail: t.ar, examples: t.examples, mistakes: t.mistakes })), ...customNotes];
   const outline = overviewOutline(s);
-  const talk = letsTalk(s);
+  const talk = speakingQuestions(s, words.map((w) => w.word));
   const voices = voicePrompts(s);
   const transcript = sourceTranscript(s);
   const generatedWordQs = wordQuizItems(words, s.id, data.dictionary).filter((q) => !qs.some((x) => x.prompt === q.prompt));
   const wordQs = generatedWordQs;
-  const generatedGrammarQs = grammarQuestions(s.id, topics, 5);
+  const generatedGrammarQs = grammarQuestions(s.id, topics, GRAMMAR_QUIZ_SIZE);
   const grammarAll = generatedGrammarQs.length ? generatedGrammarQs : grammarQs;
-  const quizNine = sessionQuizItems(words, topics, s.id, data.dictionary);
+  const sessionQuiz = sessionQuizItems(words, topics, s.id, data.dictionary);
   const allWordsStudied = words.length > 0 && words.every((w) => wordDone(w.word));
   const writingLines = writing.split(/\n/).map((x) => x.trim()).filter(Boolean).length;
   const tabs = [
@@ -252,7 +252,7 @@ export function SessionPage({ sessionId }: any) {
     { id: 'vocabulary', label: `Words${words.length ? ` (${words.length})` : ''}` },
     { id: 'grammar', label: 'Grammar' },
     { id: 'practice', label: 'Practice' },
-    { id: 'quiz', label: 'Quiz (9)' },
+    { id: 'quiz', label: `Quiz (${sessionQuiz.length || SESSION_QUIZ_SIZE})` },
   ];
   async function mark(sectionId: string) {
     if (locked || done.includes(sectionId)) return;
@@ -366,8 +366,8 @@ export function SessionPage({ sessionId }: any) {
         <a className="btn btn-primary btn-sm" href="https://wa.me/201091060951?text=%D8%B9%D8%A7%D9%88%D8%B2%20%D8%A3%D8%A8%D8%AF%D8%A3%20%D8%A7%D9%84%D8%B4%D8%A7%D8%AF%D9%88%D9%8A%D9%86%D8%AC" target="_blank" rel="noreferrer">واتساب</a></div>
     </Card>}
     {tab === 'quiz' ? <Card>
-      <div className="between"><div><h3>كويز السيشن</h3><small className="muted">9 أسئلة على الكلمات والجرامر · كمّل الفراغ</small></div>
-        <Button onClick={() => go(`/quiz/${s.id}`)} disabled={!quizNine.length || locked}>{quizNine.length ? 'ابدأ الكويز' : 'مفيش أسئلة لسه'}</Button></div>
+      <div className="between"><div><h3>كويز السيشن</h3><small className="muted">{sessionQuiz.length} سؤال على الكلمات والجرامر · النقاط على قد درجتك</small></div>
+        <Button onClick={() => go(`/quiz/${s.id}`)} disabled={!sessionQuiz.length || locked}>{sessionQuiz.length ? 'ابدأ الكويز' : 'مفيش أسئلة لسه'}</Button></div>
     </Card> : <>
       {tab === 'vocabulary' && (words.length > 0 ? <div className="stack">
         <div className="vocab-grid">{words.map((w, n) => {
@@ -444,27 +444,19 @@ export function SessionPage({ sessionId }: any) {
       </>}
       {tab === 'practice' && <div className="stack">
         <Card className="activity-card">
-          <SectionTitle title="Speaking Practice" action={<Badge tone="blue">{talk.length || voices.length}</Badge>} />
-          {(talk.length ? talk : ['اتكلم عن الدرس ده باستخدام الكلمات الجديدة.']).map((q, i) => <div key={i} className="req-item" style={{ marginTop: '.5rem' }}><span className="req-check">{i + 1}</span><span dir="ltr" className="en">{q}</span></div>)}
+          <SectionTitle title="Speaking Practice" action={<Badge tone="blue">{talk.length} questions</Badge>} />
+          <p className="muted">أسئلة مفتوحة للتدريب الحر — اتكلم بصوت عالي أو مع صاحبك. مفيش تسليم ولا واجب.</p>
+          {talk.map((q, i) => <div key={i} className="req-item" style={{ marginTop: '.5rem' }}><span className="req-check">{i + 1}</span><span dir="ltr" className="en">{q}</span></div>)}
         </Card>
         <Card className="activity-card">
-          <SectionTitle title="Voice Notes" action={<Badge>WhatsApp</Badge>} />
-          <p className="muted">جاوب على السؤالين دول بفويس نوتس على واتساب.</p>
+          <SectionTitle title="Voice Notes" action={<Badge>اختياري</Badge>} />
+          <p className="muted">لو عايز رأي المدرّس، ابعت إجابة على أي سؤال بفويس نوت على واتساب.</p>
           {voices.slice(0, 2).map((q, i) => <div key={i} className="section-card" style={{ marginTop: '.7rem' }}>
             <strong>{i + 1}. <span className="en" dir="ltr">{q}</span></strong>
             <div className="row" style={{ marginTop: '.6rem' }}>
               <a className="btn btn-primary btn-sm" href={`https://wa.me/201091060951?text=${encodeURIComponent('فويس نوت Speakozy — ' + q)}`}>ابعت فويس نوت</a>
             </div>
           </div>)}
-        </Card>
-        <Card>
-          <SectionTitle title="Writing Practice" />
-          <p className="muted">لخّص اللي فهمته من الدرس ده في 6 سطور على الأقل.</p>
-          <textarea value={writing} onChange={(e) => setWriting(e.target.value)} placeholder={'Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6'} disabled={locked} />
-          <div className="row" style={{ marginTop: '.6rem' }}>
-            <span className="muted">{writingLines} / 6 lines</span>
-            <Button size="sm" onClick={() => savePractice('writing', writing, 1)} disabled={locked || writingLines < 6}>احفظ الملخص</Button>
-          </div>
         </Card>
       </div>}
       {tab === 'overview' && <div className="stack" dir={enMaterial ? 'ltr' : undefined}>
@@ -520,8 +512,9 @@ export function QuizPage({ sessionId }: any) {
       const status = g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending';
       if (!g.auto) pending++;
       await put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: q.id, answer: ans, autoScore: g.score, maxScore: q.points, status, createdAt: today() });
-      if (g.auto && g.score > 0) await grantScore(user!.id, 'quiz', g.score, `answer-${q.id}-${user!.id}`);
     }
+    const qPts = proportionalScore(auto, max, scoreRule(data.settings.scoreRules, 'sessionQuiz'));
+    if (qPts > 0) await grantScore(user!.id, 'quiz', qPts, `sessionquiz-${s!.id}-${user!.id}`);
     await log('quiz-submit', s!.title);
     setResult({ auto, max, pending });
   }
@@ -537,7 +530,7 @@ export function QuizPage({ sessionId }: any) {
 
   return <div className="stack">
     <div className="row"><button className="icon-btn" onClick={() => go(`/session/${s.id}`)}>→ السيشن</button></div>
-    <Card><h1 dir="ltr">Session Quiz: <span className="en" dir="ltr">{s.title}</span></h1><p className="muted">9 أسئلة. كمّل كل جملة بالكلمة الصح.</p></Card>
+    <Card><h1 dir="ltr">Session Quiz: <span className="en" dir="ltr">{s.title}</span></h1><p className="muted">{qs.length} سؤال على الكلمات والجرامر. النقاط على قد درجتك.</p></Card>
     {qs.map((q, i) => <Card key={q.id}>
       <div className="row between"><strong dir="ltr" className="en" style={{textAlign:"left"}}>{i + 1}. {q.prompt}</strong><Badge>{q.points} نقاط</Badge></div>
       <div style={{ marginTop: '.8rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${answers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={answers[q.id] === o} onChange={() => setAnswers((a) => ({ ...a, [q.id]: o }))} style={{ width: 'auto' }} /> <span className="en" dir="ltr">{o}</span></label>)}</div>

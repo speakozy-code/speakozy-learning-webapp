@@ -242,7 +242,7 @@ export function ReviewsPage() {
 }
 
 export function TaskReviewsPage() {
-  const { data, put, log, grantScore } = useApp();
+  const { data, put, remove, log, grantScore } = useApp();
   const [tab, setTab] = useState('pending');
   const [picked, setPicked] = useState<string[]>([]);
   const statusOf = (c: any) => c.status || 'approved';
@@ -250,6 +250,11 @@ export function TaskReviewsPage() {
   async function decide(c: any, status: 'approved' | 'rejected') {
     await put('taskCompletions', { ...c, status, reviewedAt: today() });
     if (status === 'approved') await grantScore(c.studentId, 'task', scoreRule(data.settings.scoreRules, 'taskApproved'), `task-approved-${c.taskId}`);
+    else {
+      // rejected: take back the provisional point so points only come from approval
+      const prov = data.scores.find((x) => x.studentId === c.studentId && x.refId === `task-pending-${c.taskId}`);
+      if (prov) await remove('scores', prov.id);
+    }
     await log(status === 'approved' ? 'approve-task' : 'reject-task', c.id);
   }
   async function approveSelected() {

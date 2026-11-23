@@ -174,6 +174,28 @@ export function letsTalk(s: SessionLike): string[] {
   return unique(out, 8);
 }
 
+export const SPEAKING_MIN = 10;
+
+/** 10+ open speaking questions: the lesson's own "Let's talk" questions first, then topic and vocabulary prompts. Free practice, nothing to submit. */
+export function speakingQuestions(s: SessionLike, words: string[] = []): string[] {
+  const name = lessonName(s);
+  const topic = clip(s.topic || name, 80);
+  const generic = [
+    `What did you learn in this lesson about ${topic}? Explain it in your own words.`,
+    `Tell me about a time when ${topic} was important in your life.`,
+    `Why do you think ${topic} matters to people in Egypt?`,
+    `What is the hardest part of talking about ${topic} in English?`,
+    `If a friend asked you about ${topic}, what would you tell them?`,
+    `Describe one thing you would like to change or improve about ${topic}.`,
+    `Compare how people in your family and people your age talk about ${topic}.`,
+    `What question would you like to ask a native speaker about ${topic}?`,
+    `Give three pieces of advice about ${topic}.`,
+    `Talk about ${topic} for one minute without stopping.`,
+  ];
+  const fromWords = words.filter((w) => w && !/[\u0600-\u06FF]/.test(w)).slice(0, 4).map((w) => `Use the word “${w}” in a true sentence about your life, then say two more sentences.`);
+  return unique([...letsTalk(s), ...generic, ...fromWords], 14);
+}
+
 export function voicePrompts(s: SessionLike): string[] {
   const talk = letsTalk(s);
   const fallback = [
