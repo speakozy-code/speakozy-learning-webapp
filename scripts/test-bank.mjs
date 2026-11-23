@@ -5,6 +5,8 @@ import { getBank, questionKey, GRAMMAR_PRACTICE_SIZE, SESSION_QUIZ_SIZE } from '
 import { GRAMMAR_QUESTIONS as G } from '../src/lib/content/grammarQuestions.ts';
 import { TASK_QUESTIONS as T } from '../src/lib/content/taskQuestions.ts';
 import { TALK_QUESTIONS } from '../src/lib/content/talk.ts';
+import { fixWords } from '../src/lib/wordFixes.ts';
+import { UNIT_WORDS } from '../src/lib/unitWords.ts';
 import { buildDailyTasks } from '../src/lib/dailyTasks.ts';
 
 let pass = 0;
@@ -110,6 +112,18 @@ t('wrong grammar answers get an Arabic reason with the rule', () => {
   const s = C.sessions[0]; const q = bank.get(s.id).grammar[0];
   const why = whyWrong(q, s.id, C.dictionary);
   assert.ok(/[\u0600-\u06FF]/.test(why) && why.includes(String(q.correct)));
+});
+
+t('questions get shorter and simpler at the lower levels', () => {
+  const avg = (lid) => { const xs = []; for (const s of C.sessions.filter((x) => x.levelId === lid)) { const b = bank.get(s.id); for (const q of [...b.grammar, ...b.words, ...b.session]) xs.push(q.prompt.split(/\s+/).length); } return xs.reduce((a, b) => a + b, 0) / xs.length; };
+  assert.ok(avg('l1') < avg('l4') && avg('l4') < avg('l7'), 'prompt length grows with the level');
+  for (const s of C.sessions.filter((x) => x.levelId === 'l1')) for (const q of [...bank.get(s.id).words]) assert.ok(q.options.every((o) => o.split(/\s+/).length <= 5), q.prompt);
+});
+
+t('word lists drop contractions, names and off-topic words', () => {
+  const list = fixWords([...UNIT_WORDS]);
+  for (const bad of ["he's", "can't", 'samy', 'vocabulary', 'egypt']) assert.ok(!list.some((w) => w.word.toLowerCase() === bad), bad);
+  assert.ok(list.some((w) => w.word === 'mother' && w.sessionIds.includes('l1-s5')));
 });
 
 console.log(`\n${pass} bank checks passed`);

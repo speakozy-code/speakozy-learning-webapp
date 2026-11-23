@@ -4,6 +4,7 @@ import { seedData, PLANNED_LEVELS } from './seed';
 import { LEVEL_TASKS } from './levelTasks';
 import { buildDailyTasks } from './dailyTasks';
 import { UNIT_WORDS } from './unitWords';
+import { fixWords } from './wordFixes';
 import { uid, today, addScoreOnce, buildStudentAccount, dailyNotifications } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
 import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbCurrentAuth, sbEnsureProfile, sbSaveMyProfile, sbChangePassword, sbUpsertRecord, sbDeleteRecord } from './supabase';
@@ -57,7 +58,7 @@ function withLevelTasks(d0: AppData): AppData {
   const taskIds = new Set([...LEVEL_TASKS.map((t) => t.id), ...daily.map((t) => t.id)]);
   const wordKeys = new Set(UNIT_WORDS.map((w) => w.word.toLowerCase() + '|' + (w.sessionIds || [])[0]));
   const customWords = (d.dictionary || []).filter((w) => !wordKeys.has(w.word.toLowerCase() + '|' + (w.sessionIds || [])[0]));
-  return { ...d, tasks: [...daily, ...((d.tasks || []).filter((t) => !taskIds.has(t.id)))], dictionary: [...UNIT_WORDS, ...customWords] };
+  return { ...d, tasks: [...daily, ...((d.tasks || []).filter((t) => !taskIds.has(t.id)))], dictionary: fixWords([...UNIT_WORDS, ...customWords]) };
 }
 function saveDemo(data: AppData) {
   try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}

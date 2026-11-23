@@ -7,6 +7,7 @@ import { grammarFor } from './grammar/index.ts';
 import { grammarQuestions, shuffle, type GeneratedQuestion } from './grammarQuiz.ts';
 import { wordQuizItems } from './sessionQuizzes.ts';
 import { deckQuestions, speakingQuestions } from './lessonBrief.ts';
+import { CAPS, fits, tierOfCefr } from './difficulty.ts';
 
 export const GRAMMAR_PRACTICE_SIZE = 10;
 export const SESSION_QUIZ_SIZE = 20;
@@ -55,6 +56,11 @@ export function getBank(data: Pick<AppData, 'levels' | 'sessions' | 'dictionary'
   const bank = new Map<string, SessionBank>();
   const levels = [...data.levels].sort((a, b) => a.order - b.order);
   for (const level of levels) {
+    const tier = tierOfCefr(level.cefr);
+    const sessionIds = new Set(data.sessions.filter((x) => x.levelId === level.id).map((x) => x.id));
+    // distractors come from the same level only, so a beginner never sees an advanced word as a choice
+    const levelPool = data.dictionary.filter((w) => (w.sessionIds || []).some((id) => sessionIds.has(id)));
+    const caps = CAPS[tier];
     const sessions = data.sessions.filter((s) => s.levelId === level.id).sort((a, b) => a.order - b.order);
     // daily tasks are claimed first so the speaking practice can never reuse them
     const taskPlan = new Map<string, SessionBank['tasks']>();
@@ -69,13 +75,17 @@ export function getBank(data: Pick<AppData, 'levels' | 'sessions' | 'dictionary'
       const pool = authored(s.id, GRAMMAR_QUESTIONS[s.id] || []);
       const take = (list: GeneratedQuestion[], max: number) => {
         const out: GeneratedQuestion[] = [];
-        for (const q of list) { if (out.length >= max) break; if (claim(questionKey(q))) out.push(q); }
+        // strict pass first; only if the lesson cannot fill its quota, a slightly looser pass (never beyond the next tier)
+        for (const loose of [false, true]) {
+          const c = loose ? { ...caps, prompt: caps.prompt + 3, opt: caps.opt + 2 } : caps;
+          for (const q of list) { if (out.length >= max) break; if (!out.includes(q) && fits(q, c) && claim(questionKey(q))) out.push(q); }
+        }
         return out;
       };
       const generated = grammarQuestions(s.id, topics, 60);
       const grammar = take([...pool, ...generated], GRAMMAR_PRACTICE_SIZE);
-      const wordA = shuffle(wordQuizItems(words, s.id, data.dictionary, 'a'), s.id + 'wa');
-      const wordBq = shuffle(wordQuizItems(words, s.id, data.dictionary, 'b'), s.id + 'wb');
+      const wordA = shuffle(wordQuizItems(words, s.id, levelPool, 'a', tier), s.id + 'wa');
+      const wordBq = shuffle(wordQuizItems(words, s.id, levelPool, 'b', tier), s.id + 'wb');
       const wordQs = take(wordA, Math.min(WORD_QUIZ_SIZE, Math.max(4, Math.ceil(words.length / 2))));
       // lesson quiz: words (second style, then leftovers) first, topped up with the remaining grammar questions
       const fromWords = take([...wordBq, ...wordA], Math.min(10, SESSION_QUIZ_SIZE));
@@ -84,6 +94,10 @@ export function getBank(data: Pick<AppData, 'levels' | 'sessions' | 'dictionary'
       if (session.length < SESSION_QUIZ_SIZE) {
         const more = take(grammarQuestions(s.id, topics, 200), SESSION_QUIZ_SIZE - session.length);
         session.push(...more);
+      }
+
+      if (session.length < SESSION_QUIZ_SIZE) {
+        session.push(...take(shuffle(wordQuizItems(words, s.id, levelPool, 'c', tier), s.id + 'wc'), SESSION_QUIZ_SIZE - session.length));
       }
 
       const tasks = taskPlan.get(s.id) || [];

@@ -36,7 +36,7 @@ t('YouGlish widget query stays on the same page player', () => {
   assert.equal(q.accent, 'uk');
 });
 
-t('word quizzes are English fill-in MCQ, never Arabic meanings', () => {
+t('word quizzes are short MCQs (gap-fill, definition or meaning)', () => {
   const s = C.sessions[0];
   const words = C.dictionary.filter((w) => (w.sessionIds || []).includes(s.id));
   const qs = wordQuizItems(words, s.id, C.dictionary);
@@ -44,10 +44,10 @@ t('word quizzes are English fill-in MCQ, never Arabic meanings', () => {
   for (const q of qs) {
     assert.equal(q.scope, 'word');
     assert.equal(q.type, 'mcq');
-    assert.ok(q.prompt.includes('____') || /^Which word matches this meaning\?/.test(q.prompt), q.prompt);
+    assert.ok(q.prompt.includes('____') || /^(Which word means|What does)/.test(q.prompt), q.prompt);
     assert.ok(q.options.length >= 3);
     assert.ok(q.options.includes(q.correct));
-    assert.ok(!/[\u0600-\u06FF]/.test(q.prompt + q.options.join(' ') + q.correct), q.prompt);
+    assert.ok(q.options.every((o) => o.split(/\s+/).length <= 6), q.prompt);
   }
 });
 
@@ -81,7 +81,7 @@ t('session quiz is 20 English questions on words and grammar, with no repeats', 
     for (const q of qs) {
       assert.equal(q.type, 'mcq');
       assert.equal(q.options.filter((o) => o === q.correct).length, 1, `${id} answer once: ${q.prompt}`);
-      assert.ok(!/[\u0600-\u06FF]/.test(q.prompt + q.options.join('')));
+      if (q.scope === 'grammar') assert.ok(!/[\u0600-\u06FF]/.test(q.prompt + q.options.join('')));
       assert.ok(!/In this lesson we use/.test(q.prompt));
     }
   }
