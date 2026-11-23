@@ -4,6 +4,7 @@ import { gradeQuestion, sessionStatus, levelProgress, canOpenLevel, sessionOpen,
 import { priorFor } from '../src/lib/review.ts';
 import { schedule, dueWords } from '../src/lib/srs.ts';
 import { levelFullyOpen } from '../src/lib/domain.ts';
+import { subscriptionExpired, withExpiry, extendEnd } from '../src/lib/domain.ts';
 import { readFileSync } from 'node:fs';
 
 let pass = 0;
@@ -136,6 +137,17 @@ t('المراجعة المتباعدة (Anki): الفاصل بيكبر والن�
   assert.equal(new Date(lapse.nextReview).getTime() - now, 10 * 60000);
   const iso = new Date(now).toISOString();
   assert.equal(dueWords([{ nextReview: undefined }, { nextReview: '2025-12-31' }, { nextReview: '2026-02-01' }], iso).length, 2);
+});
+
+t('انتهاء الاشتراك تلقائي بعد آخر يوم', () => {
+  const u = { role: 'student', subscribed: true, subscriptionEnd: '2026-03-10' };
+  assert.equal(subscriptionExpired(u, '2026-03-10'), false);   // the end date is still a valid day
+  assert.equal(subscriptionExpired(u, '2026-03-11'), true);
+  assert.equal(withExpiry({ ...u, subscriptionEnd: '2999-01-01' }).subscribed, true); assert.equal(withExpiry({ ...u, subscriptionEnd: '2020-01-01' }).subscribed, false);
+  assert.equal(subscriptionExpired({ role: 'student', subscribed: true }, '2030-01-01'), false);  // no date = open
+  assert.equal(subscriptionExpired({ role: 'admin', subscriptionEnd: '2020-01-01' }, '2026-01-01'), false);
+  assert.equal(extendEnd('2026-03-10', 30, '2026-03-20'), '2026-04-19'); // expired → from today
+  assert.equal(extendEnd('2026-04-01', 30, '2026-03-20'), '2026-05-01'); // still active → from the end date
 });
 
 console.log(`\n${pass} tests passed`);

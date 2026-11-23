@@ -4,6 +4,7 @@ export interface User {
   id: string; name: string; email: string; role: Role; active: boolean;
   levelId: string; maxLevelId: string; plan?: 'starter'|'growth'|'pro'; avatar?: string; createdAt: string;
   demoPassword?: string; subscribed?: boolean; phone?: string;
+  /** YYYY-MM-DD: the last day of the subscription; after it the student is automatically treated as not subscribed */ subscriptionEnd?: string;
 }
 
 export interface Section {

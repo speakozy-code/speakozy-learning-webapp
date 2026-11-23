@@ -6,7 +6,7 @@ import { buildDailyTasks } from './dailyTasks';
 import { UNIT_WORDS } from './unitWords';
 import { mergeWords } from './wordFixes';
 import { setGrammarOverrides } from './grammar/index';
-import { uid, today, addScoreOnce, buildStudentAccount, dailyNotifications } from './domain';
+import { uid, today, addScoreOnce, buildStudentAccount, dailyNotifications, withExpiry } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
 import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbCurrentAuth, sbEnsureProfile, sbSaveMyProfile, sbChangePassword, sbUpsertRecord, sbDeleteRecord } from './supabase';
 import { englishify } from './translate';
@@ -319,6 +319,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   // hidden words (deleted in the admin lesson editor) never reach any page; grammar edits are registered for every reader
-  const view = React.useMemo(() => { setGrammarOverrides(data.grammarNotes as any); return { ...data, dictionary: (data.dictionary || []).filter((w) => !w.hidden) } as AppData; }, [data]);
-  return <AppCtx.Provider value={{ user, ready, demo, data: view, login, signup, logout, setUser, saveProfile, changePassword, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
+  const view = React.useMemo(() => { setGrammarOverrides(data.grammarNotes as any); return { ...data, users: (data.users || []).map(withExpiry), dictionary: (data.dictionary || []).filter((w) => !w.hidden) } as AppData; }, [data]);
+  return <AppCtx.Provider value={{ user: user ? withExpiry(user) : null, ready, demo, data: view, login, signup, logout, setUser, saveProfile, changePassword, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
 }
