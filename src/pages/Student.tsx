@@ -375,7 +375,7 @@ export function SessionPage({ sessionId }: any) {
         const def = defs[w.word] || WORD_MEANINGS[w.word?.toLowerCase()?.trim()]?.definition || '';
         const example = (w.examples || [])[0] || '';
         const known = wordDone(w.word);
-        return <article key={w.id} className={`vocab-card ${known ? 'is-done' : ''}`}>
+        return <article key={w.id} dir="ltr" className={`vocab-card ltr-scope ${known ? 'is-done' : ''}`}>
           <div className="vocab-top">
             <span className="vocab-index">{String(n + 1).padStart(2, '0')}</span>
             <Badge tone="blue">{w.type || 'word'}</Badge>
@@ -391,7 +391,7 @@ export function SessionPage({ sessionId }: any) {
           {def && <div className="vocab-def en" dir="ltr">{def}</div>}
           {example && <div className="vocab-example en" dir="ltr">“{example}”</div>}
           <div className="youglish-row">
-            <span className="youglish-label">اسمعها في الاستخدام</span>
+            <span className="youglish-label" dir="rtl">اسمعها في الاستخدام</span>
             <span className="youglish-btns">
               {YOUGLISH_ACCENTS.map((a) => <button key={a.code} type="button" className="yg-btn en"
                 onClick={() => openYouglish(w.word, a.code)}
@@ -404,8 +404,8 @@ export function SessionPage({ sessionId }: any) {
         </article>;
       })}</div>
         {!allWordsStudied && words.length > 0 && <div className="note">علّم كل الكلمات إنها اتذاكرت عشان يفتح كويز الكلمات.</div>}
-        {allWordsStudied && wordQs.length > 0 && <Card className="grammar-training">
-          <div className="between"><div><h3 dir="ltr">Words Quiz</h3><small className="muted">راجع الكلمات الجديدة بتاعة السيشن دي.</small></div><Badge tone="green">{wordQs.length} questions</Badge></div>
+        {allWordsStudied && wordQs.length > 0 && <Card className="grammar-training ltr-scope">
+          <div className="between"><div><h3 dir="ltr">Words Quiz</h3><small className="muted" dir="rtl">راجع الكلمات الجديدة بتاعة السيشن دي.</small></div><Badge tone="green">{wordQs.length} questions</Badge></div>
           <div className="stack" style={{ marginTop: '.8rem' }}>{wordQs.map((q, i) => <div key={q.id} className="exercise-item">
             <div className="between"><strong>{i + 1}. {q.prompt}</strong>{wordResult && <Badge tone={wordResult.marks[q.id] ? 'green' : 'red'}>{wordResult.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
             {q.options.length ? <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${wordAnswers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={wordAnswers[q.id] === o} onChange={() => setWordAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
@@ -433,8 +433,8 @@ export function SessionPage({ sessionId }: any) {
             </div>)}
           </div>}
         </Card>)}</div> : <Empty title="مفيش جرامر لسه" hint="ملاحظات الجرامر للسيشن دي هتظهر هنا." />}
-        {grammarAll.length > 0 && <Card className="grammar-training">
-          <div className="between"><div><h3 dir="ltr">Grammar Practice</h3><small className="muted">الممارسة بعد الشرح.</small></div><Badge tone="green">{grammarAll.length} questions</Badge></div>
+        {grammarAll.length > 0 && <Card className="grammar-training ltr-scope">
+          <div className="between"><div><h3 dir="ltr">Grammar Practice</h3><small className="muted" dir="rtl">الممارسة بعد الشرح.</small></div><Badge tone="green">{grammarAll.length} questions</Badge></div>
           <div className="stack" style={{ marginTop: '.8rem' }}>{grammarAll.map((q, i) => <div key={q.id} className="exercise-item">
             <div className="between"><strong>{i + 1}. {q.prompt}</strong>{grammarResult && <Badge tone={grammarResult.marks[q.id] ? 'green' : 'red'}>{grammarResult.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
             <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${grammarAnswers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={grammarAnswers[q.id] === o} onChange={() => setGrammarAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
@@ -443,15 +443,15 @@ export function SessionPage({ sessionId }: any) {
           {grammarResult && <div className="result-good" style={{ marginTop: '.6rem' }}>Grammar score: {grammarResult.score} / {grammarResult.max}</div>}
         </Card>}
       </>}
-      {tab === 'practice' && <div className="stack">
+      {tab === 'practice' && <div className="stack ltr-scope" dir="ltr">
         <Card className="activity-card">
           <SectionTitle title="Speaking Practice" action={<Badge tone="blue">{talk.length} questions</Badge>} />
-          <p className="muted">أسئلة مفتوحة للتدريب الحر — اتكلم بصوت عالي أو مع صاحبك. مفيش تسليم ولا واجب.</p>
+          <p className="muted" dir="rtl">أسئلة مفتوحة للتدريب الحر — اتكلم بصوت عالي أو مع صاحبك. مفيش تسليم ولا واجب.</p>
           {talk.map((q, i) => <div key={i} className="req-item" style={{ marginTop: '.5rem' }}><span className="req-check">{i + 1}</span><span dir="ltr" className="en">{q}</span></div>)}
         </Card>
         <Card className="activity-card">
           <SectionTitle title="Voice Notes" action={<Badge>اختياري</Badge>} />
-          <p className="muted">لو عايز رأي المدرّس، ابعت إجابة على أي سؤال بفويس نوت على واتساب.</p>
+          <p className="muted" dir="rtl">لو عايز رأي المدرّس، ابعت إجابة على أي سؤال بفويس نوت على واتساب.</p>
           {voices.slice(0, 2).map((q, i) => <div key={i} className="section-card" style={{ marginTop: '.7rem' }}>
             <strong>{i + 1}. <span className="en" dir="ltr">{q}</span></strong>
             <div className="row" style={{ marginTop: '.6rem' }}>
@@ -532,7 +532,7 @@ export function QuizPage({ sessionId }: any) {
   return <div className="stack">
     <div className="row"><button className="icon-btn" onClick={() => go(`/session/${s.id}`)}>→ السيشن</button></div>
     <Card><h1 dir="ltr">Session Quiz: <span className="en" dir="ltr">{s.title}</span></h1><p className="muted">{qs.length} سؤال على الكلمات والجرامر. النقاط على قد درجتك.</p></Card>
-    {qs.map((q, i) => <Card key={q.id}>
+    {qs.map((q, i) => <Card key={q.id} className="ltr-scope">
       <div className="row between"><strong dir="ltr" className="en" style={{textAlign:"left"}}>{i + 1}. {q.prompt}</strong><Badge>{q.points} نقاط</Badge></div>
       <div style={{ marginTop: '.8rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${answers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={answers[q.id] === o} onChange={() => setAnswers((a) => ({ ...a, [q.id]: o }))} style={{ width: 'auto' }} /> <span className="en" dir="ltr">{o}</span></label>)}</div>
     </Card>)}
@@ -543,8 +543,6 @@ export function QuizPage({ sessionId }: any) {
 export function DictionaryPage() {
   const { user, data, put, remove, demo } = useApp();
   const [q, setQ] = useState('');
-  const [type, setType] = useState('all');
-  const [tab, setTab] = useState('search');
   const [detail, setDetail] = useState<LookupEntry | null>(null);
   const [looking, setLooking] = useState(false);
   const [manual, setManual] = useState<any>(null);
@@ -559,18 +557,16 @@ export function DictionaryPage() {
   const saved = data.savedWords.filter((w) => w.studentId === user.id);
   const globalEntries = allCached();
   const matches = (d: any) => {
-    const matchesType = type === 'all' || d.type === type;
     const hay = (d.word + ' ' + d.meaning + ' ' + d.arabic + ' ' + (d.examples || []).join(' ')).toLowerCase();
-    return matchesType && (!q || hay.includes(q.trim().toLowerCase()));
+    return !q || hay.includes(q.trim().toLowerCase());
   };
   const seen = new Set<string>();
   const localResults = [...all, ...globalEntries].filter((d: any) => {
     const key = d.word.toLowerCase();
     if (seen.has(key) || !matches(d)) return false;
     seen.add(key); return true;
-  }).slice(0, 120);
+  }).slice(0, 40);
   const savedResults = saved.filter((d) => !q || (d.word + d.meaning).toLowerCase().includes(q.toLowerCase()));
-  const types = ['all', ...Array.from(new Set(all.map((d) => d.type)))];
   const suggestions = q.trim().length >= 1
     ? all.filter((d) => d.word.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 8)
     : [];
@@ -645,8 +641,7 @@ export function DictionaryPage() {
     <Card className="search-hero">
       <div className="row"><span style={{ fontSize: '1.4rem' }}>🔎</span><input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) showWord(q); }} placeholder="اكتب أي كلمة... مثال: serendipity" aria-label="دوّر في الديكشنري" /></div>
       {suggestions.length > 0 && <div className="dict-suggest">{suggestions.map((d) => <button key={d.id} type="button" className="dict-suggest-item en" dir="ltr" onClick={() => { setQ(d.word); showWord(d.word); }}>{d.word}</button>)}</div>}
-      <div className="row" style={{ marginTop: '.7rem', justifyContent: 'space-between' }}>
-        <div className="row">{types.map((t) => <button key={t} className={`tab ${type === t ? 'active' : ''}`} onClick={() => setType(t)}>{t === 'all' ? 'الكل' : t}</button>)}</div>
+      <div className="row" style={{ marginTop: '.7rem', justifyContent: 'flex-end' }}>
         <div className="row"><Button size="sm" variant="ghost" onClick={() => setManual({ word: q.trim(), meaning: '', type: 'noun', examples: '' })}>+ ضيف كلمة</Button><Button size="sm" onClick={() => q.trim() && showWord(q)} disabled={!q.trim() || looking}>{looking ? 'بندوّر...' : 'دوّر عالميًا'}</Button></div>
       </div>
       {q.trim() && !looking && <div className="muted" style={{ marginTop: '.5rem', fontSize: '.82rem' }}>
@@ -673,20 +668,14 @@ export function DictionaryPage() {
       </div>
     </Card>}
 
-    <div className="grid g2">
-      <Card>
-        <SectionTitle title={q ? `Results (${localResults.length})` : `All words (${localResults.length})`} />
-        {localResults.length ? <div className="stack">{localResults.map((d) => <div key={d.id} className="word-row">
-          <button className="icon-btn" onClick={() => setDetail({ ...d, source: d.source || 'local' })}><strong className="en">{d.word}</strong></button>
-          <span className="muted" dir="rtl">{d.meaning}</span>
-          <div className="row"><Badge>{d.type}</Badge><button className="icon-btn" onClick={() => pronounce(d)}>🔊</button><Button size="sm" variant={isSaved(d.word) ? 'ghost' : 'primary'} onClick={() => toggle(d)}>{isSaved(d.word) ? '✓' : 'حفظ'}</Button></div>
-        </div>)}</div> : <Empty icon="🔍" title="مفيش نتايج محلية" hint="هنجرّب المصدر العالمي تلقائيًا، أو تقدر تضيف الكلمة بنفسك." />}
-      </Card>
-      <Card><SectionTitle title="ملاحظات" />
-        <div className="note">البحث بيشمل الكلمة والمعنى والشرح والأمثلة. لو الكلمة مش موجودة، المصدر العالمي هيجيب تعريفها، ولو مفيش نت تقدر تضيفها يدويًا.</div>
-        <div style={{ marginTop: '1rem' }}><Button size="sm" variant="ghost" onClick={() => go('/words')}>كلماتي المحفوظة ({saved.length}) ←</Button></div>
-      </Card>
-    </div>
+    {q.trim() && <Card>
+      <SectionTitle title={`Results (${localResults.length})`} />
+      {localResults.length ? <div className="stack">{localResults.map((d) => <div key={d.id} className="word-row">
+        <button className="icon-btn" onClick={() => setDetail({ ...d, source: d.source || 'local' })}><strong className="en" dir="ltr">{d.word}</strong></button>
+        <span className="muted" dir="rtl">{d.meaning}</span>
+        <div className="row"><Badge>{d.type}</Badge><button className="icon-btn" onClick={() => pronounce(d)}>🔊</button><Button size="sm" variant={isSaved(d.word) ? 'ghost' : 'primary'} onClick={() => toggle(d)}>{isSaved(d.word) ? '✓' : 'حفظ'}</Button></div>
+      </div>)}</div> : <Empty icon="🔍" title="مفيش نتايج محلية" hint="هنجرّب المصدر العالمي تلقائيًا، أو تقدر تضيف الكلمة بنفسك." />}
+    </Card>}
 
     <Modal open={!!detail} title="كارت الكلمة" onClose={() => setDetail(null)}>
       {detail && <div className="stack">
@@ -817,7 +806,6 @@ export function YallaNetkellemPage() {
 
 export function TasksPage() {
   const { user, data, put, remove, grantScore } = useApp();
-  const [expanded, setExpanded] = useState<string | null>(null);
   if (!user) return null;
   const mine = data.tasks.filter((t) => t.active && (t.targetType === 'all' || (t.targetType === 'student' && t.targetId === user.id) || (t.targetType === 'level' && t.targetId === user.levelId)));
   const doneIds = data.taskCompletions.filter((c) => c.studentId === user.id).map((c) => c.taskId);
@@ -855,27 +843,31 @@ export function TasksPage() {
       </Card>
       {weeks.map((w) => {
         const list = levelTasks.filter((t) => (t.week || 1) === w);
-        const first = list[0];
+        const topicNames = [...new Set(list.map((t) => t.topic || ''))];
         return <Card key={w}>
-          <SectionTitle title={`أسبوع ${w} — ${first?.topic || ''}`} action={<Badge tone="blue">{list.filter(isDone).length}/{list.length}</Badge>} />
-          {first?.grammar && <div className="muted" style={{ fontSize: '.82rem', marginBottom: '.6rem' }} dir="ltr">{first.grammar}</div>}
+          <SectionTitle title={`Week ${w}`} action={<Badge tone="blue">{list.filter(isDone).length}/{list.length}</Badge>} />
           <div className="stack">
-            {list.map((t) => {
-              const done = isDone(t);
-              const open = expanded === t.id;
-              return <div key={t.id} className={`task-item ${done ? 'is-done' : ''}`}>
-                <div className="task-item-head">
-                  <button className={`task-check ${done ? 'checked' : ''}`} onClick={() => toggle(t)} disabled={taskLocked(t)} aria-label={done ? 'علّم إنها ما خلصتش' : 'علّم إنها خلصت'}>{done ? '✓' : ''}</button>
-                  <button className="task-item-title" onClick={() => setExpanded(open ? null : t.id)}>
-                    <span className="task-badge">{t.badge || t.kind}</span>
-                    <strong>{t.title}</strong>
-                    {statusBadge(t)}
-                    <span className="task-caret">{open ? '⌃' : '⌄'}</span>
-                  </button>
-                </div>
-                {open && <div className="task-instructions" dir="ltr">
-                  {(t.instructions || []).map((ins, i) => <div key={i} className="task-ins"><span className="task-ins-num">{i + 1}.</span><span>{ins}</span></div>)}
-                </div>}
+            {topicNames.map((topicName) => {
+              const items = list.filter((t) => (t.topic || '') === topicName);
+              return <div key={topicName} className="stack" dir="ltr" style={{ textAlign: 'left' }}>
+                <div><strong className="en">{topicName}</strong>{items[0]?.grammar && <div className="muted" style={{ fontSize: '.82rem' }}>{items[0].grammar}</div>}</div>
+                {items.map((t) => {
+                  const done = isDone(t);
+                  return <div key={t.id} className={`task-item ${done ? 'is-done' : ''}`}>
+                    <div className="task-item-head">
+                      <button className={`task-check ${done ? 'checked' : ''}`} onClick={() => toggle(t)} disabled={taskLocked(t)} aria-label={done ? 'علّم إنها ما خلصتش' : 'علّم إنها خلصت'}>{done ? '✓' : ''}</button>
+                      <div className="task-item-title" style={{ cursor: 'default' }}>
+                        <span className="task-badge">{t.badge || t.kind}</span>
+                        <strong>{t.title}</strong>
+                        <span dir="rtl">{statusBadge(t)}</span>
+                      </div>
+                    </div>
+                    <div className="task-instructions" dir="ltr">
+                      {(t.instructions || []).map((ins, i) => <div key={i} className="task-ins"><span>{ins}</span></div>)}
+                      {t.source === 'generated' && <div className="muted" dir="rtl" style={{ fontSize: '.78rem', marginTop: '.4rem', textAlign: 'right' }}>سؤال عام على موضوع السيشن — ملف السيشن مفيهوش سؤال محادثة لده.</div>}
+                    </div>
+                  </div>;
+                })}
               </div>;
             })}
           </div>
