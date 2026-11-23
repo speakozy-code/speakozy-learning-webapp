@@ -78,7 +78,7 @@ export function seedData(): AppData {
       { id: 'lg1', actorId: 'admin-1', action: 'load-curriculum', target: `${LEVELS.length} levels / ${SESSIONS.length} sessions / ${DICTIONARY.length} words`, createdAt: '2026-11-18T09:00:00.000Z' },
     ],
     settings: {
-      scoreRules: { study: 10, exercise: 5, wordQuiz: 10, grammarQuiz: 10, sessionQuiz: 30, levelQuiz: 50 },
+      scoreRules: { wordQuiz: 10, grammarQuiz: 10, sessionQuiz: 30, levelQuiz: 50, taskPending: 1, taskApproved: 5, speakingExercise: 5, writingExercise: 5 },
       leaderboard: { enabled: true, nameMode: 'first', period: 'weekly', hidden: [] },
       quizDefaults: { attempts: 2, passScore: 70, durationMin: 10 },
       reminders: { inactivityDays: 3, reminderHours: 24 },

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, Progress, Stat, SectionTitle, Empty, Tabs, Field, Modal, fmtDate, fmtDay, isLate } from '../components/UI';
-import { sessionStatus, levelProgress, engagementProgress, sessionOpen, levelFullyOpen, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, uid, today, levelLabel, cefrOf } from '../lib/domain';
+import { sessionStatus, levelProgress, engagementProgress, sessionOpen, levelFullyOpen, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, proportionalScore, scoreRule, uid, today, levelLabel, cefrOf } from '../lib/domain';
 import { go } from '../App';
 import { lookupWord, allCached, type LookupEntry } from '../lib/dictionaryProvider';
 import { WORD_MEANINGS } from '../lib/wordMeanings';
@@ -257,13 +257,11 @@ export function SessionPage({ sessionId }: any) {
   async function mark(sectionId: string) {
     if (locked || done.includes(sectionId)) return;
     await put('progress', { studentId: user!.id, sessionId: s!.id, sectionId, completedAt: today() });
-    await grantScore(user!.id, 'study', data.settings.scoreRules.study, `section-${sectionId}`);
     await log('study-section', `${s!.title} / ${sectionId}`);
   }
   async function markWord(w: string) {
     if (locked || wordDone(w)) return;
     await put('progress', { studentId: user!.id, sessionId: s!.id, sectionId: wordProgressId(w), completedAt: today() });
-    await grantScore(user!.id, 'word', data.settings.scoreRules.wordQuiz || 5, `word-${s!.id}-${w.toLowerCase()}`);
   }
   function pronounce(w: any) {
     const word = typeof w === 'string' ? w : w.word;
@@ -300,7 +298,8 @@ export function SessionPage({ sessionId }: any) {
       score += g.score; max += q.points;
       await put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: practiceId('grammar', s!.id, Number(String(q.id).split('-').pop()) || 1), answer: grammarAnswers[q.id] || '', autoScore: g.score, maxScore: q.points, status: g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending', createdAt: today() });
     }
-    await grantScore(user!.id, 'grammar', data.settings.scoreRules.grammarQuiz || 10, `grammar-${s!.id}-${user!.id}`);
+    const gPts = proportionalScore(score, max, scoreRule(data.settings.scoreRules, 'grammarQuiz'));
+    if (gPts > 0) await grantScore(user!.id, 'grammar', gPts, `grammar-${s!.id}-${user!.id}`);
     await log('grammar-quiz', `${s!.title} · ${score}/${max}`);
     setGrammarResult({ marks, score, max });
   }
@@ -314,7 +313,8 @@ export function SessionPage({ sessionId }: any) {
       score += g.score; max += q.points;
       await put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: `wordquiz:${s!.id}:${q.id}`, answer: wordAnswers[q.id] || '', autoScore: g.score, maxScore: q.points, status: g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending', createdAt: today() });
     }
-    await grantScore(user!.id, 'word', data.settings.scoreRules.wordQuiz || 10, `wordquiz-${s!.id}-${user!.id}`);
+    const wPts = proportionalScore(score, max, scoreRule(data.settings.scoreRules, 'wordQuiz'));
+    if (wPts > 0) await grantScore(user!.id, 'word', wPts, `wordquiz-${s!.id}-${user!.id}`);
     await log('word-quiz', `${s!.title} · ${score}/${max}`);
     setWordResult({ marks, score, max });
   }
@@ -323,7 +323,6 @@ export function SessionPage({ sessionId }: any) {
     const id = practiceId(kind, s!.id, n);
     const wordsUsed = text.trim().split(/\s+/).length;
     await put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: id, answer: text, autoScore: Math.min(20, Math.max(5, wordsUsed * 2)), maxScore: 20, status: 'pending', createdAt: today() });
-    await grantScore(user!.id, 'exercise', 5, `practice-${id}-${user!.id}`);
     await log(`${kind}-saved`, s!.title);
     if (kind === 'speaking') setSpeaking('');
     if (kind === 'writing') setWriting('');
@@ -823,12 +822,14 @@ export function YallaNetkellemPage() {
 }
 
 export function TasksPage() {
-  const { user, data, put, remove } = useApp();
+  const { user, data, put, remove, grantScore } = useApp();
   const [expanded, setExpanded] = useState<string | null>(null);
   if (!user) return null;
   const mine = data.tasks.filter((t) => t.active && (t.targetType === 'all' || (t.targetType === 'student' && t.targetId === user.id) || (t.targetType === 'level' && t.targetId === user.levelId)));
   const doneIds = data.taskCompletions.filter((c) => c.studentId === user.id).map((c) => c.taskId);
   const isDone = (t: any) => doneIds.includes(t.id);
+  const statusOf = (t: any) => data.taskCompletions.find((c) => c.studentId === user.id && c.taskId === t.id)?.status || (isDone(t) ? 'approved' : '');
+  const statusBadge = (t: any) => { const st = statusOf(t); return st === 'pending' ? <Badge tone="amber">بانتظار المدرّس</Badge> : st === 'rejected' ? <Badge tone="red">اتردّ — جرّب تاني</Badge> : st === 'approved' ? <Badge tone="green">معتمد</Badge> : null; };
   const levelTasks = mine.filter((t) => (t.instructions || []).length > 0).sort((a, b) => (a.order || 0) - (b.order || 0));
   const otherTasks = mine.filter((t) => !(t.instructions || []).length);
   const weeks = [...new Set(levelTasks.map((t) => t.week || 1))].sort((a, b) => a - b);
@@ -837,8 +838,13 @@ export function TasksPage() {
   async function toggle(t: any) {
     if (taskLocked(t)) return;
     const existing = data.taskCompletions.find((c) => c.studentId === user!.id && c.taskId === t.id);
-    if (existing) await remove('taskCompletions', existing.id);
-    else await put('taskCompletions', { taskId: t.id, studentId: user!.id, completedAt: today() });
+    if (existing) {
+      if ((existing.status || 'approved') === 'approved') return; // approved by the teacher: can't be undone
+      await remove('taskCompletions', existing.id);
+    } else {
+      await put('taskCompletions', { taskId: t.id, studentId: user!.id, completedAt: today(), status: 'pending' });
+      await grantScore(user!.id, 'task', scoreRule(data.settings.scoreRules, 'taskPending'), `task-pending-${t.id}`);
+    }
   }
   return <div className="stack">
     <div><h1>تاسكاتي اليومية</h1><p className="muted">دي تاسكات يوميه علشان تتكلم كل يوم. هتسجّل ريكورد بتقرا أو بتجاوب على السؤال في تاسك اليوم وتبعته على جروب الواتساب.</p>
@@ -869,6 +875,7 @@ export function TasksPage() {
                   <button className="task-item-title" onClick={() => setExpanded(open ? null : t.id)}>
                     <span className="task-badge">{t.badge || t.kind}</span>
                     <strong>{t.title}</strong>
+                    {statusBadge(t)}
                     <span className="task-caret">{open ? '⌃' : '⌄'}</span>
                   </button>
                 </div>
@@ -885,7 +892,7 @@ export function TasksPage() {
       <SectionTitle title="تاسكات تانية" />
       <div className="stack">{otherTasks.map((t) => <div key={t.id} className="row between section-card">
         <div><strong>{t.title}</strong>{t.dueAt && <div className="muted">{fmtDate(t.dueAt)} · {t.kind}</div>}</div>
-        {isDone(t) ? <Badge tone="green">خلصت</Badge> : <Button size="sm" onClick={() => toggle(t)} disabled={taskLocked(t)}>تم</Button>}
+        {isDone(t) ? <>{statusBadge(t)}{statusOf(t) === 'rejected' && <Button size="sm" variant="ghost" onClick={() => toggle(t)}>حاول تاني</Button>}</> : <Button size="sm" onClick={() => toggle(t)} disabled={taskLocked(t)}>تم</Button>}
       </div>)}</div>
     </Card>}
   </div>;

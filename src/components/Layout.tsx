@@ -33,6 +33,7 @@ const adminNav = [
   { path: '/admin/words', label: 'الكلمات', ic: BookOpen },
   { path: '/admin/quizzes', label: 'الكويزات', ic: ClipboardList },
   { path: '/admin/reviews', label: 'مراجعة النتائج', ic: Inbox },
+  { path: '/admin/task-reviews', label: 'مراجعة التاسكات', ic: ListChecks },
   { path: '/admin/operations', label: 'التاسكات والإشعارات', ic: ListChecks },
   { path: '/admin/certificates', label: 'الشهادات', ic: Award },
   { path: '/admin/settings', label: 'الإعدادات', ic: Settings },

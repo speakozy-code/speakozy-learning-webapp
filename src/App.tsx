@@ -7,7 +7,7 @@ import { StudentDashboard, Roadmap, SessionPage, QuizPage, LevelExamPage, Dictio
 import TrialPage from './pages/Trial';
 import ShadowingPage from './pages/Shadowing';
 import TestimonialsPage from './pages/Testimonials';
-import { AdminDashboard, StudentsPage, CurriculumPage, ContentPage, GrammarStudioPage, QuizzesPage, ReviewsPage, OperationsPage, AdminSettingsPage, CertificatesPage, AdminWordsPage } from './pages/Admin';
+import { AdminDashboard, StudentsPage, CurriculumPage, ContentPage, GrammarStudioPage, QuizzesPage, ReviewsPage, OperationsPage, AdminSettingsPage, CertificatesPage, AdminWordsPage, TaskReviewsPage } from './pages/Admin';
 
 class ErrorBoundary extends React.Component<any, { error: any }> {
   state = { error: null as any };
@@ -59,6 +59,7 @@ export default function App() {
         case 'words': page = <AdminWordsPage />; break;
         case 'quizzes': page = <QuizzesPage />; break;
         case 'reviews': page = <ReviewsPage />; break;
+        case 'task-reviews': page = <TaskReviewsPage />; break;
         case 'operations': page = <OperationsPage />; break;
         case 'settings': page = <AdminSettingsPage />; break;
         case 'certificates': page = <CertificatesPage />; break;
