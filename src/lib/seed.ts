@@ -1,7 +1,7 @@
 import type { AppData } from '../types';
 import { DRIVE_CURRICULUM as D } from './driveCurriculum.ts';
 import { SOURCE_SESSION_REPAIRS, SOURCE_WORDS_BY_SESSION, replaceSessionSections } from './sourceSessionRepairs.ts';
-import { LEVEL_TASKS } from './levelTasks.ts';
+import { buildDailyTasks } from './dailyTasks.ts';
 
 // Full curriculum imported from the Speakozy Google Drive decks (E1 → Upper 1).
 // Seven levels, ordered from level 1 upwards; every session carries its original
@@ -54,9 +54,9 @@ export function seedData(): AppData {
       { id: 'p2', studentId: 'stu-1', sessionId: 'l1-s1', sectionId: 'l1-s1-b', completedAt: '2026-11-16T10:10:00.000Z' },
     ],
     tasks: [
-      ...LEVEL_TASKS,
+      ...buildDailyTasks(LEVELS, SESSIONS),
     ],
-    taskCompletions: [{ id: 'tc1', taskId: 'e2-t1', studentId: 'stu-2', completedAt: '2026-11-19T09:00:00.000Z' }],
+    taskCompletions: [{ id: 'tc1', taskId: 'dt-l2-s1-1', studentId: 'stu-2', completedAt: '2026-11-19T09:00:00.000Z' }],
     notifications: [
       { id: 'n1', targetId: 'stu-1', title: 'A task is due', body: 'Review today’s words before the next session.', href: '#/tasks', read: false, createdAt: '2026-11-19T08:00:00.000Z' },
       { id: 'n2', targetId: 'all', title: 'The new path is ready', body: `${LEVELS.length} levels and ${SESSIONS.length} sessions from the lesson decks.`, href: '#/roadmap', read: false, createdAt: '2026-11-18T14:00:00.000Z' },

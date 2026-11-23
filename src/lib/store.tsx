@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { AppData, User } from '../types';
 import { seedData } from './seed';
 import { LEVEL_TASKS } from './levelTasks';
+import { buildDailyTasks } from './dailyTasks';
 import { UNIT_WORDS } from './unitWords';
 import { uid, today, addScoreOnce, buildStudentAccount, dailyNotifications } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
@@ -33,10 +34,12 @@ function withDailyNotes(d: AppData, user: any): AppData {
 }
 // التاسكات المستوردة من مواقع المستويات مصدرها الكود؛ بتندمج مع أي تاسكات مخصصة من الأدمن.
 function withLevelTasks(d: AppData): AppData {
-  const taskIds = new Set(LEVEL_TASKS.map((t) => t.id));
+  const daily = buildDailyTasks(d.levels || [], d.sessions || []);
+  // the old imported tasks (LEVEL_TASKS) are retired: drop them and rebuild daily tasks from the level's topics
+  const taskIds = new Set([...LEVEL_TASKS.map((t) => t.id), ...daily.map((t) => t.id)]);
   const wordKeys = new Set(UNIT_WORDS.map((w) => w.word.toLowerCase() + '|' + (w.sessionIds || [])[0]));
   const customWords = (d.dictionary || []).filter((w) => !wordKeys.has(w.word.toLowerCase() + '|' + (w.sessionIds || [])[0]));
-  return { ...d, tasks: [...LEVEL_TASKS, ...((d.tasks || []).filter((t) => !taskIds.has(t.id)))], dictionary: [...UNIT_WORDS, ...customWords] };
+  return { ...d, tasks: [...daily, ...((d.tasks || []).filter((t) => !taskIds.has(t.id)))], dictionary: [...UNIT_WORDS, ...customWords] };
 }
 function saveDemo(data: AppData) {
   try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}

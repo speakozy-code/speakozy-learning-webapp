@@ -176,6 +176,11 @@ export function letsTalk(s: SessionLike): string[] {
 
 export const SPEAKING_MIN = 10;
 
+/** Real questions found in the lesson deck: only actual questions, never objectives or slide headings. */
+export function deckQuestions(s: SessionLike): string[] {
+  return letsTalk(s).filter((q) => /\?$/.test(q) && q.split(/\s+/).length >= 3 && !/learn today|what will we|[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/iu.test(q) && !/[\u0600-\u06FF]/.test(q));
+}
+
 /** 10+ open speaking questions: the lesson's own "Let's talk" questions first, then topic and vocabulary prompts. Free practice, nothing to submit. */
 export function speakingQuestions(s: SessionLike, words: string[] = []): string[] {
   const name = lessonName(s);
@@ -193,7 +198,7 @@ export function speakingQuestions(s: SessionLike, words: string[] = []): string[
     `Talk about ${topic} for one minute without stopping.`,
   ];
   const fromWords = words.filter((w) => w && !/[\u0600-\u06FF]/.test(w)).slice(0, 4).map((w) => `Use the word “${w}” in a true sentence about your life, then say two more sentences.`);
-  return unique([...letsTalk(s), ...generic, ...fromWords], 14);
+  return unique([...deckQuestions(s), ...generic, ...fromWords], 14);
 }
 
 export function voicePrompts(s: SessionLike): string[] {

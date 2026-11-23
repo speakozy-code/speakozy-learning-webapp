@@ -1,4 +1,5 @@
 // Lesson presentation: brief overview, in-page YouGlish, generated quizzes, student accounts.
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { DRIVE_CURRICULUM as C } from '../src/lib/driveCurriculum.ts';
 import { overviewOutline, sourceTranscript, letsTalk } from '../src/lib/lessonBrief.ts';
@@ -8,7 +9,7 @@ import { wordQuizItems, sessionQuizItems } from '../src/lib/sessionQuizzes.ts';
 import { grammarQuestions } from '../src/lib/grammarQuiz.ts';
 import { speakingQuestions } from '../src/lib/lessonBrief.ts';
 import { buildStudentAccount } from '../src/lib/domain.ts';
-import { LEVEL_TASKS } from '../src/lib/levelTasks.ts';
+import { buildDailyTasks } from '../src/lib/dailyTasks.ts';
 import { GRAMMAR } from '../src/lib/grammar/index.ts';
 
 let pass = 0;
@@ -106,14 +107,28 @@ t('admin grants student access by email only, no password', () => {
   assert.throws(() => buildStudentAccount({ name: 'A', email: 'nope', levelId: 'l1', maxLevelId: 'l1' }));
 });
 
-t('level tasks imported for 9 levels, no shadowing, all with instructions', () => {
-  assert.equal(LEVEL_TASKS.length, 143);
-  const levels = [...new Set(LEVEL_TASKS.map((x) => x.targetId))].sort();
-  assert.deepEqual(levels, ['l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10'].sort());
-  assert.ok(LEVEL_TASKS.every((x) => x.targetType === 'level'));
-  assert.ok(LEVEL_TASKS.every((x) => (x.instructions || []).length >= 1));
-  assert.ok(LEVEL_TASKS.every((x) => !/shadowing/i.test(x.badge + ' ' + x.title)));
-  assert.equal(LEVEL_TASKS.filter((x) => x.targetId === 'l2').length, 16);
+t('daily tasks: 4 per week = next 2 topics x 2 questions, tied to level, topic and week', () => {
+  const tasks = buildDailyTasks(C.levels, C.sessions);
+  assert.ok(tasks.length > 0);
+  for (const level of C.levels) {
+    const topics = C.sessions.filter((x) => x.levelId === level.id).sort((a, b) => a.order - b.order);
+    const mine = tasks.filter((x) => x.targetId === level.id);
+    assert.equal(mine.length, topics.length * 2, `${level.id} task count`);
+    const weeks = [...new Set(mine.map((x) => x.week))].sort((a, b) => a - b);
+    assert.equal(weeks.length, Math.ceil(topics.length / 2), `${level.id} weeks`);
+    weeks.forEach((w, wi) => {
+      const inWeek = mine.filter((x) => x.week === w);
+      const expectedTopics = topics.slice(wi * 2, wi * 2 + 2);
+      assert.equal(inWeek.length, expectedTopics.length * 2, `${level.id} week ${w} size`);
+      if (wi < weeks.length - 1 || topics.length % 2 === 0) assert.equal(inWeek.length, 4);
+      for (const topic of expectedTopics) assert.equal(inWeek.filter((x) => x.sessionIds[0] === topic.id).length, 2, `${topic.id} needs 2 questions`);
+    });
+  }
+  assert.ok(tasks.every((x) => x.targetType === 'level' && x.week >= 1 && x.topic && x.instructions.length === 1 && x.instructions[0].trim()));
+  assert.equal(new Set(tasks.map((x) => x.id)).size, tasks.length);
+  assert.ok(tasks.filter((x) => x.source === 'deck').every((x) => /\?$/.test(x.instructions[0])), 'deck questions are real questions');
+  assert.ok(tasks.every((x) => x.source === 'deck' || x.badge.includes('General')), 'generated questions are flagged');
+  assert.ok(!tasks.some((x) => x.levelId === 'l12' || ['l12', 'l13', 'l14'].includes(x.targetId)), 'empty levels get no tasks');
 });
 
 
@@ -142,5 +157,17 @@ t('speaking practice has at least 10 open questions for every session', () => {
     assert.ok(q.length >= 10, `${sess.id} has ${q.length}`);
     assert.equal(new Set(q.map((x) => x.toLowerCase())).size, q.length);
   }
+});
+t('English quizzes, practice and vocab cards are LTR; dictionary shows only search + word of the day', () => {
+  const src = readFileSync(new URL('../src/pages/Student.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+  assert.ok(src.includes('grammar-training ltr-scope'), 'grammar and word quizzes are ltr');
+  assert.ok(/qs\.map\(\(q, i\) => <Card key=\{q\.id\} className="ltr-scope">/.test(src), 'session quiz is ltr');
+  assert.ok(src.includes('tab === \'practice\' && <div className="stack ltr-scope" dir="ltr">'), 'practice is ltr');
+  assert.ok(src.includes('vocab-card ltr-scope'), 'vocab card is ltr');
+  assert.ok(css.includes('.ltr-scope [dir="rtl"]'), 'arabic inside ltr stays rtl');
+  const dict = src.slice(src.indexOf('export function DictionaryPage'), src.indexOf('export function WordsPage'));
+  for (const gone of ['All words', 'ملاحظات', 'phrasal verb', "types.map"]) assert.ok(!dict.includes(gone), `dictionary must not contain ${gone}`);
+  assert.ok(dict.includes('word-day'), 'word of the day stays');
 });
 console.log(`\n${pass} lesson-ui checks passed`);

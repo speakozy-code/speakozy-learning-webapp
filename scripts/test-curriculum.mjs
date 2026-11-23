@@ -66,7 +66,7 @@ t('seed exposes the imported curriculum to the app', () => {
   assert.equal(d.sessions.length, C.sessions.length);
   assert.equal(d.dictionary.length, C.dictionary.length + 7, 'Only the two independently reviewed Drive vocabulary sets are added');
   assert.equal(d.grammarNotes.length, 0, 'auto-imported lesson objectives must not appear as grammar notes');
-  assert.equal(d.tasks.filter(t => t.targetType === 'level' && t.targetId === 'l2').length, 16);
+  assert.equal(d.tasks.filter(t => t.targetType === 'level' && t.targetId === 'l2').length, 14, '7 topics x 2 questions');
 });
 
 t('every session has hand-written grammar with Arabic explanation and examples', () => {

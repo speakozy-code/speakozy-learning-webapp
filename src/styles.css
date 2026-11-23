@@ -553,3 +553,11 @@ body { font-family: 'Jua', var(--font-arabic); }
 @media(max-width:980px){.float-wa{bottom:5.2rem}.to-top{bottom:8.4rem}}
 /* English content stays LTR inside the RTL page */
 .en{unicode-bidi:plaintext}
+
+/* English content reads left-to-right; Arabic inside it stays right-to-left */
+.ltr-scope,.exercise-item,.req-item{direction:ltr;text-align:left}
+.ltr-scope [dir="rtl"],.exercise-item [dir="rtl"],.req-item [dir="rtl"]{direction:rtl;text-align:right}
+.ltr-scope .quiz-opt{text-align:left}
+.ltr-scope .vocab-meaning,.ltr-scope .youglish-label{text-align:right;width:100%}
+.vocab-card .youglish-row{flex-direction:column;align-items:stretch}
+.vocab-top{justify-content:flex-start}
