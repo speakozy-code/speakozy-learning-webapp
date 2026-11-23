@@ -123,8 +123,8 @@ export function Layout({ current, children }: { current: string; children: React
         {bellButton}
         <button className="user-chip" onClick={() => setProfileMenu((m) => !m)} aria-label="الملف الشخصي"><span className="avatar">{user.avatar || (user.role === 'admin' ? '🧑‍💼' : '🧑‍🎓')}</span>{!admin && <span className="user-chip-name">{user.name.split(' ')[0]}{isSubscribed(user) && <span className="verified-badge" title="طالب مشترك">✓</span>}</span>}</button>
       </div>
-      {!admin && !isSubscribed(user) && <div className="sub-notice" dir="rtl">
-        <span>أنت غير مشترك معانا — ابدأ رحلتك وكمّل كل المحتوى</span>
+      {!admin && !isSubscribed(user) && <div className="sub-banner" dir="rtl">
+        <div className="sub-banner-text"><span className="sub-banner-ic" aria-hidden="true">✨</span><div><strong>انت غير مشترك في الكورس</strong><small>لتفاصيل الاشتراك</small></div></div>
         <SubscribeButtons size="sm" />
       </div>}
       {!admin && perm === 'default' && <div className="sub-notice" dir="rtl">

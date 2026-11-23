@@ -607,3 +607,12 @@ input:-webkit-autofill,input:-webkit-autofill:focus,input:-webkit-autofill:hover
 .play-word{padding:.4rem .9rem;border-radius:999px;border:1px solid var(--green);font-weight:800}
 .play-word.used{background:rgba(22,199,132,.18)}
 @media(max-width:600px){.play-opts{grid-template-columns:1fr}}
+
+/* unsubscribed banner: calm glass card with a green accent edge */
+.sub-banner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.7rem 1rem;padding:.65rem 1rem;border-radius:14px;border:1px solid rgba(18,206,144,.28);border-inline-start:3px solid var(--green);background:linear-gradient(90deg,rgba(18,206,144,.10),rgba(19,29,49,.55));box-shadow:0 6px 22px rgba(0,0,0,.18)}
+.sub-banner-text{display:flex;align-items:center;gap:.7rem;min-width:0}
+.sub-banner-ic{display:grid;place-items:center;width:2.1rem;height:2.1rem;border-radius:10px;background:rgba(18,206,144,.16);font-size:1rem}
+.sub-banner-text strong{display:block;font-size:.95rem;line-height:1.3;color:#eafaf4}
+.sub-banner-text small{display:block;color:var(--muted);font-size:.78rem;margin-top:.05rem}
+.sub-banner .btn-primary{border-radius:999px;padding:.4rem 1rem}
+@media(max-width:600px){.sub-banner{padding:.6rem .75rem}.sub-banner .sub-actions{width:100%}.sub-banner .sub-actions .btn{flex:1;text-align:center}}
