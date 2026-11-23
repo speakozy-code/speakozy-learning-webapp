@@ -61,7 +61,8 @@ t('Arabic fields do not leak Latin script', () => {
 
 t('seed exposes the imported curriculum to the app', () => {
   const d = seedData();
-  assert.equal(d.levels.length, 11);
+  assert.equal(d.levels.length, 14, '11 levels with content + Upper 3, Advanced 1, Advanced 2 as empty planned levels');
+  for (const id of ['l12', 'l13', 'l14']) assert.equal(d.sessions.filter((s) => s.levelId === id).length, 0, `${id} must stay empty until content is added`);
   assert.equal(d.sessions.length, C.sessions.length);
   assert.equal(d.dictionary.length, C.dictionary.length + 7, 'Only the two independently reviewed Drive vocabulary sets are added');
   assert.equal(d.grammarNotes.length, 0, 'auto-imported lesson objectives must not appear as grammar notes');

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Home, Map, FolderOpen, BookOpen, ListChecks, User,
   LayoutDashboard, Users, Layers, FileText, PenLine, ClipboardList,
@@ -43,6 +43,15 @@ export function Layout({ current, children }: { current: string; children: React
   const [open, setOpen] = useState(false);
   const [bell, setBell] = useState(false);
   const [profileMenu, setProfileMenu] = useState(false);
+  const [showTop, setShowTop] = useState(false);
+  useEffect(() => {
+    const main = document.getElementById('app-main');
+    if (!main) return;
+    const onScroll = () => setShowTop(main.scrollTop > 300);
+    main.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => main.removeEventListener('scroll', onScroll);
+  }, [user]);
   if (!user) return <>{children}</>;
   const admin = user.role === 'admin';
   const nav = admin ? adminNav : studentNav;
@@ -106,7 +115,7 @@ export function Layout({ current, children }: { current: string; children: React
     {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 75 }} />}
     {mobile}
     <a className="float-wa" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب" title="تواصل معانا على واتساب"><MessageCircle size={20} /></a>
-    <button className="to-top" onClick={() => { const main = document.querySelector('.main'); if (main) main.scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="العودة لأعلى">↑</button>
+    {showTop && <button className="to-top" onClick={() => { const main = document.getElementById('app-main'); if (main) main.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="العودة لأعلى">↑</button>}
     <Modal open={bell} title="الإشعارات" onClose={() => setBell(false)}>
       {notes.length ? <div className="stack">{notes.map((n) => <div key={n.id} className="section-card">
         <div className="row between"><strong>{n.title}</strong>{!n.read && <Badge tone="green">جديد</Badge>}</div>

@@ -7,7 +7,14 @@ import { LEVEL_TASKS } from './levelTasks.ts';
 // Seven levels, ordered from level 1 upwards; every session carries its original
 // presentation text, generated exercises, quiz questions, grammar slides and a
 // word list enriched with definition, part of speech, IPA and audio.
-const LEVELS = (D as any).levels as AppData['levels'];
+const SOURCE_LEVELS = (D as any).levels as AppData['levels'];
+// Structure only: these levels have no sessions yet (content will be added later).
+const PLANNED_LEVELS: AppData['levels'] = [
+  { id: 'l12', title: 'Upper 3', cefr: 'B2++', order: SOURCE_LEVELS.length + 1, description: 'Upper Intermediate 3 · content coming soon', active: true },
+  { id: 'l13', title: 'Advanced 1', cefr: 'C1', order: SOURCE_LEVELS.length + 2, description: 'Advanced 1 · content coming soon', active: true },
+  { id: 'l14', title: 'Advanced 2', cefr: 'C1+', order: SOURCE_LEVELS.length + 3, description: 'Advanced 2 · content coming soon', active: true },
+].filter((l) => !SOURCE_LEVELS.some((x) => x.id === l.id));
+const LEVELS = [...SOURCE_LEVELS, ...PLANNED_LEVELS];
 const SESSIONS = ((D as any).sessions as AppData['sessions']).map((session) => {
   const repair = SOURCE_SESSION_REPAIRS[session.id];
   const sections = replaceSessionSections(session.id, session.sections);

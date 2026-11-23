@@ -75,12 +75,17 @@ export function StudentDashboard() {
       {leaderboard(data).length ? <div className="champs-strip">
         {leaderboard(data).slice(0, 10).map((b, i) => <div key={b.id} className={`champ-chip ${b.id === user.id ? 'is-me' : ''}`}>
           <span className="champ-rank">{i + 1}</span>
-          <span className="champ-avatar">{b.avatar || b.name.charAt(0)}</span>
+          <span className="champ-avatar">{b.avatar || '🧑‍🎓'}</span>
           <span className="champ-name">{b.name}{b.id === user.id ? ' (You)' : ''}</span>
           <strong className="champ-points">{b.points} pts</strong>
         </div>)}
       </div> : <Empty title="مفيش طلاب في الترتيب لسه" />}
     </Card>
+
+    <div className="quick-links">
+      {[['/words', '🎴', 'الكلمات'], ['/yalla-netkellem', '🎤', 'يلا نتكلم'], ['/tasks', '✅', 'التاسكات اليومية'], ['/shadowing', '🎧', 'الشادوينج']].map(([to, ic, label]) =>
+        <button key={to} type="button" className="quick-link" onClick={() => go(to)}><span className="quick-ic">{ic}</span><span>{label}</span></button>)}
+    </div>
 
     <div className="grid g4">
       <Stat label="تقدم المستوى" value={`${pct}%`} sub={level?.title} tone="green" />
@@ -162,7 +167,9 @@ export function Roadmap() {
               <div className="between"><strong>{levelLabel(l)}</strong><Badge tone={full ? 'green' : 'muted'}>{levelLabel(l)}</Badge></div>
               <p className="muted" style={{ margin: '.3rem 0' }}>{l.description}</p>
               <div className="rm-dots">{sessions.map((s) => { const st = sessionStatus(data, s, user.id).key; return <span key={s.id} className={`rm-dot ${st === 'approved' ? 'done' : st === 'progress' || st === 'review' || st === 'done' ? 'active' : ''}`} title={s.title} />; })}</div>
-              <div className="muted" style={{ fontSize: '.8rem' }}>{approved} من {sessions.length} سيشن معتمدة · {pct}% مكتمل</div>
+              {sessions.length
+                ? <div className="muted" style={{ fontSize: '.8rem' }}>{approved} من {sessions.length} سيشن معتمدة · {pct}% مكتمل</div>
+                : <div className="muted" style={{ fontSize: '.8rem' }}>🚧 المحتوى قريبًا</div>}
             </div>
           </div>;
         })}
@@ -916,7 +923,7 @@ export function LeaderboardPage() {
     <Tabs tabs={[{ id: 'weekly', label: 'أسبوعي' }, { id: 'monthly', label: 'شهري' }, { id: 'total', label: 'كل الوقت' }]} active={period} onChange={setPeriod} />
     {!data.settings.leaderboard.enabled ? <Card><Empty icon="🔒" title="لوحة الأبطال متوقفة حاليًا" hint="الأدمن قرر يخفيها مؤقتًا." /></Card> : <Card>
       {board.length ? <div className="stack">{board.map((b, i) => <div key={b.id} className={`row between section-card ${b.id === user.id ? 'done' : ''}`}>
-        <div className="row"><span className="node-num">{i + 1}</span><span className="champ-avatar">{b.avatar || b.name.charAt(0)}</span><strong>{b.name}</strong>{b.id === user.id && <Badge tone="green">أنت</Badge>}</div>
+        <div className="row"><span className="node-num">{i + 1}</span><span className="champ-avatar">{b.avatar || '🧑‍🎓'}</span><strong>{b.name}</strong>{b.id === user.id && <Badge tone="green">أنت</Badge>}</div>
         <strong className="green">{b.points} points</strong>
       </div>)}</div> : <Empty title="مفيش مشاركين لسه" />}
     </Card>}
@@ -962,7 +969,7 @@ export function ProfilePage() {
   }
   return <div className="stack">
     <div><h1>بروفايلي</h1></div>
-    <Card className="row" style={{ gap: '1rem' }}><span className="avatar" style={{ width: 56, height: 56, fontSize: '1.3rem' }}>{user.avatar || user.name.charAt(0)}</span>
+    <Card className="row" style={{ gap: '1rem' }}><span className="avatar" style={{ width: 56, height: 56, fontSize: '1.3rem' }}>{user.avatar || '🧑‍🎓'}</span>
       <div><h2>{user.name}</h2><div className="muted">{user.email}</div><div className="row" style={{ marginTop: '.4rem' }}><Badge tone="green">{level?.title || '—'}</Badge><Badge>آخر مستوى: {data.levels.find((l) => l.id === user.maxLevelId)?.title || '—'}</Badge></div></div>
     </Card>
     <Card>
