@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Home, Map, FolderOpen, BookOpen, ListChecks, User,
   LayoutDashboard, Users, Layers, FileText, PenLine, ClipboardList,
-  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, Gift, MessageSquareHeart, MessageCircle, Layers2, Mic2, Gamepad2,
+  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, Gift, MessageSquareHeart, MessageCircle, Layers2, Mic2, Gamepad2, Library,
 } from 'lucide-react';
 import { useApp } from '../lib/store';
 import { go } from '../App';
@@ -25,6 +25,7 @@ const studentNav = [
   { path: '/tasks', label: 'التاسكات اليومية', ic: ListChecks },
   { path: '/shadowing', label: 'الشادوينج', ic: Headphones },
   { path: '/play', label: 'العب واتعلم', ic: Gamepad2 },
+  { path: '/resources', label: 'المصادر', ic: Library },
   { path: '/trial', label: 'تجربة مجانية', ic: Gift },
   { path: '/testimonials', label: 'آراء طلابنا', ic: MessageSquareHeart },
   { path: '/profile', label: 'البروفايل', ic: User },

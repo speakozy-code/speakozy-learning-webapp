@@ -5,7 +5,7 @@ import { SHADOWING_VIDEOS, youtubeEmbed } from '../lib/videoSlots';
 import { Headphones, Lock } from 'lucide-react';
 import { UpsellModal, SubscribeButtons } from '../components/Upsell';
 import { isSubscribed, FREE_SHADOWING_VIDEOS } from '../lib/subscription';
-import { scoreRule } from '../lib/domain';
+import { scoreRule, levelFullyOpen } from '../lib/domain';
 
 
 const STEPS = [
@@ -38,7 +38,8 @@ export default function ShadowingPage() {
   }
   const videos = SHADOWING_VIDEOS[tab] || [];
   const level = levels.find((l) => l.id === tab);
-  const ownLevel = admin || tab === user.levelId;
+  // every level inside the student's allowed range (first → last level) is fully open, not only one level
+  const ownLevel = admin || (!!level && levelFullyOpen(user, level, allLevels));
   return <div className="stack">
     <div><h1><Headphones size={22} /> الشادوينج</h1>
       <p className="muted">اتكلم إنجليزي زي المتحدثين الأصليين — اسمع، ردّد، سجّل، وابعت. فيديوهات مختارة لكل مستوى.</p></div>
@@ -55,11 +56,12 @@ export default function ShadowingPage() {
 
     <Tabs tabs={levels.map((l) => ({ id: l.id, label: l.title }))} active={tab} onChange={setTab} />
     {!admin && <div className="note" dir="rtl">{ownLevel
-      ? `ده مستواك (${level?.title || ''}) — تقدر تعمل شادوينج وتدوس «تم الإنجاز» على فيديوهاته.`
+      ? `ليفل ${level?.title || ''} مفتوح ليك — تقدر تعمل شادوينج وتدوس «تم الإنجاز» على فيديوهاته.`
       : 'اختار الليفل بتاعك علشان تقدر تعمل شادوينج. باقي الليفلات تقدر تشوف فيها أول فيديو بس، والباقي مقفول.'}</div>}
 
     <Card>
       <SectionTitle title={`فيديوهات ${level?.title || ''}`} action={<Badge tone="blue">{videos.length} فيديو</Badge>} />
+      <p className="muted" dir="rtl" style={{ marginTop: 0 }}>لو حاسس إن المحتوى مش مناسب ليك، ممكن تعمل نفس الخطوات دي مع فيلمك المفضل.</p>
       {videos.length ? <div className="grid g2">
         {videos.map((v, i) => {
           // own level: everything for subscribers; any other level (or not subscribed): the first video only
@@ -67,7 +69,7 @@ export default function ShadowingPage() {
           const c = mineDone(v);
           const st = c ? (c.status || 'approved') : '';
           return <div key={v.youtubeId} className={`section-card ${locked ? 'locked-item' : ''}`} onClick={locked && !subscribed ? () => setUpsell(true) : undefined}>
-            {locked ? <div className="lock-cover" style={{ minHeight: 160 }}><Lock size={20} /> {subscribed ? 'مقفول — ده مش مستواك' : 'اشترك معانا علشان تكمل'}</div>
+            {locked ? <div className="lock-cover" style={{ minHeight: 160 }}><Lock size={20} /> {subscribed ? 'مقفول — الليفل ده مش مفتوح ليك' : 'اشترك معانا علشان تكمل'}</div>
               : <div className="video-frame"><iframe src={youtubeEmbed(v.youtubeId)} title={v.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>}
             <strong style={{ display: 'block', marginTop: '.6rem' }}>{v.title}</strong>
             {!locked && !admin && ownLevel && subscribed && <div className="row" style={{ marginTop: '.5rem' }}>
