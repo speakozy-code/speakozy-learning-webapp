@@ -25,13 +25,13 @@ export default function Login() {
     if (mode === 'signup') {
       if (name.trim().split(/\s+/).filter(Boolean).length < 2) { setError('اكتب اسمك الكامل (اسم أول واسم تاني)'); return; }
       if (!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(email.trim())) { setError('اكتب إيميل صحيح'); return; }
-      if (!/^01[0-9]{9}$/.test(phone.trim())) { setError('اكتب رقم موبايل مصري صحيح (11 رقم)'); return; }
+      if (!/^\+?[0-9][0-9\s-]{5,18}$/.test(phone.trim()) || phone.replace(/\D/g, '').length < 6) { setError('اكتب رقم موبايل صحيح (ممكن يكون من أي دولة، ويبدأ بكود الدولة لو من برّه مصر)'); return; }
       if (password.length < 6) { setError('الباسورد لازم يكون 6 حروف على الأقل'); return; }
       if (password !== confirm) { setError('الباسورد مش متطابق'); return; }
     }
     setBusy(true);
     try {
-      if (mode === 'signup') { localStorage.setItem('speakozy-phone', phone.trim()); await signup(name.trim(), email.trim(), password); }
+      if (mode === 'signup') { const ph = phone.trim().replace(/\s+/g, ' '); localStorage.setItem('speakozy-phone', ph); await signup(name.trim(), email.trim(), password, ph); }
       else await login(email.trim(), password);
       go('/');
     } catch (err: any) {
@@ -92,7 +92,7 @@ export default function Login() {
           <button type="button" className="icon-btn" style={{ marginTop: '.8rem' }} onClick={() => { setForgot(false); setError(''); setInfo(''); }}>← رجوع لتسجيل الدخول</button>
         </form> : <form onSubmit={submit}>
           {mode === 'signup' && <Field label="الاسم"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="اسمك" required autoComplete="name" /></Field>}
-          {mode === 'signup' && <Field label="رقم الموبايل"><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01xxxxxxxxx" required inputMode="numeric" /></Field>}
+          {mode === 'signup' && <Field label="رقم الموبايل"><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01xxxxxxxxx أو +966…" required inputMode="tel" autoComplete="tel" dir="ltr" style={{ textAlign: 'right' }} /></Field>}
           <Field label="الإيميل"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required autoComplete="username" /></Field>
           <Field label="الباسورد"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} /></Field>
           {mode === 'signup' && <Field label="تأكيد الباسورد"><input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" required autoComplete="new-password" /></Field>}

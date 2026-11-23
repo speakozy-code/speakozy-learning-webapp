@@ -9,7 +9,7 @@ import { buildDailyTasks } from './dailyTasks.ts';
 // word list enriched with definition, part of speech, IPA and audio.
 const SOURCE_LEVELS = (D as any).levels as AppData['levels'];
 // Structure only: these levels have no sessions yet (content will be added later).
-const PLANNED_LEVELS: AppData['levels'] = [
+export const PLANNED_LEVELS: AppData['levels'] = [
   { id: 'l12', title: 'Upper 3', cefr: 'B2++', order: SOURCE_LEVELS.length + 1, description: 'Upper Intermediate 3 · content coming soon', active: true },
   { id: 'l13', title: 'Advanced 1', cefr: 'C1', order: SOURCE_LEVELS.length + 2, description: 'Advanced 1 · content coming soon', active: true },
   { id: 'l14', title: 'Advanced 2', cefr: 'C1+', order: SOURCE_LEVELS.length + 3, description: 'Advanced 2 · content coming soon', active: true },

@@ -43,7 +43,7 @@ export function StudentsPage() {
   const [form, setForm] = useState<any>({});
   const [error, setError] = useState('');
   const [created, setCreated] = useState<{ email: string } | null>(null);
-  const rows = data.users.filter((u) => !q || (u.name + u.email).toLowerCase().includes(q.toLowerCase()));
+  const rows = data.users.filter((u) => !q || (u.name + u.email + (u.phone || "")).toLowerCase().includes(q.toLowerCase()));
 
   function openEdit(u?: any) {
     setError('');
@@ -77,10 +77,10 @@ export function StudentsPage() {
   return <div className="stack">
     <div className="between"><div><h1>إدارة الطلاب</h1><p className="muted">كل طالب بيسجّل بيظهر هنا تلقائي. غيّر حالة الاشتراك بضغطة على الشارة. امنح صلاحية بالإيميل وتحكم في المستويات اللي الطالب يقدر يفتحها. الطالب بيحط الباسورد بنفسه من صفحة إنشاء حساب.</p></div><Button onClick={() => openEdit()}>+ حساب جديد</Button></div>
     {created && <div className="result-good">Access granted to {created.email}. The student signs up with this email and chooses their own password.</div>}
-    <Card><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="دوّر بالاسم أو الإيميل..." /></Card>
+    <Card><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="دوّر بالاسم أو الإيميل أو الموبايل..." /></Card>
     <Card><Table head={['طالب', 'أول مستوى', 'آخر مستوى', 'النقاط', 'الاشتراك', 'الحالة', 'إجراءات']}>
       {rows.map((u) => <tr key={u.id}>
-        <td><strong>{u.name}</strong><div className="muted">{u.email}</div></td>
+        <td><strong>{u.name}</strong><div className="muted">{u.email}</div>{u.phone && <div className="muted" dir="ltr" style={{ textAlign: 'right' }}>📞 {u.phone}</div>}</td>
         <td>{data.levels.find((l) => l.id === u.levelId)?.title || '—'}</td>
         <td>{data.levels.find((l) => l.id === u.maxLevelId)?.title || '—'}</td>
         <td>{totalScore(data, u.id)}</td>
@@ -92,6 +92,7 @@ export function StudentsPage() {
     <Modal open={!!editing} title={data.users.some((u) => u.id === editing?.id) ? 'تعديل الحساب' : 'حساب جديد'} onClose={() => setEditing(null)}>
       <Field label="الاسم"><input value={form.name || ''} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
       <Field label="الإيميل (الدخول)" hint="الطالب بيسجل بالإيميل ده وبيحط الباسورد بنفسه. مش محتاج باسورد هنا."><input type="email" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
+      <Field label="رقم الموبايل"><input dir="ltr" value={form.phone || ''} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="01xxxxxxxxx أو +966…" /></Field>
       <div className="grid g2">
         <Field label="الدور"><select value={form.role || 'student'} onChange={(e) => setForm({ ...form, role: e.target.value })}><option value="student">طالب</option><option value="admin">أدمن</option></select></Field>
         <Field label="الصلاحية"><select value={form.active === false ? '0' : '1'} onChange={(e) => setForm({ ...form, active: e.target.value === '1' })}><option value="1">نشط — يقدر يسجل دخول</option><option value="0">موقوف — محظور</option></select></Field>

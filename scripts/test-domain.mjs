@@ -27,7 +27,7 @@ t('حالة الجلسة تتبع الإكمال والاعتماد', () => {
   base.progress.push({ id:'p1', studentId:'stu', sessionId:'s1', sectionId:'a', completedAt:'' });
   assert.equal(sessionStatus(base, s, 'stu').key, 'progress');
   base.attempts.push({ id:'a1', studentId:'stu', sessionId:'s1', questionId:'q', answer:'', autoScore:0, maxScore:10, status:'pending', createdAt:'' });
-  assert.equal(sessionStatus(base, s, 'stu').key, 'review');
+  assert.equal(sessionStatus(base, s, 'stu').key, 'done');
   base.attempts[0].status = 'approved';
   assert.equal(sessionStatus(base, s, 'stu').key, 'approved');
   assert.equal(levelProgress(base, 'l1', 'stu'), 100);

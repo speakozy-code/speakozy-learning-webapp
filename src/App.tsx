@@ -9,6 +9,7 @@ import TrialPage from './pages/Trial';
 import ResetPassword from './pages/ResetPassword';
 import { openedFromRecoveryLink, sbOnPasswordRecovery } from './lib/supabase';
 import ShadowingPage from './pages/Shadowing';
+import PlayPage from './pages/Play';
 import TestimonialsPage from './pages/Testimonials';
 import { AdminDashboard, StudentsPage, CurriculumPage, ContentPage, GrammarStudioPage, QuizzesPage, ReviewsPage, OperationsPage, AdminSettingsPage, CertificatesPage, AdminWordsPage, TaskReviewsPage } from './pages/Admin';
 
@@ -88,6 +89,7 @@ export default function App() {
       case 'profile': page = <ProfilePage />; break;
       case 'trial': page = <TrialPage />; break;
       case 'shadowing': page = <ShadowingPage />; break;
+      case 'play': page = <PlayPage />; break;
       case 'testimonials': page = <TestimonialsPage />; break;
       default: page = <StudentDashboard />;
     }

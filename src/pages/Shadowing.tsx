@@ -19,8 +19,8 @@ export default function ShadowingPage() {
   const { user, data, put, remove, grantScore } = useApp();
   const admin = user?.role === 'admin';
   const allLevels = [...data.levels].sort((a, b) => a.order - b.order);
-  // students only see the shadowing videos of their own level; the admin sees every level
-  const levels = admin ? allLevels : allLevels.filter((l) => l.id === user?.levelId);
+  // every level is visible to everyone; only the student's own level can be practiced
+  const levels = allLevels;
   const [tab, setTab] = useState(user?.levelId || allLevels[0]?.id);
   const [upsell, setUpsell] = useState(false);
   if (!user) return null;
@@ -28,7 +28,7 @@ export default function ShadowingPage() {
   const sid = (v: { youtubeId: string }) => `shadow-${v.youtubeId}`;
   const mineDone = (v: { youtubeId: string }) => data.taskCompletions.find((c) => c.studentId === user.id && c.taskId === sid(v));
   async function done(v: { youtubeId: string }) {
-    if (!subscribed || mineDone(v)) return;
+    if (!subscribed || !ownLevel || mineDone(v)) return;
     await put('taskCompletions', { taskId: sid(v), studentId: user!.id, completedAt: new Date().toISOString().slice(0, 10), status: 'pending' });
     await grantScore(user!.id, 'task', scoreRule(data.settings.scoreRules, 'taskPending'), `task-pending-${sid(v)}`);
   }
@@ -38,6 +38,7 @@ export default function ShadowingPage() {
   }
   const videos = SHADOWING_VIDEOS[tab] || [];
   const level = levels.find((l) => l.id === tab);
+  const ownLevel = admin || tab === user.levelId;
   return <div className="stack">
     <div><h1><Headphones size={22} /> الشادوينج</h1>
       <p className="muted">اتكلم إنجليزي زي المتحدثين الأصليين — اسمع، ردّد، سجّل، وابعت. فيديوهات مختارة لكل مستوى.</p></div>
@@ -52,20 +53,24 @@ export default function ShadowingPage() {
       </div>
     </Card>
 
-    {admin && <Tabs tabs={levels.map((l) => ({ id: l.id, label: l.title }))} active={tab} onChange={setTab} />}
+    <Tabs tabs={levels.map((l) => ({ id: l.id, label: l.title }))} active={tab} onChange={setTab} />
+    {!admin && <div className="note" dir="rtl">{ownLevel
+      ? `ده مستواك (${level?.title || ''}) — تقدر تعمل شادوينج وتدوس «تم الإنجاز» على فيديوهاته.`
+      : 'اختار الليفل بتاعك علشان تقدر تعمل شادوينج. باقي الليفلات تقدر تشوف فيها أول فيديو بس، والباقي مقفول.'}</div>}
 
     <Card>
       <SectionTitle title={`فيديوهات ${level?.title || ''}`} action={<Badge tone="blue">{videos.length} فيديو</Badge>} />
       {videos.length ? <div className="grid g2">
         {videos.map((v, i) => {
-          const locked = !subscribed && i >= FREE_SHADOWING_VIDEOS;
+          // own level: everything for subscribers; any other level (or not subscribed): the first video only
+          const locked = !admin && !(subscribed && ownLevel) && i >= FREE_SHADOWING_VIDEOS;
           const c = mineDone(v);
           const st = c ? (c.status || 'approved') : '';
-          return <div key={v.youtubeId} className={`section-card ${locked ? 'locked-item' : ''}`} onClick={locked ? () => setUpsell(true) : undefined}>
-            {locked ? <div className="lock-cover" style={{ minHeight: 160 }}><Lock size={20} /> اشترك معانا علشان تكمل</div>
+          return <div key={v.youtubeId} className={`section-card ${locked ? 'locked-item' : ''}`} onClick={locked && !subscribed ? () => setUpsell(true) : undefined}>
+            {locked ? <div className="lock-cover" style={{ minHeight: 160 }}><Lock size={20} /> {subscribed ? 'مقفول — ده مش مستواك' : 'اشترك معانا علشان تكمل'}</div>
               : <div className="video-frame"><iframe src={youtubeEmbed(v.youtubeId)} title={v.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>}
             <strong style={{ display: 'block', marginTop: '.6rem' }}>{v.title}</strong>
-            {!locked && !admin && <div className="row" style={{ marginTop: '.5rem' }}>
+            {!locked && !admin && ownLevel && subscribed && <div className="row" style={{ marginTop: '.5rem' }}>
               {!c && <Button size="sm" onClick={() => done(v)}>تم الإنجاز ✓</Button>}
               {st === 'pending' && <><Badge tone="amber">بانتظار المدرّس</Badge><Button size="sm" variant="ghost" onClick={() => undo(v)}>تراجع</Button></>}
               {st === 'approved' && <Badge tone="green">معتمد</Badge>}

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { AppData, User } from '../types';
-import { seedData } from './seed';
+import { seedData, PLANNED_LEVELS } from './seed';
 import { LEVEL_TASKS } from './levelTasks';
 import { buildDailyTasks } from './dailyTasks';
 import { UNIT_WORDS } from './unitWords';
@@ -42,8 +42,16 @@ function cleanSessions(d: AppData): AppData {
     return { ...x, title, topic: topic.toLowerCase() === title.toLowerCase() ? '' : topic };
   }) };
 }
+/** The live document may predate the full 14-level path: add any level that is missing (structure only). */
+function withAllLevels(d: AppData): AppData {
+  const have = new Set((d.levels || []).map((l) => l.id));
+  const missing = PLANNED_LEVELS.filter((l) => !have.has(l.id));
+  if (!missing.length) return d;
+  const top = Math.max(0, ...(d.levels || []).map((l) => l.order || 0));
+  return { ...d, levels: [...(d.levels || []), ...missing.map((l, i) => ({ ...l, order: Math.max(l.order, top + 1 + i) }))] };
+}
 function withLevelTasks(d0: AppData): AppData {
-  const d = cleanSessions(d0);
+  const d = cleanSessions(withAllLevels(d0));
   const daily = buildDailyTasks(d.levels || [], d.sessions || []);
   // the old imported tasks (LEVEL_TASKS) are retired: drop them and rebuild daily tasks from the level's topics
   const taskIds = new Set([...LEVEL_TASKS.map((t) => t.id), ...daily.map((t) => t.id)]);
@@ -58,10 +66,10 @@ function saveDemo(data: AppData) {
 type Ctx = {
   user: User | null; ready: boolean; demo: boolean; data: AppData;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string, phone?: string) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (u: User | null) => void;
-  saveProfile: (updates: { avatar?: string; name?: string }) => Promise<void>;
+  saveProfile: (updates: { avatar?: string; name?: string; phone?: string }) => Promise<void>;
   changePassword: (newPassword: string) => Promise<void>;
   put: (collectionName: string, value: any) => Promise<void>;
   remove: (collectionName: string, id: string) => Promise<void>;
@@ -141,9 +149,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(me as User);
   }
 
-  async function signup(name: string, email: string, password: string) {
+  async function signup(name: string, email: string, password: string, phone?: string) {
     if (!demo) {
       await sbSignUp(name.trim(), email.trim(), password);
+      // the phone number is stored with the student's profile (needs the save_my_profile update in supabase/migrations)
+      if (phone && CLOUD === 'supabase') { try { await sbSaveMyProfile({ phone }); } catch {} }
       await refresh();
       const loaded = await sbLoadAll(['users']);
       const authId = await sbCurrentUserId();
@@ -159,10 +169,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (granted) {
       granted.demoPassword = password;
       if (name.trim()) granted.name = name.trim();
+      if (phone) granted.phone = phone;
       account = granted;
     } else {
       const first = d.levels.slice().sort((a, b) => a.order - b.order)[0]?.id || 'l1';
-      account = buildStudentAccount({ name, email: mail, demoPassword: password, levelId: first, maxLevelId: first, subscribed: false });
+      account = buildStudentAccount({ name, email: mail, demoPassword: password, levelId: first, maxLevelId: first, subscribed: false, phone });
       d.users.push(account);
     }
     saveDemo(d);
@@ -177,7 +188,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }
 
-  async function saveProfile(updates: { avatar?: string; name?: string }) {
+  async function saveProfile(updates: { avatar?: string; name?: string; phone?: string }) {
     if (!user) return;
     if (demo) {
       const d = readDemo();

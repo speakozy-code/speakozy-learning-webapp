@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Home, Map, FolderOpen, BookOpen, ListChecks, User,
   LayoutDashboard, Users, Layers, FileText, PenLine, ClipboardList,
-  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, Gift, MessageSquareHeart, MessageCircle, Layers2, Mic2,
+  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, Gift, MessageSquareHeart, MessageCircle, Layers2, Mic2, Gamepad2,
 } from 'lucide-react';
 import { useApp } from '../lib/store';
 import { go } from '../App';
@@ -10,7 +10,7 @@ import { Modal, Button, Badge, fmtDate } from './UI';
 import { engagementProgress, totalScore } from '../lib/domain';
 import { canInstall, isStandalone, isIos, onInstallChange, promptInstall, showBrowserNotification, notificationPermission, requestNotifications } from '../lib/pwa';
 import { SubscribeButtons } from './Upsell';
-import { isSubscribed } from '../lib/subscription';
+import { isSubscribed, PRICING_URL } from '../lib/subscription';
 import { usePullToRefresh } from '../lib/pullToRefresh';
 
 const WA_LINK = 'https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83%20%D9%81%D9%8A%20%D9%83%D9%88%D8%B1%D8%B3%20%D8%B3%D8%A8%D9%8A%D9%83%D9%88%D8%B2%D9%8A';
@@ -24,6 +24,7 @@ const studentNav = [
   { path: '/yalla-netkellem', label: 'يلا نتكلم', ic: Mic2 },
   { path: '/tasks', label: 'التاسكات اليومية', ic: ListChecks },
   { path: '/shadowing', label: 'الشادوينج', ic: Headphones },
+  { path: '/play', label: 'العب واتعلم', ic: Gamepad2 },
   { path: '/trial', label: 'تجربة مجانية', ic: Gift },
   { path: '/testimonials', label: 'آراء طلابنا', ic: MessageSquareHeart },
   { path: '/profile', label: 'البروفايل', ic: User },
@@ -91,7 +92,7 @@ export function Layout({ current, children }: { current: string; children: React
     </div>
   </aside>;
 
-  const shortLabel = (l: string) => ({ 'خريطة المستويات': 'المستويات', 'تجربة مجانية': 'تجربة', 'آراء طلابنا': 'آراء', 'المستويات والجلسات': 'المستويات', 'استوديو الجرامر': 'الجرامر', 'مراجعة النتائج': 'المراجعة', 'التاسكات والإشعارات': 'التاسكات', 'التاسكات اليومية': 'التاسكات', 'يلا نتكلم': 'نتكلم' } as Record<string, string>)[l] || l.split(' ')[0];
+  const shortLabel = (l: string) => ({ 'خريطة المستويات': 'المستويات', 'تجربة مجانية': 'تجربة', 'آراء طلابنا': 'آراء', 'المستويات والجلسات': 'المستويات', 'استوديو الجرامر': 'الجرامر', 'مراجعة النتائج': 'المراجعة', 'التاسكات والإشعارات': 'التاسكات', 'التاسكات اليومية': 'التاسكات', 'يلا نتكلم': 'نتكلم', 'العب واتعلم': 'العب' } as Record<string, string>)[l] || l.split(' ')[0];
   const mobile = <nav className="mobile-nav">
     {nav.slice(0, 5).map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
       <Icon size={18} /><span>{shortLabel(n.label)}</span>
@@ -134,7 +135,10 @@ export function Layout({ current, children }: { current: string; children: React
     </div>{children}</main></div>
     {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 75 }} />}
     {mobile}
-    {(admin || isSubscribed(user)) && <a className="float-wa" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب" title="تواصل معانا على واتساب"><MessageCircle size={20} /></a>}
+    <div className="float-stack">
+      {!admin && !isSubscribed(user) && <a className="float-pricing" href={PRICING_URL} target="_blank" rel="noreferrer">شوف الباقات</a>}
+      <a className="float-wa" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب" title="تواصل معانا على واتساب"><MessageCircle size={20} /></a>
+    </div>
     {showTop && <button className="to-top" onClick={() => { const main = document.getElementById('app-main'); if (main) main.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="العودة لأعلى">↑</button>}
     <Modal open={bell} title="الإشعارات" onClose={() => setBell(false)}>
       {notes.length ? <div className="stack">{notes.map((n) => <div key={n.id} className="section-card">

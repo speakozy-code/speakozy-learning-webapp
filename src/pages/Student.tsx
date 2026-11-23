@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, Progress, Stat, SectionTitle, Empty, Tabs, Field, Modal, fmtDate, fmtDay, isLate } from '../components/UI';
-import { sessionStatus, levelProgress, engagementProgress, sessionOpen, levelFullyOpen, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, proportionalScore, scoreRule, uid, today, levelLabel, cefrOf } from '../lib/domain';
+import { sessionStatus, levelProgress, engagementProgress, sessionOpen, levelFullyOpen, pdfAllowed, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, proportionalScore, scoreRule, uid, today, levelLabel, cefrOf } from '../lib/domain';
 import { go } from '../App';
 import { lookupWord, allCached, type LookupEntry } from '../lib/dictionaryProvider';
 import { WORD_MEANINGS } from '../lib/wordMeanings';
@@ -49,6 +49,24 @@ function materialPdf(s: any): string {
   return s?.pdfUrl || MATERIAL_PDF[s?.id] || `./lesson-pdfs/${s?.id}.pdf`;
 }
 
+/** Open / download buttons for a lesson PDF; locked for anyone outside their allowed levels. */
+function PdfActions({ s, stop = false, extra = null }: { s: any; stop?: boolean; extra?: React.ReactNode }) {
+  const { user, data } = useApp();
+  const [upsell, setUpsell] = useState(false);
+  if (!user || !materialPdf(s)) return null;
+  const ok = pdfAllowed(user, s, data.levels);
+  const st = stop ? { onClick: (e: React.MouseEvent) => e.stopPropagation() } : {};
+  if (!ok) return <>
+    <Button size="sm" variant="ghost" onClick={(e: any) => { e.stopPropagation(); setUpsell(true); }}>🔒 PDF</Button>
+    <UpsellModal open={upsell} onClose={() => setUpsell(false)} what={user.subscribed === false ? 'ملفات PDF' : 'PDF المستويات التانية'} />
+  </>;
+  return <>
+    <a className="btn btn-primary btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer" {...st}>افتح PDF ↗</a>
+    <a className="btn btn-ghost btn-sm" href={materialPdf(s)} download {...st}>نزّل PDF ⬇</a>
+    {extra}
+  </>;
+}
+
 export function StudentDashboard() {
   const { user, data } = useApp();
   if (!user) return null;
@@ -88,11 +106,6 @@ export function StudentDashboard() {
         </div>)}
       </div> : <Empty title="مفيش طلاب في الترتيب لسه" />}
     </Card>
-
-    <div className="quick-links">
-      {[['/words', '🎴', 'الكلمات'], ['/yalla-netkellem', '🎤', 'يلا نتكلم'], ['/tasks', '✅', 'التاسكات اليومية'], ['/shadowing', '🎧', 'الشادوينج']].map(([to, ic, label]) =>
-        <button key={to} type="button" className="quick-link" onClick={() => go(to)}><span className="quick-ic">{ic}</span><span>{label}</span></button>)}
-    </div>
 
     <div className="grid g4">
       <Stat label="تقدم المستوى" value={`${pct}%`} sub={level?.title} tone="green" />
@@ -350,8 +363,8 @@ export function SessionPage({ sessionId }: any) {
 
   return <div className="stack">
     <div className="row"><button className="icon-btn" onClick={() => window.history.length > 1 ? window.history.back() : go('/roadmap')}>→ السابق</button></div>
-    <Card className="between">
-      <div><div className="muted">Session {s.order} · {data.levels.find((l) => l.id === s.levelId)?.title}</div><h1>{s.title}</h1><p className="muted">{[s.topic, fmtDate(s.dueAt)].filter(Boolean).join(' · ')}</p></div>
+    <Card className="session-head between">
+      <div><div className="muted session-head-meta">Session {s.order} · {data.levels.find((l) => l.id === s.levelId)?.title}{[s.topic, fmtDate(s.dueAt)].filter(Boolean).length ? ' · ' + [s.topic, fmtDate(s.dueAt)].filter(Boolean).join(' · ') : ''}</div><h1 className="session-head-title">{s.title}</h1></div>
       <Badge tone={locked ? 'muted' : statusTone[st.key]}>{locked ? '🔒 مقفول' : st.label}</Badge>
     </Card>
     {locked && <div className="note">🔒 تقدر تقرأ كل حاجة في السيشن دي، بس هي مقفولة لحسابك.
@@ -361,11 +374,9 @@ export function SessionPage({ sessionId }: any) {
       <div className="between"><span className="muted">تقدم السيشن · {done.filter((d) => d.startsWith(`${s.id}-`) || d.startsWith('word:')).length} من {totalParts} جزء خلص</span><strong>{pct}%</strong></div>
       <div className="progress-track"><span style={{ width: `${pct}%` }} /></div>
     </Card>
-    {materialPdf(s) && <Card>
-      <SectionTitle title="ملخص العرض للمراجعة" />
-      <p className="muted">نسخة PDF من كل سلايدات العرض، للمشاهدة والمراجعة بعد السيشن.</p>
-      <div className="row"><a className="btn btn-primary btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer">افتح PDF ↗</a><a className="btn btn-ghost btn-sm" href={materialPdf(s)} download>نزّل PDF ⬇</a>
-        {s.driveUrl && <a className="btn btn-ghost btn-sm" href={s.driveUrl} target="_blank" rel="noreferrer">PDF من الدرايف ↗</a>}</div>
+    {materialPdf(s) && <Card className="pdf-line">
+      <div className="between"><strong>ملخص العرض للمراجعة</strong>
+        <div className="row"><PdfActions s={s} extra={pdfAllowed(user, s, data.levels) && s.driveUrl ? <a className="btn btn-ghost btn-sm" href={s.driveUrl} target="_blank" rel="noreferrer">PDF من الدرايف ↗</a> : null} /></div></div>
     </Card>}
     {s.driveUrl && <Card>
       <SectionTitle title="مصدر إضافي للمشاهدة" />
@@ -813,7 +824,6 @@ export function YallaNetkellemPage() {
   return <div className="stack">
     <div><h1>يلا نتكلم</h1><p className="muted">اضغط على «سؤال جديد»، سجّل ريكورد بتجاوب فيه بصوتك، وابعته للمدرّس على الواتساب.</p></div>
     <Tabs tabs={Object.keys(TALK_QUESTIONS).map((k) => ({ id: k, label: k }))} active={pick} onChange={(k) => { setPick(k); setN(0); }} />
-    {!subscribed && <div className="note" dir="rtl">متاح لك {FREE_YALLA_PER_LEVEL} أسئلة مجانية من كل مستوى ({(n % pool.length) + 1}/{pool.length}). اشترك معانا علشان تفتح باقي الأسئلة.</div>}
     <Card className="flashcard">
       <h2 dir="ltr" className="en" style={{ textAlign: 'center', lineHeight: 1.6 }}>{question}</h2>
       <div className="row" style={{ justifyContent: 'center', marginTop: '1rem' }}>
@@ -1076,7 +1086,7 @@ export function MaterialsPage() {
           <Badge>{grammarTitle.slice(0, 42)}</Badge>
         </div>
         <div className="row">
-          {materialPdf(s) && <><a className="btn btn-primary btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{L.pdf}</a><a className="btn btn-ghost btn-sm" href={materialPdf(s)} download onClick={(e) => e.stopPropagation()}>{L.dl}</a></>}
+          <PdfActions s={s} stop />
           <Button size="sm" disabled={sessionLocked} onClick={() => go(`/session/${s.id}`)}>{sessionLocked ? L.locked : L.open}</Button>
         </div>
       </Card>;
