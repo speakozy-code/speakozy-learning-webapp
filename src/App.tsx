@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import { Layout } from './components/Layout';
 import { StudentDashboard, Roadmap, SessionPage, QuizPage, LevelExamPage, DictionaryPage, WordsPage, YallaNetkellemPage, TasksPage, NotificationsPage, LeaderboardPage, ProfilePage, MaterialsPage } from './pages/Student';
 import TrialPage from './pages/Trial';
+import ResetPassword from './pages/ResetPassword';
+import { openedFromRecoveryLink, sbOnPasswordRecovery } from './lib/supabase';
 import ShadowingPage from './pages/Shadowing';
 import TestimonialsPage from './pages/Testimonials';
 import { AdminDashboard, StudentsPage, CurriculumPage, ContentPage, GrammarStudioPage, QuizzesPage, ReviewsPage, OperationsPage, AdminSettingsPage, CertificatesPage, AdminWordsPage, TaskReviewsPage } from './pages/Admin';
@@ -37,7 +39,10 @@ export default function App() {
   const { user, ready } = useApp();
   const route = useRoute();
   const toast = useToast();
+  const [recovering, setRecovering] = useState(openedFromRecoveryLink);
+  useEffect(() => sbOnPasswordRecovery(() => setRecovering(true)), []);
 
+  if (recovering) return <ResetPassword onDone={() => { setRecovering(false); window.location.hash = '#/'; window.location.reload(); }} />;
   if (!ready) return <Loading label="بنجهز Speakozy..." />;
   if (!user) {
     if (route === '/trial') return <><TrialPage />{toast.node}</>;

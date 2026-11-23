@@ -11,6 +11,7 @@ import { wordQuizItems, sessionQuizItems, SESSION_QUIZ_SIZE, GRAMMAR_QUIZ_SIZE }
 import { grammarQuestions } from '../lib/grammarQuiz.ts';
 import { YOUGLISH_ACCENTS } from '../lib/youglish';
 import { YouGlishDock } from '../components/YouGlishDock';
+import { notificationPermission, requestNotifications } from '../lib/pwa';
 import { Play, Volume2, Star, Check, BookOpen, X } from 'lucide-react';
 
 const statusTone: Record<string, string> = { locked: 'muted', available: 'blue', progress: 'amber', done: 'blue', review: 'amber', approved: 'green' };
@@ -893,6 +894,7 @@ export function TasksPage() {
 
 export function NotificationsPage() {
   const { user, data, put } = useApp();
+  const [perm, setPerm] = useState(notificationPermission());
   if (!user) return null;
   const list = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id || n.targetId === user.levelId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   async function markRead(n: any) {
@@ -901,7 +903,13 @@ export function NotificationsPage() {
     else await put('notificationReads', { id: `${user!.id}-${n.id}`, studentId: user!.id, notificationId: n.id, read: true });
   }
   return <div className="stack">
-    <div><h1>الإشعارات</h1><p className="muted">إشعارات الموقع متاحة دايمًا. إشعارات الجهاز محتاجة إذنك.</p></div>
+    <div><h1>الإشعارات</h1><p className="muted">إشعارات الموقع متاحة دايمًا. إشعارات الجهاز محتاجة إذنك.</p>
+      {perm === 'default' && <Button size="sm" style={{ marginTop: '.6rem' }} onClick={async () => setPerm(await requestNotifications())}>فعّل إشعارات الجهاز</Button>}
+      {perm === 'granted' && <Badge tone="green">إشعارات الجهاز شغالة</Badge>}
+      {perm === 'denied' && <div className="note" style={{ marginTop: '.6rem' }}>إشعارات الجهاز مقفولة من إعدادات المتصفح. فعّلها من هناك لو عايزها.</div>}
+      {perm === 'unsupported' && <div className="note" style={{ marginTop: '.6rem' }}>المتصفح ده مش بيدعم إشعارات الجهاز.</div>}
+      {perm === 'granted' && <p className="muted" style={{ fontSize: '.8rem' }}>الإشعارات بتظهر وانت فاتح الموقع أو التطبيق. التنبيه والتطبيق مقفول محتاج خدمة push منفصلة.</p>}
+    </div>
     <Card>{list.length ? <div className="stack">{list.map((n) => <div key={n.id} className={`section-card ${!n.read ? 'done' : ''}`}>
       <div className="row between"><strong>{n.title}</strong>{!n.read && <Badge tone="green">جديد</Badge>}</div>
       <p className="muted" style={{ margin: '.4rem 0' }}>{n.body}</p>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../lib/store';
 import { Button, Field, Card } from '../components/UI';
 import { go } from '../App';
+import { sbSendPasswordReset } from '../lib/supabase';
 
 const LANDING = 'https://speakozy.com';
 
@@ -15,6 +16,8 @@ export default function Login() {
   const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [forgot, setForgot] = useState(false);
+  const [info, setInfo] = useState('');
 
   async function submit(e?: React.FormEvent) {
     e?.preventDefault();
@@ -33,6 +36,19 @@ export default function Login() {
       go('/');
     } catch (err: any) {
       setError(err?.message?.includes('auth/') ? 'إيميل أو باسورد غلط' : (err?.message || 'مش قادرين نكمل، جرّب تاني'));
+    } finally { setBusy(false); }
+  }
+
+  async function sendReset(e?: React.FormEvent) {
+    e?.preventDefault();
+    setError(''); setInfo('');
+    if (!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(email.trim())) { setError('اكتب إيميلك الصحيح'); return; }
+    setBusy(true);
+    try {
+      await sbSendPasswordReset(email);
+      setInfo('لو الإيميل ده متسجل عندنا، هيوصلك لينك لتغيير الباسورد. راجع الـInbox والـSpam.');
+    } catch (err: any) {
+      setError(err?.message?.includes('rate') ? 'استنى شوية وجرّب تاني' : 'مش قادرين نبعت الإيميل دلوقتي، جرّب تاني');
     } finally { setBusy(false); }
   }
 
@@ -66,7 +82,15 @@ export default function Login() {
         <h2>{mode === 'signin' ? 'أهلًا بعودتك' : 'انضم لـ Speakozy'}</h2>
         <p className="muted">{mode === 'signin' ? 'سجّل دخول عشان تكمل خطة تعلمك.' : 'اعمل حسابك وابدأ بأول سيشن من أي مستوى.'}</p>
         {demo && <div className="note" style={{ margin: '1rem 0' }}>وضع تجريبي: الحسابات محفوظة على الجهاز ده. وصّل الخدمة الحقيقية عشان حسابات فعلية.</div>}
-        <form onSubmit={submit}>
+        {forgot ? <form onSubmit={sendReset}>
+          <h2>نسيت الباسورد؟</h2>
+          <p className="muted">اكتب إيميلك وهنبعتلك لينك تعمل بيه باسورد جديد.</p>
+          <Field label="الإيميل"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required autoComplete="username" /></Field>
+          {error && <div className="result-bad" style={{ marginBottom: '.8rem' }}>{error}</div>}
+          {info && <div className="result-good" style={{ marginBottom: '.8rem' }}>{info}</div>}
+          <Button type="submit" disabled={busy} style={{ width: '100%' }}>{busy ? 'لحظة...' : 'ابعت لينك الاسترجاع'}</Button>
+          <button type="button" className="icon-btn" style={{ marginTop: '.8rem' }} onClick={() => { setForgot(false); setError(''); setInfo(''); }}>← رجوع لتسجيل الدخول</button>
+        </form> : <form onSubmit={submit}>
           {mode === 'signup' && <Field label="الاسم"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="اسمك" required autoComplete="name" /></Field>}
           {mode === 'signup' && <Field label="رقم الموبايل"><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01xxxxxxxxx" required inputMode="numeric" /></Field>}
           <Field label="الإيميل"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required autoComplete="username" /></Field>
@@ -74,7 +98,8 @@ export default function Login() {
           {mode === 'signup' && <Field label="تأكيد الباسورد"><input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" required autoComplete="new-password" /></Field>}
           {error && <div className="result-bad" style={{ marginBottom: '.8rem' }}>{error}</div>}
           <Button type="submit" disabled={busy} style={{ width: '100%' }}>{busy ? 'لحظة...' : (mode === 'signin' ? 'تسجيل الدخول' : 'إنشاء حساب')}</Button>
-        </form>
+          {mode === 'signin' && !demo && <button type="button" className="icon-btn" style={{ marginTop: '.8rem' }} onClick={() => { setForgot(true); setError(''); }}>نسيت الباسورد؟</button>}
+        </form>}
         <a className="auth-landing" href={LANDING} target="_blank" rel="noreferrer">الرجوع لصفحة Speakozy</a>
         {demo && <div className="demo-box">
           <div className="muted" style={{ fontSize: '.82rem' }}>حسابات تجريبية جاهزة (اضغط عشان تتملي البيانات):</div>

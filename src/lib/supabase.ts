@@ -64,6 +64,22 @@ export async function sbEnsureProfile(): Promise<void> {
   if (error) throw error;
 }
 
+/** True when the page was opened from a password-reset email link (captured before the client strips the hash). */
+export const openedFromRecoveryLink = typeof window !== 'undefined' && /type=recovery/.test(window.location.hash);
+
+export async function sbSendPasswordReset(email: string): Promise<void> {
+  if (!sb) throw new Error('supabase-not-configured');
+  const redirectTo = `${window.location.origin}${window.location.pathname}`;
+  const { error } = await sb.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+  if (error) throw error;
+}
+
+export function sbOnPasswordRecovery(cb: () => void): () => void {
+  if (!sb) return () => {};
+  const { data } = sb.auth.onAuthStateChange((event) => { if (event === 'PASSWORD_RECOVERY') cb(); });
+  return () => data.subscription.unsubscribe();
+}
+
 export async function sbSignOut() {
   if (sb) await sb.auth.signOut();
 }

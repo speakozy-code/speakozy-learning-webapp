@@ -8,6 +8,7 @@ import { useApp } from '../lib/store';
 import { go } from '../App';
 import { Modal, Button, Badge, fmtDate } from './UI';
 import { engagementProgress, totalScore } from '../lib/domain';
+import { canInstall, isStandalone, isIos, onInstallChange, promptInstall, showBrowserNotification } from '../lib/pwa';
 
 const WA_LINK = 'https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83%20%D9%81%D9%8A%20%D9%83%D9%88%D8%B1%D8%B3%20%D8%B3%D8%A8%D9%8A%D9%83%D9%88%D8%B2%D9%8A';
 
@@ -45,6 +46,8 @@ export function Layout({ current, children }: { current: string; children: React
   const [bell, setBell] = useState(false);
   const [profileMenu, setProfileMenu] = useState(false);
   const [showTop, setShowTop] = useState(false);
+  const [, setTick] = useState(0);
+  useEffect(() => onInstallChange(() => setTick((t) => t + 1)), []);
   useEffect(() => {
     const main = document.getElementById('app-main');
     if (!main) return;
@@ -58,6 +61,8 @@ export function Layout({ current, children }: { current: string; children: React
   const nav = admin ? adminNav : studentNav;
   const notes = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id || n.targetId === user.levelId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const unread = notes.filter((n) => !n.read).length;
+  const unreadKey = notes.filter((n) => !n.read).map((n) => n.id).join('|');
+  useEffect(() => { notes.filter((n) => !n.read).slice(0, 3).forEach((n) => { void showBrowserNotification({ id: n.id, title: n.title, body: n.body, href: n.href }); }); }, [unreadKey]);
   const level = data.levels.find((l) => l.id === user.levelId) || data.levels[0];
   const pct = !admin && level ? engagementProgress(data, level.id, user.id) : 0;
   const points = admin ? 0 : totalScore(data, user.id);
@@ -99,6 +104,8 @@ export function Layout({ current, children }: { current: string; children: React
         {profileMenu && <div className="profile-menu">
           <button onClick={() => { setProfileMenu(false); go('/profile'); }}>تعديل الملف الشخصي</button>
           <button onClick={() => { setProfileMenu(false); go('/trial'); }}>تفاصيل الكورس</button>
+          {!isStandalone() && canInstall() && <button onClick={() => { setProfileMenu(false); void promptInstall(); }}>تثبيت التطبيق على الموبايل</button>}
+          {!isStandalone() && !canInstall() && isIos() && <button onClick={() => { setProfileMenu(false); alert('على الآيفون: اضغط زرار المشاركة في Safari ثم «إضافة إلى الشاشة الرئيسية».'); }}>تثبيت التطبيق على الموبايل</button>}
           <button onClick={() => { setProfileMenu(false); logout(); go('/'); }}>تسجيل الخروج / دخول حساب تاني</button>
         </div>}
         <div className="sticky-progress">
