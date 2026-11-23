@@ -3,7 +3,7 @@ import { useApp } from './lib/store';
 import { Loading, Toast, useToast } from './components/UI';
 import Login from './pages/Login';
 import { Layout } from './components/Layout';
-import { StudentDashboard, Roadmap, SessionPage, QuizPage, LevelExamPage, DictionaryPage, TasksPage, NotificationsPage, LeaderboardPage, ProfilePage, MaterialsPage } from './pages/Student';
+import { StudentDashboard, Roadmap, SessionPage, QuizPage, LevelExamPage, DictionaryPage, WordsPage, YallaNetkellemPage, TasksPage, NotificationsPage, LeaderboardPage, ProfilePage, MaterialsPage } from './pages/Student';
 import TrialPage from './pages/Trial';
 import ShadowingPage from './pages/Shadowing';
 import TestimonialsPage from './pages/Testimonials';
@@ -73,6 +73,8 @@ export default function App() {
       case 'quiz': page = <QuizPage sessionId={parts[1]} />; break;
       case 'exam': page = <LevelExamPage levelId={parts[1]} />; break;
       case 'dictionary': page = <DictionaryPage />; break;
+      case 'words': page = <WordsPage />; break;
+      case 'yalla-netkellem': page = <YallaNetkellemPage />; break;
       case 'tasks': page = <TasksPage />; break;
       case 'notifications': page = <NotificationsPage />; break;
       case 'leaderboard': page = <LeaderboardPage />; break;

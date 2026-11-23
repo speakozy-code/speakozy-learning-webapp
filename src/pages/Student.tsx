@@ -673,9 +673,7 @@ export function DictionaryPage() {
       </div>
     </Card>}
 
-    <Tabs tabs={[{ id: 'search', label: 'بحث' }, { id: 'saved', label: `كلماتي (${saved.length})` }, { id: 'review', label: `مراجعة (${reviewList.length})` }]} active={tab} onChange={setTab} />
-
-    {tab === 'search' && <div className="grid g2">
+    <div className="grid g2">
       <Card>
         <SectionTitle title={q ? `Results (${localResults.length})` : `All words (${localResults.length})`} />
         {localResults.length ? <div className="stack">{localResults.map((d) => <div key={d.id} className="word-row">
@@ -686,33 +684,9 @@ export function DictionaryPage() {
       </Card>
       <Card><SectionTitle title="ملاحظات" />
         <div className="note">البحث بيشمل الكلمة والمعنى والشرح والأمثلة. لو الكلمة مش موجودة، المصدر العالمي هيجيب تعريفها، ولو مفيش نت تقدر تضيفها يدويًا.</div>
-        <div className="stack" style={{ marginTop: '1rem' }}>{saved.slice(0, 6).map((w) => <div key={w.id} className="row between"><strong className="en">{w.word}</strong><span className="muted" dir="rtl">{w.meaning}</span></div>)}</div>
+        <div style={{ marginTop: '1rem' }}><Button size="sm" variant="ghost" onClick={() => go('/words')}>كلماتي المحفوظة ({saved.length}) ←</Button></div>
       </Card>
-    </div>}
-
-    {tab === 'saved' && <Card>
-      <SectionTitle title={`الكلمات المحفوظة (${savedResults.length})`} action={<Badge tone="blue">{saved.filter((w) => w.review).length} محتاجة مراجعة</Badge>} />
-      {savedResults.length ? <div className="saved-grid">{savedResults.map((w) => <div key={w.id} className={`saved-card ${w.review ? 'needs-review' : ''}`}>
-        <div className="saved-word en" dir="ltr">{w.word}</div>
-        {w.transcript && <div className="saved-transcript en" dir="ltr">{w.transcript}</div>}
-        <div className="saved-meaning" dir="rtl">{w.meaning}</div>
-        <div className="saved-actions">
-          <button className={`icon-btn ${w.review ? '' : 'is-on'}`} title={w.review ? 'علّم إنها اتذاكرت' : 'علّم إنها محتاجة مراجعة'} onClick={() => markReview(w, w.review)}>{w.review ? '✓' : '↺'}</button>
-          <button className="icon-btn" title="اسمع النطق" onClick={() => pronounce(w)}>🔊</button>
-          <button className="icon-btn danger" title="حذف" onClick={() => remove('savedWords', w.id)}>🗑</button>
-        </div>
-      </div>)}</div> : <Empty title="لسه ما حفظتش أي كلمات" hint="احفظ أي كلمة من البحث أو من السيشنات." />}
-    </Card>}
-
-    {tab === 'review' && <Card>
-      <SectionTitle title="مراجعة سريعة" />
-      {reviewList.length ? <div className="flashcard">
-        <div className="muted">كلمة للمراجعة ({reviewIdx % reviewList.length + 1} من {reviewList.length})</div>
-        <h2 dir="ltr" className="en">{reviewCard?.word}</h2>
-        {showMeaning ? <div className="result-good" dir="rtl">{reviewCard?.meaning}</div> : <Button variant="ghost" onClick={() => setShowMeaning(true)}>وريني المعنى</Button>}
-        {showMeaning && <div className="row" style={{ marginTop: '1rem' }}><Button onClick={() => markReview(reviewCard, true)}>عرفتها ✓</Button><Button variant="danger" onClick={() => markReview(reviewCard, false)}>محتاجة تدريب أكتر</Button></div>}
-      </div> : <Empty icon="🎴" title="كل الكلمات محفوظة تمام" hint="علامة «محتاجة تدريب أكتر» هتخلي الكلمة تظهر هنا." />}
-    </Card>}
+    </div>
 
     <Modal open={!!detail} title="كارت الكلمة" onClose={() => setDetail(null)}>
       {detail && <div className="stack">
@@ -742,6 +716,102 @@ export function DictionaryPage() {
       <Field label="أمثلة (واحد في كل سطر)"><textarea dir="ltr" value={manual?.examples || ''} onChange={(e) => setManual({ ...manual, examples: e.target.value })} /></Field>
       <Button onClick={saveManual} disabled={!manual?.word?.trim() || !manual?.meaning?.trim()}>احفظ الكلمة</Button>
     </Modal>
+  </div>;
+}
+
+function speakWord(word: string) {
+  try { const u = new SpeechSynthesisUtterance(word); u.lang = 'en-US'; u.rate = 0.85; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {}
+}
+
+/** الكلمات: مراجعة كروت على طريقة AnkiDroid (Again / Hard / Good / Easy) على الكلمات المحفوظة. */
+export function WordsPage() {
+  const { user, data, put, remove } = useApp();
+  const [tab, setTab] = useState('review');
+  const [flipped, setFlipped] = useState(false);
+  const [q, setQ] = useState('');
+  const [skipped, setSkipped] = useState<string[]>([]);
+  if (!user) return null;
+  const saved = data.savedWords.filter((w) => w.studentId === user.id);
+  const now = new Date().toISOString();
+  const due = saved.filter((w) => (w.review || !w.nextReview || w.nextReview <= now) && !skipped.includes(w.id));
+  const card = due[0];
+  const list = saved.filter((w) => !q || (w.word + w.meaning).toLowerCase().includes(q.trim().toLowerCase()));
+  async function rate(grade: 'again' | 'hard' | 'good' | 'easy') {
+    if (!card) return;
+    const days = { again: 0, hard: 1, good: 3, easy: 7 }[grade];
+    const next = new Date(Date.now() + days * 86400000).toISOString();
+    if (grade === 'again') setSkipped((s) => [...s, card.id]);
+    await put('savedWords', { ...card, review: grade === 'again', nextReview: next });
+    setFlipped(false);
+  }
+  return <div className="stack">
+    <div><h1>الكلمات</h1><p className="muted">راجع كلماتك المحفوظة بكروت. اقلب الكارت، وبعدين قيّم نفسك: لسه بنساها، صعبة، كويسة، أو سهلة.</p></div>
+    <div className="grid g3">
+      <Stat label="كلمات محفوظة" value={saved.length} />
+      <Stat label="مستحقة للمراجعة" value={due.length} tone="green" />
+      <Stat label="محتاجة تدريب" value={saved.filter((w) => w.review).length} />
+    </div>
+    <Tabs tabs={[{ id: 'review', label: `مراجعة (${due.length})` }, { id: 'all', label: `كل كلماتي (${saved.length})` }]} active={tab} onChange={setTab} />
+    {tab === 'review' && <Card>
+      {card ? <div className="flashcard">
+        <div className="muted">باقي {due.length} كلمة للمراجعة</div>
+        <h2 dir="ltr" className="en" style={{ fontSize: '2rem' }}>{card.word}</h2>
+        <Button variant="ghost" onClick={() => speakWord(card.word)}>🔊 اسمع</Button>
+        {flipped
+          ? <>
+            <div className="result-good" dir="rtl" style={{ margin: '1rem 0' }}>{card.meaning}</div>
+            <div className="row" style={{ justifyContent: 'center' }}>
+              <Button variant="danger" onClick={() => rate('again')}>لسه بنساها</Button>
+              <Button variant="ghost" onClick={() => rate('hard')}>صعبة</Button>
+              <Button onClick={() => rate('good')}>كويسة</Button>
+              <Button variant="ghost" onClick={() => rate('easy')}>سهلة</Button>
+            </div>
+          </>
+          : <Button style={{ marginTop: '1rem' }} onClick={() => setFlipped(true)}>اقلب الكارت</Button>}
+      </div> : <Empty icon="🎉" title={saved.length ? 'خلصت مراجعة النهاردة' : 'لسه ما حفظتش كلمات'} hint={saved.length ? 'ارجع بكرة لباقي الكلمات.' : 'احفظ كلمات من الديكشنري أو من السيشنات وهتظهر هنا.'} />}
+    </Card>}
+    {tab === 'all' && <Card>
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="دوّر في كلماتك" aria-label="دوّر في كلماتك" style={{ marginBottom: '.8rem' }} />
+      {list.length ? <div className="saved-grid">{list.map((w) => <div key={w.id} className={`saved-card ${w.review ? 'needs-review' : ''}`}>
+        <div className="saved-word en" dir="ltr">{w.word}</div>
+        <div className="saved-meaning" dir="rtl">{w.meaning}</div>
+        <div className="saved-actions">
+          <button className="icon-btn" title="اسمع النطق" onClick={() => speakWord(w.word)}>🔊</button>
+          <button className="icon-btn danger" title="حذف" onClick={() => remove('savedWords', w.id)}>🗑</button>
+        </div>
+      </div>)}</div> : <Empty title="مفيش كلمات" hint="احفظ كلمات من الديكشنري." />}
+    </Card>}
+  </div>;
+}
+
+const TALK_QUESTIONS: Record<string, string[]> = {
+  A1: ['What is your name and where are you from?', 'What do you do every morning?', 'Describe your family in a few sentences.', 'What is your favorite food? Why?', 'What do you like to do on the weekend?', 'Describe your room.'],
+  A2: ['Tell me about your best friend.', 'What did you do last weekend?', 'What is your daily routine like?', 'Describe your favorite place in your city.', 'What are you going to do next week?', 'Which do you prefer, summer or winter? Why?'],
+  B1: ['Tell me about a memorable trip you took.', 'What are the advantages and disadvantages of working from home?', 'Describe a person who has influenced you.', 'How has technology changed the way we study?', 'What would you do if you won a lot of money?', 'Talk about a problem you solved recently.'],
+  B2: ['Do you think social media does more harm than good? Explain.', 'Describe a decision that changed your life.', 'How important is it to learn a second language today?', 'What makes a good leader?', 'If you could change one thing about your country, what would it be?', 'Talk about a time you failed and what you learned.'],
+  C1: ['To what extent should governments regulate artificial intelligence?', 'Is success mostly talent or hard work? Defend your view.', 'How do cultural differences shape the way people communicate?', 'Is it ethical to prioritize economic growth over the environment?', 'Discuss a belief you once held that you have since changed.'],
+};
+
+/** يلا نتكلم: سؤال محادثة عشوائي على حسب مستوى الطالب. */
+export function YallaNetkellemPage() {
+  const { user, data } = useApp();
+  const level = data.levels.find((l) => l.id === user?.levelId);
+  const band = (level?.cefr || 'A1').slice(0, 2);
+  const [pick, setPick] = useState(band in TALK_QUESTIONS ? band : 'A1');
+  const [n, setN] = useState(() => Math.floor(Math.random() * 1000));
+  if (!user) return null;
+  const pool = TALK_QUESTIONS[pick] || TALK_QUESTIONS.A1;
+  const question = pool[n % pool.length];
+  return <div className="stack">
+    <div><h1>يلا نتكلم</h1><p className="muted">اضغط على «سؤال جديد»، سجّل ريكورد بتجاوب فيه بصوتك، وابعته للمدرّس على الواتساب.</p></div>
+    <Tabs tabs={Object.keys(TALK_QUESTIONS).map((k) => ({ id: k, label: k }))} active={pick} onChange={(k) => { setPick(k); setN((x) => x + 1); }} />
+    <Card className="flashcard">
+      <h2 dir="ltr" className="en" style={{ textAlign: 'center', lineHeight: 1.6 }}>{question}</h2>
+      <div className="row" style={{ justifyContent: 'center', marginTop: '1rem' }}>
+        <Button onClick={() => setN((x) => x + 1 + Math.floor(Math.random() * (pool.length - 1)))}>سؤال جديد</Button>
+        <Button variant="ghost" onClick={() => speakWord(question)}>🔊 اسمع السؤال</Button>
+      </div>
+    </Card>
   </div>;
 }
 

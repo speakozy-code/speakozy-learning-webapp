@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Home, Map, FolderOpen, BookOpen, ListChecks, User,
   LayoutDashboard, Users, Layers, FileText, PenLine, ClipboardList,
-  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, Gift, MessageSquareHeart, MessageCircle,
+  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, Gift, MessageSquareHeart, MessageCircle, Layers2, Mic2,
 } from 'lucide-react';
 import { useApp } from '../lib/store';
 import { go } from '../App';
@@ -16,7 +16,9 @@ const studentNav = [
   { path: '/roadmap', label: 'خريطة المستويات', ic: Map },
   { path: '/materials', label: 'الماتيريال', ic: FolderOpen },
   { path: '/dictionary', label: 'الديكشنري', ic: BookOpen },
-  { path: '/tasks', label: 'التاسكات', ic: ListChecks },
+  { path: '/words', label: 'الكلمات', ic: Layers2 },
+  { path: '/yalla-netkellem', label: 'يلا نتكلم', ic: Mic2 },
+  { path: '/tasks', label: 'التاسكات اليومية', ic: ListChecks },
   { path: '/shadowing', label: 'الشادوينج', ic: Headphones },
   { path: '/trial', label: 'تجربة مجانية', ic: Gift },
   { path: '/testimonials', label: 'آراء طلابنا', ic: MessageSquareHeart },
@@ -64,12 +66,12 @@ export function Layout({ current, children }: { current: string; children: React
       </a>; })}
     </nav>
     <div className="side-foot">
-      <div className="who"><span className="avatar">{user.avatar || user.name.charAt(0)}</span><span>{user.name}<br /><small>{admin ? 'مدير الأكاديمية' : 'طالب'}</small></span></div>
+      <div className="who"><span className="avatar">{user.avatar || (user.role === 'admin' ? '🧑‍💼' : '🧑‍🎓')}</span><span>{user.name}<br /><small>{admin ? 'مدير الأكاديمية' : 'طالب'}</small></span></div>
       <button className="btn btn-ghost btn-sm" style={{ width: '100%' }} onClick={() => { logout(); go('/'); }}><LogOut size={14} /> تسجيل الخروج</button>
     </div>
   </aside>;
 
-  const shortLabel = (l: string) => ({ 'خريطة المستويات': 'المستويات', 'تجربة مجانية': 'تجربة', 'آراء طلابنا': 'آراء', 'المستويات والجلسات': 'المستويات', 'استوديو الجرامر': 'الجرامر', 'مراجعة النتائج': 'المراجعة', 'التاسكات والإشعارات': 'التاسكات' } as Record<string, string>)[l] || l.split(' ')[0];
+  const shortLabel = (l: string) => ({ 'خريطة المستويات': 'المستويات', 'تجربة مجانية': 'تجربة', 'آراء طلابنا': 'آراء', 'المستويات والجلسات': 'المستويات', 'استوديو الجرامر': 'الجرامر', 'مراجعة النتائج': 'المراجعة', 'التاسكات والإشعارات': 'التاسكات', 'التاسكات اليومية': 'التاسكات', 'يلا نتكلم': 'نتكلم' } as Record<string, string>)[l] || l.split(' ')[0];
   const mobile = <nav className="mobile-nav">
     {nav.slice(0, 5).map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
       <Icon size={18} /><span>{shortLabel(n.label)}</span>
@@ -95,7 +97,7 @@ export function Layout({ current, children }: { current: string; children: React
         </div>
         {!admin && <strong className="sticky-points">{points} pts</strong>}
         {bellButton}
-        <button className="user-chip" onClick={() => setProfileMenu((m) => !m)} aria-label="الملف الشخصي"><span className="avatar">{user.avatar || user.name.charAt(0)}</span></button>
+        <button className="user-chip" onClick={() => setProfileMenu((m) => !m)} aria-label="الملف الشخصي"><span className="avatar">{user.avatar || (user.role === 'admin' ? '🧑‍💼' : '🧑‍🎓')}</span></button>
       </div>
       {!admin && user.subscribed === false && <div className="sub-notice" dir="rtl">
         <span>أنت غير مشترك بالكورس، تواصل معنا للتفاصيل والاشتراك</span>
