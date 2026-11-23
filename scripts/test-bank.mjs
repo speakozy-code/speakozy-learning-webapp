@@ -95,7 +95,7 @@ t('subscription: admin and subscribed see everything, unsubscribed are limited',
   assert.equal(isSubscribed({ role: 'student', subscribed: true }), true);
   assert.equal(isSubscribed({ role: 'admin' }), true);
   assert.equal(FREE_SHADOWING_VIDEOS, 1); assert.equal(FREE_YALLA_PER_LEVEL, 5);
-  for (const list of Object.values(TALK_QUESTIONS)) assert.ok(list.length >= FREE_YALLA_PER_LEVEL);
+  for (const list of Object.values(TALK_QUESTIONS)) assert.ok(list.length >= 100, 'each band has 100 Yalla questions');
 });
 t('shadowing: Inter 1 has 6 videos, Inter 2 has 6 videos, ids unique', () => {
   assert.equal(SHADOWING_VIDEOS.l4.length, 6); assert.equal(SHADOWING_VIDEOS.l5.length, 6);

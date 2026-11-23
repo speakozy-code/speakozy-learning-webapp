@@ -21,7 +21,7 @@ export function sessionStatus(data: AppData, session: Session, studentId: string
   if (!prog.length && !attempts.length) return { key: 'locked', label: 'لسه ما بدأتش' };
   if (prog.length < session.sections.length && !attempts.length) return { key: 'progress', label: 'جاري المذاكرة' };
   if (attempts.some((a) => a.status === 'approved')) return { key: 'approved', label: 'معتمد' };
-  if (attempts.some((a) => a.status === 'pending')) return { key: 'review', label: 'منتظر المراجعة' };
+  // quizzes are graded automatically: nothing waits on the teacher at session level (only daily tasks do)
   if (attempts.length) return { key: 'done', label: 'الكويز خلص' };
   return { key: 'available', label: 'متاح' };
 }
@@ -69,6 +69,15 @@ export function sessionOpen(user: User, session: { levelId: string; order: numbe
   if (user.role === 'admin') return true;
   if (levelFullyOpen(user, level, levels)) return true;
   return session.order === 1;
+}
+
+/** PDFs: not subscribed → the first session only; subscribed → only the levels opened for the student. */
+export function pdfAllowed(user: User, session: { levelId: string; order: number }, levels: { id: string; order: number }[]) {
+  if (user.role === 'admin') return true;
+  const level = levels.find((l) => l.id === session.levelId);
+  if (!level) return false;
+  if (user.subscribed === false) return session.order === 1 && session.levelId === user.levelId;
+  return levelFullyOpen(user, level, levels);
 }
 
 export const wordProgressId = (word: string) => `word:${word.toLowerCase()}`;
@@ -135,7 +144,7 @@ export function needsReview(attempts: Attempt[]) {
 export function buildStudentAccount(input: {
   id?: string; name?: string; email?: string; demoPassword?: string;
   role?: User['role']; active?: boolean; plan?: User['plan'];
-  levelId: string; maxLevelId: string; createdAt?: string; avatar?: string; subscribed?: boolean;
+  levelId: string; maxLevelId: string; createdAt?: string; avatar?: string; subscribed?: boolean; phone?: string;
 }): User {
   const name = String(input.name || '').trim();
   const email = String(input.email || '').trim().toLowerCase();
@@ -155,6 +164,7 @@ export function buildStudentAccount(input: {
     maxLevelId: input.maxLevelId || input.levelId,
     createdAt: input.createdAt || today(),
     avatar: input.avatar,
+    ...(input.phone ? { phone: String(input.phone).trim() } : {}),
   };
 }
 
