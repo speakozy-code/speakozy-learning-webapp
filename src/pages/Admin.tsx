@@ -1,3 +1,4 @@
+import { SHADOWING_VIDEOS } from '../lib/videoSlots';
 import React, { useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, Stat, SectionTitle, Empty, Tabs, Field, Modal, Table, fmtDate, fmtDay, isLate } from '../components/UI';
@@ -74,15 +75,16 @@ export function StudentsPage() {
   }
 
   return <div className="stack">
-    <div className="between"><div><h1>إدارة الطلاب</h1><p className="muted">امنح صلاحية بالإيميل وتحكم في المستويات اللي الطالب يقدر يفتحها. الطالب بيحط الباسورد بنفسه من صفحة إنشاء حساب.</p></div><Button onClick={() => openEdit()}>+ حساب جديد</Button></div>
+    <div className="between"><div><h1>إدارة الطلاب</h1><p className="muted">كل طالب بيسجّل بيظهر هنا تلقائي. غيّر حالة الاشتراك بضغطة على الشارة. امنح صلاحية بالإيميل وتحكم في المستويات اللي الطالب يقدر يفتحها. الطالب بيحط الباسورد بنفسه من صفحة إنشاء حساب.</p></div><Button onClick={() => openEdit()}>+ حساب جديد</Button></div>
     {created && <div className="result-good">Access granted to {created.email}. The student signs up with this email and chooses their own password.</div>}
     <Card><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="دوّر بالاسم أو الإيميل..." /></Card>
-    <Card><Table head={['طالب', 'أول مستوى', 'آخر مستوى', 'النقاط', 'الحالة', 'إجراءات']}>
+    <Card><Table head={['طالب', 'أول مستوى', 'آخر مستوى', 'النقاط', 'الاشتراك', 'الحالة', 'إجراءات']}>
       {rows.map((u) => <tr key={u.id}>
         <td><strong>{u.name}</strong><div className="muted">{u.email}</div></td>
         <td>{data.levels.find((l) => l.id === u.levelId)?.title || '—'}</td>
         <td>{data.levels.find((l) => l.id === u.maxLevelId)?.title || '—'}</td>
         <td>{totalScore(data, u.id)}</td>
+        <td>{u.role === 'admin' ? <Badge tone="blue">أدمن</Badge> : <button className="icon-btn" title="غيّر حالة الاشتراك" onClick={async () => { await put('users', { ...u, subscribed: u.subscribed === false }); await log('toggle-subscription', u.email); }}>{u.subscribed === false ? <Badge tone="amber">غير مشترك</Badge> : <Badge tone="green">مشترك ✓</Badge>}</button>}</td>
         <td><Badge tone={u.active ? 'green' : 'red'}>{u.active ? 'نشط' : 'موقوف'}</Badge></td>
         <td><div className="row"><Button size="sm" variant="ghost" onClick={() => copyEmail(u)}>انسخ الإيميل</Button><Button size="sm" variant="ghost" onClick={() => openEdit(u)}>تعديل</Button><Button size="sm" variant={u.active ? 'danger' : 'ghost'} onClick={() => toggle(u)}>{u.active ? 'إيقاف' : 'تفعيل'}</Button></div></td>
       </tr>)}
@@ -241,6 +243,12 @@ export function ReviewsPage() {
   </div>;
 }
 
+const shadowTitle = (taskId: string) => {
+  if (!taskId.startsWith('shadow-')) return '';
+  const id = taskId.slice(7);
+  for (const [lv, list] of Object.entries(SHADOWING_VIDEOS)) { const v = list.find((x) => x.youtubeId === id); if (v) return `🎧 ${v.title}`; }
+  return '🎧 Shadowing';
+};
 export function TaskReviewsPage() {
   const { data, put, remove, log, grantScore } = useApp();
   const [tab, setTab] = useState('pending');
@@ -276,7 +284,7 @@ export function TaskReviewsPage() {
           const t = data.tasks.find((x) => x.id === c.taskId);
           return <tr key={c.id}>
             {tab === 'pending' && <td><input type="checkbox" checked={picked.includes(c.id)} onChange={() => setPicked((p) => p.includes(c.id) ? p.filter((x) => x !== c.id) : [...p, c.id])} style={{ width: 'auto' }} aria-label="تحديد" /></td>}
-            <td>{st?.name || '—'}</td><td dir="auto">{t?.title || c.taskId}</td><td>{fmtDate(c.completedAt)}</td>
+            <td>{st?.name || '—'}</td><td dir="auto">{t?.title || shadowTitle(c.taskId) || c.taskId}</td><td>{fmtDate(c.completedAt)}</td>
             {tab === 'pending' && <td><div className="row"><Button size="sm" onClick={() => decide(c, 'approved')}>اعتماد</Button><Button size="sm" variant="danger" onClick={() => decide(c, 'rejected')}>رفض</Button></div></td>}
           </tr>;
         })}

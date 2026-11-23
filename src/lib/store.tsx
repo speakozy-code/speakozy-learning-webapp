@@ -33,7 +33,17 @@ function withDailyNotes(d: AppData, user: any): AppData {
   return { ...d, notifications: [...notes, ...((d.notifications || []).filter((n: any) => !ids.has(n.id)))] };
 }
 // التاسكات المستوردة من مواقع المستويات مصدرها الكود؛ بتندمج مع أي تاسكات مخصصة من الأدمن.
-function withLevelTasks(d: AppData): AppData {
+const stripSession = (t?: string) => String(t || '').replace(/^\s*session\s+\d+\s*[|—:-]\s*/i, '').replace(/^\s*\d+\.\s*/, '').trim();
+/** "SESSION 1 | Social Media" → "Social Media"; when topic repeats the title, the topic is dropped. */
+function cleanSessions(d: AppData): AppData {
+  return { ...d, sessions: (d.sessions || []).map((x) => {
+    const title = stripSession(x.title) || x.title;
+    const topic = stripSession(x.topic);
+    return { ...x, title, topic: topic.toLowerCase() === title.toLowerCase() ? '' : topic };
+  }) };
+}
+function withLevelTasks(d0: AppData): AppData {
+  const d = cleanSessions(d0);
   const daily = buildDailyTasks(d.levels || [], d.sessions || []);
   // the old imported tasks (LEVEL_TASKS) are retired: drop them and rebuild daily tasks from the level's topics
   const taskIds = new Set([...LEVEL_TASKS.map((t) => t.id), ...daily.map((t) => t.id)]);

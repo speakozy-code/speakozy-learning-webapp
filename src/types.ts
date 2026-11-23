@@ -35,7 +35,7 @@ export interface Attempt {
 
 export interface Progress { id: string; studentId: string; sessionId: string; sectionId: string; completedAt: string; }
 export interface GrammarNote { id: string; sessionId: string; order: number; title: string; rule: string; examples: string[]; detail?: string; }
-export interface Task { id: string; title: string; kind: string; dueAt: string; targetType: 'all'|'level'|'student'; targetId?: string; sessionIds?: string[]; active: boolean; week?: number; topic?: string; grammar?: string; badge?: string; instructions?: string[]; order?: number; source?: 'deck' | 'generated'; }
+export interface Task { id: string; title: string; kind: string; dueAt: string; targetType: 'all'|'level'|'student'; targetId?: string; sessionIds?: string[]; active: boolean; week?: number; topic?: string; grammar?: string; badge?: string; instructions?: string[]; order?: number; source?: 'deck' | 'authored' | 'generated'; }
 export interface TaskCompletion { id: string; taskId: string; studentId: string; completedAt: string; /** missing = legacy record, treated as approved */ status?: 'pending' | 'approved' | 'rejected'; reviewedAt?: string; }
 export interface AppNotification { id: string; targetId: string; title: string; body: string; href: string; read: boolean; createdAt: string; }
 export interface Score { id: string; studentId: string; source: string; points: number; refId: string; createdAt: string; }

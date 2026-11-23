@@ -12,6 +12,12 @@ import { grammarQuestions } from '../lib/grammarQuiz.ts';
 import { YOUGLISH_ACCENTS } from '../lib/youglish';
 import { YouGlishDock } from '../components/YouGlishDock';
 import { notificationPermission, requestNotifications } from '../lib/pwa';
+import { TALK_QUESTIONS } from '../lib/content/talk';
+import { getBank } from '../lib/questionBank';
+import { lessonOverview } from '../lib/overview';
+import { whyWrong } from '../lib/reasons';
+import { UpsellModal, SubscribeButtons } from '../components/Upsell';
+import { isSubscribed, FREE_YALLA_PER_LEVEL, FREE_TASK_WEEKS, waGroupShare } from '../lib/subscription';
 import { Play, Volume2, Star, Check, BookOpen, X } from 'lucide-react';
 
 const statusTone: Record<string, string> = { locked: 'muted', available: 'blue', progress: 'amber', done: 'blue', review: 'amber', approved: 'green' };
@@ -155,7 +161,7 @@ export function Roadmap() {
       <SectionTitle title="المستويات" action={<Badge tone="blue">{levels.length} مستوى — تصنيف CEFR العالمي</Badge>} />
       {user.subscribed === false && <><div className="note">تقدر تتصفح كل المستويات من البداية بتقسيمها العالمي — اشترك عشان تفتح كل الجلسات.</div>
         <Card className="shadow-inline"><div className="row between"><span>🎧 تاسكات يومية هتخليك تتكلم إنجليزي كل يوم وتوصل لهدفك أسرع — ابدأ معانا الشادوينج.</span>
-          <a className="btn btn-primary btn-sm" href="https://wa.me/201091060951?text=%D8%B9%D8%A7%D9%88%D8%B2%20%D8%A3%D8%A8%D8%AF%D8%A3%20%D8%A7%D9%84%D8%B4%D8%A7%D8%AF%D9%88%D9%8A%D9%86%D8%AC" target="_blank" rel="noreferrer">واتساب</a></div></Card></>}
+          <SubscribeButtons size="sm" /></div></Card></>}
       <div className="roadmap-map">
         {levels.map((l, i) => {
           const sessions = data.sessions.filter((s) => s.levelId === l.id).sort((a, b) => a.order - b.order);
@@ -236,16 +242,17 @@ export function SessionPage({ sessionId }: any) {
   const customNotes = (data.grammarNotes || []).filter((n) => n.sessionId === s.id).sort((a, b) => a.order - b.order)
     .map((n) => ({ title: n.title, rule: n.rule, examples: n.examples, detail: n.detail || '' }));
   const topics = grammarFor(s.id);
-  const slides: any[] = [...topics.map((t) => ({ title: t.title, rule: t.formula, detail: t.ar, examples: t.examples, mistakes: t.mistakes })), ...customNotes];
+  // the lesson's own grammar topics only: old imported notes are dropped whenever the lesson has real topics
+  const slides: any[] = topics.length ? topics.map((t) => ({ title: t.title, rule: t.formula, detail: t.ar, examples: t.examples, mistakes: t.mistakes })) : customNotes;
   const outline = overviewOutline(s);
-  const talk = speakingQuestions(s, words.map((w) => w.word));
+  const overview = lessonOverview(s.title, topics, words);
+  const bank = getBank(data).get(s.id);
+  const talk = bank?.speaking || [];
   const voices = voicePrompts(s);
   const transcript = sourceTranscript(s);
-  const generatedWordQs = wordQuizItems(words, s.id, data.dictionary).filter((q) => !qs.some((x) => x.prompt === q.prompt));
-  const wordQs = generatedWordQs;
-  const generatedGrammarQs = grammarQuestions(s.id, topics, GRAMMAR_QUIZ_SIZE);
-  const grammarAll = generatedGrammarQs.length ? generatedGrammarQs : grammarQs;
-  const sessionQuiz = sessionQuizItems(words, topics, s.id, data.dictionary);
+  const wordQs = bank?.words || [];
+  const grammarAll = bank?.grammar?.length ? bank.grammar : grammarQs;
+  const sessionQuiz = bank?.session || [];
   const allWordsStudied = words.length > 0 && words.every((w) => wordDone(w.word));
   const writingLines = writing.split(/\n/).map((x) => x.trim()).filter(Boolean).length;
   const tabs = [
@@ -293,31 +300,35 @@ export function SessionPage({ sessionId }: any) {
     if (locked || !grammarAll.length) return;
     let score = 0, max = 0;
     const marks: Record<string, boolean> = {};
+    const jobs: Promise<any>[] = [];
     for (const q of grammarAll) {
       const g = gradeQuestion(q as any, grammarAnswers[q.id] || '');
       marks[q.id] = g.score > 0;
       score += g.score; max += q.points;
-      await put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: practiceId('grammar', s!.id, Number(String(q.id).split('-').pop()) || 1), answer: grammarAnswers[q.id] || '', autoScore: g.score, maxScore: q.points, status: g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending', createdAt: today() });
+      jobs.push(put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: practiceId('grammar', s!.id, Number(String(q.id).split('-').pop()) || 1), answer: grammarAnswers[q.id] || '', autoScore: g.score, maxScore: q.points, status: g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending', createdAt: today() }));
     }
+    setGrammarResult({ marks, score, max }); // show the result immediately, save in the background
     const gPts = proportionalScore(score, max, scoreRule(data.settings.scoreRules, 'grammarQuiz'));
-    if (gPts > 0) await grantScore(user!.id, 'grammar', gPts, `grammar-${s!.id}-${user!.id}`);
-    await log('grammar-quiz', `${s!.title} · ${score}/${max}`);
-    setGrammarResult({ marks, score, max });
+    if (gPts > 0) jobs.push(grantScore(user!.id, 'grammar', gPts, `grammar-${s!.id}-${user!.id}`));
+    jobs.push(log('grammar-quiz', `${s!.title} · ${score}/${max}`));
+    await Promise.allSettled(jobs);
   }
   async function submitWordQuiz() {
     if (locked || !wordQs.length) return;
     let score = 0, max = 0;
     const marks: Record<string, boolean> = {};
+    const jobs: Promise<any>[] = [];
     for (const q of wordQs) {
       const g = gradeQuestion(q as any, wordAnswers[q.id] || '');
       marks[q.id] = g.score > 0;
       score += g.score; max += q.points;
-      await put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: `wordquiz:${s!.id}:${q.id}`, answer: wordAnswers[q.id] || '', autoScore: g.score, maxScore: q.points, status: g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending', createdAt: today() });
+      jobs.push(put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: `wordquiz:${s!.id}:${q.id}`, answer: wordAnswers[q.id] || '', autoScore: g.score, maxScore: q.points, status: g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending', createdAt: today() }));
     }
-    const wPts = proportionalScore(score, max, scoreRule(data.settings.scoreRules, 'wordQuiz'));
-    if (wPts > 0) await grantScore(user!.id, 'word', wPts, `wordquiz-${s!.id}-${user!.id}`);
-    await log('word-quiz', `${s!.title} · ${score}/${max}`);
     setWordResult({ marks, score, max });
+    const wPts = proportionalScore(score, max, scoreRule(data.settings.scoreRules, 'wordQuiz'));
+    if (wPts > 0) jobs.push(grantScore(user!.id, 'word', wPts, `wordquiz-${s!.id}-${user!.id}`));
+    jobs.push(log('word-quiz', `${s!.title} · ${score}/${max}`));
+    await Promise.allSettled(jobs);
   }
   async function savePractice(kind: string, text: string, n: number) {
     if (locked || !text.trim()) return;
@@ -340,11 +351,11 @@ export function SessionPage({ sessionId }: any) {
   return <div className="stack">
     <div className="row"><button className="icon-btn" onClick={() => window.history.length > 1 ? window.history.back() : go('/roadmap')}>→ السابق</button></div>
     <Card className="between">
-      <div><div className="muted">Session {s.order} · {data.levels.find((l) => l.id === s.levelId)?.title}</div><h1>{s.title}</h1><p className="muted">{s.topic} · {fmtDate(s.dueAt)}</p></div>
+      <div><div className="muted">Session {s.order} · {data.levels.find((l) => l.id === s.levelId)?.title}</div><h1>{s.title}</h1><p className="muted">{[s.topic, fmtDate(s.dueAt)].filter(Boolean).join(' · ')}</p></div>
       <Badge tone={locked ? 'muted' : statusTone[st.key]}>{locked ? '🔒 مقفول' : st.label}</Badge>
     </Card>
     {locked && <div className="note">🔒 تقدر تقرأ كل حاجة في السيشن دي، بس هي مقفولة لحسابك.
-        {user.subscribed === false && <div className="row" style={{ marginTop: '.6rem' }}><a className="btn btn-primary btn-sm" href="https://wa.me/201091060951?text=%D8%B9%D8%A7%D9%88%D8%B2%20%D8%A3%D8%B3%D8%AC%D9%84%20%D9%81%D9%8A%20%D8%A7%D9%84%D9%83%D9%88%D8%B1%D8%B3%20%D8%B9%D8%B4%D8%A7%D9%86%20%D8%A3%D9%83%D9%85%D9%84%20%D9%85%D8%B9%D8%A7%D9%83%D9%85" target="_blank" rel="noreferrer">سجّل في الكورس</a></div>}
+        {user.subscribed === false && <div className="row" style={{ marginTop: '.6rem' }}><SubscribeButtons size="sm" /></div>}
       </div>}
     <Card className="study-progress sticky-progress-session">
       <div className="between"><span className="muted">تقدم السيشن · {done.filter((d) => d.startsWith(`${s.id}-`) || d.startsWith('word:')).length} من {totalParts} جزء خلص</span><strong>{pct}%</strong></div>
@@ -364,7 +375,7 @@ export function SessionPage({ sessionId }: any) {
     <div className="lesson-tabs" dir="ltr">{tabs.map((t) => <button key={t.id} className={`tab ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>{t.label}</button>)}</div>
     {user.subscribed === false && <Card className="shadow-inline">
       <div className="row between"><span>🎧 {tab === 'vocabulary' ? 'عرف كلمات أكتر واستخدمها في كلامك.' : tab === 'grammar' ? 'كمّل وتخلي الجرامر أسهل وميبقاش عقدة.' : tab === 'practice' ? 'تاسكات يومية هتخليك تتكلم إنجليزي كل يوم وتوصل لهدفك أسرع.' : tab === 'quiz' ? 'راجع الكلمات والجرامر قبل الكويز.' : 'اسمع السيشن وردّد ورا المتحدث.'}</span>
-        <a className="btn btn-primary btn-sm" href="https://wa.me/201091060951?text=%D8%B9%D8%A7%D9%88%D8%B2%20%D8%A3%D8%A8%D8%AF%D8%A3%20%D8%A7%D9%84%D8%B4%D8%A7%D8%AF%D9%88%D9%8A%D9%86%D8%AC" target="_blank" rel="noreferrer">واتساب</a></div>
+        <SubscribeButtons size="sm" /></div>
     </Card>}
     {tab === 'quiz' ? <Card>
       <div className="between"><div><h3>كويز السيشن</h3><small className="muted">{sessionQuiz.length} سؤال على الكلمات والجرامر · النقاط على قد درجتك</small></div>
@@ -408,6 +419,7 @@ export function SessionPage({ sessionId }: any) {
           <div className="between"><div><h3 dir="ltr">Words Quiz</h3><small className="muted" dir="rtl">راجع الكلمات الجديدة بتاعة السيشن دي.</small></div><Badge tone="green">{wordQs.length} questions</Badge></div>
           <div className="stack" style={{ marginTop: '.8rem' }}>{wordQs.map((q, i) => <div key={q.id} className="exercise-item">
             <div className="between"><strong>{i + 1}. {q.prompt}</strong>{wordResult && <Badge tone={wordResult.marks[q.id] ? 'green' : 'red'}>{wordResult.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
+            {wordResult && !wordResult.marks[q.id] && <div className="why-box" dir="rtl">{whyWrong(q as any, s.id, data.dictionary)}</div>}
             {q.options.length ? <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${wordAnswers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={wordAnswers[q.id] === o} onChange={() => setWordAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
               : <input value={wordAnswers[q.id] || ''} onChange={(e) => setWordAnswers((a) => ({ ...a, [q.id]: e.target.value }))} placeholder="اكتب الكلمة الناقصة…" disabled={locked} dir="ltr" />}
           </div>)}</div>
@@ -437,6 +449,7 @@ export function SessionPage({ sessionId }: any) {
           <div className="between"><div><h3 dir="ltr">Grammar Practice</h3><small className="muted" dir="rtl">الممارسة بعد الشرح.</small></div><Badge tone="green">{grammarAll.length} questions</Badge></div>
           <div className="stack" style={{ marginTop: '.8rem' }}>{grammarAll.map((q, i) => <div key={q.id} className="exercise-item">
             <div className="between"><strong>{i + 1}. {q.prompt}</strong>{grammarResult && <Badge tone={grammarResult.marks[q.id] ? 'green' : 'red'}>{grammarResult.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
+            {grammarResult && !grammarResult.marks[q.id] && <div className="why-box" dir="rtl">{whyWrong(q as any, s.id, data.dictionary)}</div>}
             <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${grammarAnswers[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={grammarAnswers[q.id] === o} onChange={() => setGrammarAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
           </div>)}</div>
           <Button style={{ marginTop: '.8rem' }} onClick={submitGrammar} disabled={locked || !grammarAll.every((q) => grammarAnswers[q.id])}>صحح إجابات الجرامر</Button>
@@ -446,46 +459,24 @@ export function SessionPage({ sessionId }: any) {
       {tab === 'practice' && <div className="stack ltr-scope" dir="ltr">
         <Card className="activity-card">
           <SectionTitle title="Speaking Practice" action={<Badge tone="blue">{talk.length} questions</Badge>} />
-          <p className="muted" dir="rtl">أسئلة مفتوحة للتدريب الحر — اتكلم بصوت عالي أو مع صاحبك. مفيش تسليم ولا واجب.</p>
-          {talk.map((q, i) => <div key={i} className="req-item" style={{ marginTop: '.5rem' }}><span className="req-check">{i + 1}</span><span dir="ltr" className="en">{q}</span></div>)}
+          <p className="muted" dir="rtl">أسئلة مفتوحة للتدريب — اتكلم بصوت عالي، ولو عايز رأي المدرّس ابعت إجابتك على أي سؤال للجروب.</p>
+          {talk.map((q, i) => <div key={i} className="req-item" style={{ marginTop: '.5rem', gap: '.5rem', flexWrap: 'wrap' }}><span className="req-check">{i + 1}</span><span dir="ltr" className="en" style={{ flex: 1 }}>{q}</span><a className="btn btn-ghost btn-sm" dir="rtl" href={waGroupShare(`فويس نوت Speakozy — ${s.title}\n${i + 1}. ${q}`)} target="_blank" rel="noreferrer">ابعت إجابتك على واتساب</a></div>)}
         </Card>
         <Card className="activity-card">
           <SectionTitle title="Voice Notes" action={<Badge>اختياري</Badge>} />
-          <p className="muted" dir="rtl">لو عايز رأي المدرّس، ابعت إجابة على أي سؤال بفويس نوت على واتساب.</p>
-          {voices.slice(0, 2).map((q, i) => <div key={i} className="section-card" style={{ marginTop: '.7rem' }}>
-            <strong>{i + 1}. <span className="en" dir="ltr">{q}</span></strong>
-            <div className="row" style={{ marginTop: '.6rem' }}>
-              <a className="btn btn-primary btn-sm" href={`https://wa.me/201091060951?text=${encodeURIComponent('فويس نوت Speakozy — ' + q)}`}>ابعت فويس نوت</a>
-            </div>
-          </div>)}
+          <p className="muted" dir="rtl">اختار أي سؤال من الأسئلة اللي فوق، سجّل إجابتك بصوتك، وابعتها على واتساب Speakozy علشان المدرّس يسمعها.</p>
+          <a className="btn btn-primary btn-sm" href={waGroupShare(`فويس نوت Speakozy — ${s.title}`)} target="_blank" rel="noreferrer">افتح الواتساب وابعت</a>
         </Card>
       </div>}
-      {tab === 'overview' && <div className="stack" dir={enMaterial ? 'ltr' : undefined}>
-        <Card className="brief-card">
-          <div className="brief-kicker">Lesson</div>
-          <h2 className="en" dir="ltr">{outline.title}</h2>
-          {outline.topic && <p className="muted en" dir="ltr">{outline.topic}</p>}
-        </Card>
+      {tab === 'overview' && <div className="stack" dir="ltr">
         <article className="brief-card">
           <div className="brief-kicker">Objectives</div>
-          <h3>Objectives</h3>
-          <ul className="brief-list">{outline.objectives.map((item, i) => <li key={i} className="en" dir="ltr">{item}</li>)}</ul>
-        </article>
-        <article className="brief-card">
-          <div className="brief-kicker">Vocabulary</div>
-          <h3>Vocabulary</h3>
-          <p className="brief-summary en" dir="ltr">{outline.wordsAbout}</p>
-          <button className="brief-jump" style={{ marginTop: '.7rem' }} onClick={() => setTab('vocabulary')}>Open vocabulary</button>
-        </article>
-        <article className="brief-card">
-          <div className="brief-kicker">Grammar</div>
-          <h3>Grammar</h3>
-          <p className="brief-summary en" dir="ltr">{outline.grammarAbout}</p>
-          <button className="brief-jump" style={{ marginTop: '.7rem' }} onClick={() => setTab('grammar')}>Open grammar</button>
+          <h3>Lesson objectives</h3>
+          <ul className="brief-list">{overview.objectives.map((item, i) => <li key={i} className="en" dir="ltr">{item}</li>)}</ul>
         </article>
         <Card className="brief-card kind-summary">
           <div className="brief-kicker">Summary</div>
-          <p className="brief-summary en" dir="ltr">{outline.summary}</p>
+          <p className="brief-summary en" dir="ltr">{overview.summary}</p>
         </Card>
       </div>}
     </>}
@@ -499,25 +490,29 @@ export function QuizPage({ sessionId }: any) {
   const [result, setResult] = useState<any>(null);
   const s = data.sessions.find((x) => x.id === sessionId);
   const words = data.dictionary.filter((w) => (w.sessionIds || []).includes(sessionId));
-  const qs = s ? sessionQuizItems(words, grammarFor(s.id), s.id, data.dictionary) : [];
+  const qs = s ? (getBank(data).get(s.id)?.session || []) : [];
   if (!user) return null;
   if (!s) return <Empty title="السيشن مش موجودة" />;
   if (!qs.length) return <Empty title="مفيش أسئلة للسيشن دي" hint="راجع خريطة المستويات." />;
 
   async function submit() {
     let auto = 0, max = 0, pending = 0;
+    const jobs: Promise<any>[] = [];
+    const marks: Record<string, boolean> = {};
     for (const q of qs) {
       const ans = answers[q.id] || '';
       const g = gradeQuestion(q as any, ans);
       max += q.points; auto += g.score;
       const status = g.auto ? (g.score > 0 ? 'approved' : 'rejected') : 'pending';
       if (!g.auto) pending++;
-      await put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: q.id, answer: ans, autoScore: g.score, maxScore: q.points, status, createdAt: today() });
+      marks[q.id] = g.score > 0;
+      jobs.push(put('attempts', { id: uid(), studentId: user!.id, sessionId: s!.id, questionId: q.id, answer: ans, autoScore: g.score, maxScore: q.points, status, createdAt: today() }));
     }
+    setResult({ auto, max, pending, marks });
     const qPts = proportionalScore(auto, max, scoreRule(data.settings.scoreRules, 'sessionQuiz'));
-    if (qPts > 0) await grantScore(user!.id, 'quiz', qPts, `sessionquiz-${s!.id}-${user!.id}`);
-    await log('quiz-submit', s!.title);
-    setResult({ auto, max, pending });
+    if (qPts > 0) jobs.push(grantScore(user!.id, 'quiz', qPts, `sessionquiz-${s!.id}-${user!.id}`));
+    jobs.push(log('quiz-submit', s!.title));
+    await Promise.allSettled(jobs);
   }
 
   if (result) return <Card className="stack">
@@ -526,6 +521,10 @@ export function QuizPage({ sessionId }: any) {
       <strong>Automated score: {result.auto} out of {result.max}</strong>
       {result.pending > 0 && <div>There are {result.pending} written answers to be reviewed by the admin. Final approval isn't immediate.</div>}
     </div>
+    {qs.filter((q) => result.marks && result.marks[q.id] === false).map((q) => <div key={q.id} className="exercise-item ltr-scope">
+      <strong dir="ltr" className="en">{q.prompt}</strong>
+      <div className="why-box" dir="rtl">{`إجابتك: ${answers[q.id] || '—'}\n${whyWrong(q as any, s.id, data.dictionary)}`}</div>
+    </div>)}
     <div className="row"><Button onClick={() => go(`/session/${s.id}`)}>رجوع للسيشن</Button><Button variant="ghost" onClick={() => go('/roadmap')}>الخريطة</Button></div>
   </Card>;
 
@@ -538,6 +537,13 @@ export function QuizPage({ sessionId }: any) {
     </Card>)}
     <Card><div className="between"><span className="muted">الإجابات الكتابية بتتحفظ للمراجعة.</span><Button onClick={submit}>سلّم الإجابات</Button></div></Card>
   </div>;
+}
+
+/** Two short, simple examples that really contain the searched word. */
+function easyExamples(e: { word: string; examples: string[] }): string[] {
+  const w = e.word.toLowerCase();
+  const has = (x: string) => x.toLowerCase().includes(w.split(' ')[0].slice(0, Math.max(3, w.length - 3)));
+  return [...(e.examples || [])].filter((x) => x && has(x)).sort((a, b) => a.length - b.length).slice(0, 2);
 }
 
 export function DictionaryPage() {
@@ -682,16 +688,14 @@ export function DictionaryPage() {
         <div className="between"><div><h2 dir="ltr" className="en" style={{ fontSize: '1.9rem' }}>{detail.word}</h2>
           <div className="row"><Badge tone="green">{detail.type}</Badge>{detail.phonetic && <span className="muted" dir="ltr">{phon(detail.phonetic)}</span>}<Badge tone={detail.source === 'global' ? 'blue' : 'muted'}>{detail.source === 'global' ? 'الديكشنري العالمي' : detail.source === 'manual' ? 'إضافة يدوية' : 'من المنهج'}</Badge></div></div>
           <Button variant="ghost" onClick={() => pronounce(detail)}>🔊 اسمع النطق</Button></div>
-        <div className="section-card"><h3>المعنى</h3><p className="en" dir="ltr">{detail.meaning}</p>
-          {detail.arabic && <p dir="rtl">{detail.arabic}</p>}
-          {detail.definitions && <div className="stack" style={{ marginTop: '.5rem' }}>{detail.definitions.map((d, i) => <div key={i} className="muted en" dir="ltr">• {d}</div>)}</div>}
-        </div>
+        {detail.arabic && <div className="section-card"><h3>المعنى بالعربي</h3><p dir="rtl" style={{ fontSize: '1.15rem', margin: 0 }}>{detail.arabic}</p></div>}
+        <div className="section-card"><h3>التعريف</h3><p className="en" dir="ltr" style={{ margin: 0 }}>{detail.definitions?.[0] || detail.meaning}</p></div>
+        <div className="section-card"><h3>مثالين</h3>{easyExamples(detail).length ? easyExamples(detail).map((ex, i) => <div key={i} className="en" dir="ltr" style={{ textAlign: 'left', lineHeight: 1.9 }}>• {ex}</div>) : <p className="muted">مفيش أمثلة متاحة.</p>}</div>
         {detail.phonetic && <div className="section-card"><h3>النطق المكتوب</h3><p className="en" dir="ltr">{phon(detail.phonetic)}</p></div>}
         <div className="section-card"><h3>اسمعها في الاستخدام</h3>
           <div className="youglish-btns">{YOUGLISH_ACCENTS.map((a) => <button key={a.code} type="button" className="yg-btn en" onClick={() => setYg({ word: detail.word, accent: a.code })}>{a.label}</button>)}</div>
         </div>
         {detail.synonyms && detail.synonyms.length > 0 && <div className="section-card"><h3>المرادفات</h3><div className="row">{detail.synonyms.map((x) => <span key={x} className="word-chip en">{x}</span>)}</div></div>}
-        <div className="section-card"><h3>أمثلة</h3>{detail.examples.length ? detail.examples.map((ex, i) => <div key={i} className="en" dir="ltr" style={{ textAlign: 'left', lineHeight: 1.9 }}>{ex}</div>) : <p className="muted">مفيش أمثلة متاحة.</p>}</div>
         {(detail.sessionIds || []).length > 0 && <div className="section-card"><h3>بتظهر في سيشنات</h3>{detail.sessionIds!.map((sid) => { const sess = data.sessions.find((x) => x.id === sid); return sess ? <div key={sid}><button className="icon-btn" onClick={() => { setDetail(null); go(`/session/${sid}`); }}>{sess.title} ←</button></div> : null; })}</div>}
         <Button onClick={() => toggle(detail)}>{isSaved(detail.word) ? 'شيلها من المحفوظات' : 'ضيفها لكلماتي'}</Button>
       </div>}
@@ -719,6 +723,7 @@ export function WordsPage() {
   const [flipped, setFlipped] = useState(false);
   const [q, setQ] = useState('');
   const [skipped, setSkipped] = useState<string[]>([]);
+  const [adding, setAdding] = useState<{ word: string; meaning: string; example: string } | null>(null);
   if (!user) return null;
   const saved = data.savedWords.filter((w) => w.studentId === user.id);
   const now = new Date().toISOString();
@@ -733,8 +738,22 @@ export function WordsPage() {
     await put('savedWords', { ...card, review: grade === 'again', nextReview: next });
     setFlipped(false);
   }
+  async function addOwn() {
+    if (!adding || !adding.word.trim() || !adding.meaning.trim()) return;
+    const word = adding.word.trim();
+    if (saved.some((w) => w.word.toLowerCase() === word.toLowerCase())) { setAdding(null); return; }
+    await put('savedWords', { studentId: user!.id, word, meaning: adding.meaning.trim(), transcript: adding.example.trim() || undefined, review: true, createdAt: today(), nextReview: today() });
+    setAdding(null);
+  }
   return <div className="stack">
     <div><h1>الكلمات</h1><p className="muted">راجع كلماتك المحفوظة بكروت. اقلب الكارت، وبعدين قيّم نفسك: لسه بنساها، صعبة، كويسة، أو سهلة.</p></div>
+    <div><Button size="sm" onClick={() => setAdding({ word: '', meaning: '', example: '' })}>+ ضيف كلمة بنفسك</Button></div>
+    <Modal open={!!adding} title="ضيف كلمة" onClose={() => setAdding(null)}>
+      <Field label="الكلمة بالإنجليزي"><input dir="ltr" value={adding?.word || ''} onChange={(e) => setAdding({ ...adding!, word: e.target.value })} placeholder="e.g. reliable" /></Field>
+      <Field label="المعنى بالعربي"><input dir="rtl" value={adding?.meaning || ''} onChange={(e) => setAdding({ ...adding!, meaning: e.target.value })} /></Field>
+      <Field label="جملة مثال (اختياري)"><input dir="ltr" value={adding?.example || ''} onChange={(e) => setAdding({ ...adding!, example: e.target.value })} /></Field>
+      <Button onClick={addOwn} disabled={!adding?.word.trim() || !adding?.meaning.trim()}>ضيف للكروت</Button>
+    </Modal>
     <div className="grid g3">
       <Stat label="كلمات محفوظة" value={saved.length} />
       <Stat label="مستحقة للمراجعة" value={due.length} tone="green" />
@@ -749,6 +768,7 @@ export function WordsPage() {
         {flipped
           ? <>
             <div className="result-good" dir="rtl" style={{ margin: '1rem 0' }}>{card.meaning}</div>
+            {card.transcript && <div className="muted en" dir="ltr" style={{ marginBottom: '.8rem' }}>{card.transcript}</div>}
             <div className="row" style={{ justifyContent: 'center' }}>
               <Button variant="danger" onClick={() => rate('again')}>لسه بنساها</Button>
               <Button variant="ghost" onClick={() => rate('hard')}>صعبة</Button>
@@ -763,6 +783,7 @@ export function WordsPage() {
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="دوّر في كلماتك" aria-label="دوّر في كلماتك" style={{ marginBottom: '.8rem' }} />
       {list.length ? <div className="saved-grid">{list.map((w) => <div key={w.id} className={`saved-card ${w.review ? 'needs-review' : ''}`}>
         <div className="saved-word en" dir="ltr">{w.word}</div>
+        {w.transcript && <div className="saved-transcript en" dir="ltr">{w.transcript}</div>}
         <div className="saved-meaning" dir="rtl">{w.meaning}</div>
         <div className="saved-actions">
           <button className="icon-btn" title="اسمع النطق" onClick={() => speakWord(w.word)}>🔊</button>
@@ -773,13 +794,6 @@ export function WordsPage() {
   </div>;
 }
 
-const TALK_QUESTIONS: Record<string, string[]> = {
-  A1: ['What is your name and where are you from?', 'What do you do every morning?', 'Describe your family in a few sentences.', 'What is your favorite food? Why?', 'What do you like to do on the weekend?', 'Describe your room.'],
-  A2: ['Tell me about your best friend.', 'What did you do last weekend?', 'What is your daily routine like?', 'Describe your favorite place in your city.', 'What are you going to do next week?', 'Which do you prefer, summer or winter? Why?'],
-  B1: ['Tell me about a memorable trip you took.', 'What are the advantages and disadvantages of working from home?', 'Describe a person who has influenced you.', 'How has technology changed the way we study?', 'What would you do if you won a lot of money?', 'Talk about a problem you solved recently.'],
-  B2: ['Do you think social media does more harm than good? Explain.', 'Describe a decision that changed your life.', 'How important is it to learn a second language today?', 'What makes a good leader?', 'If you could change one thing about your country, what would it be?', 'Talk about a time you failed and what you learned.'],
-  C1: ['To what extent should governments regulate artificial intelligence?', 'Is success mostly talent or hard work? Defend your view.', 'How do cultural differences shape the way people communicate?', 'Is it ethical to prioritize economic growth over the environment?', 'Discuss a belief you once held that you have since changed.'],
-};
 
 /** يلا نتكلم: سؤال محادثة عشوائي على حسب مستوى الطالب. */
 export function YallaNetkellemPage() {
@@ -787,20 +801,27 @@ export function YallaNetkellemPage() {
   const level = data.levels.find((l) => l.id === user?.levelId);
   const band = (level?.cefr || 'A1').slice(0, 2);
   const [pick, setPick] = useState(band in TALK_QUESTIONS ? band : 'A1');
-  const [n, setN] = useState(() => Math.floor(Math.random() * 1000));
+  const [n, setN] = useState(0);
+  const [upsell, setUpsell] = useState(false);
   if (!user) return null;
-  const pool = TALK_QUESTIONS[pick] || TALK_QUESTIONS.A1;
+  const subscribed = isSubscribed(user);
+  const full = TALK_QUESTIONS[pick] || TALK_QUESTIONS.A1;
+  // not subscribed: only the first few questions of every level
+  const pool = subscribed ? full : full.slice(0, FREE_YALLA_PER_LEVEL);
   const question = pool[n % pool.length];
+  const next = () => { if (!subscribed && n + 1 >= pool.length) { setUpsell(true); return; } setN((x) => subscribed ? x + 1 + Math.floor(Math.random() * Math.max(1, pool.length - 1)) : x + 1); };
   return <div className="stack">
     <div><h1>يلا نتكلم</h1><p className="muted">اضغط على «سؤال جديد»، سجّل ريكورد بتجاوب فيه بصوتك، وابعته للمدرّس على الواتساب.</p></div>
-    <Tabs tabs={Object.keys(TALK_QUESTIONS).map((k) => ({ id: k, label: k }))} active={pick} onChange={(k) => { setPick(k); setN((x) => x + 1); }} />
+    <Tabs tabs={Object.keys(TALK_QUESTIONS).map((k) => ({ id: k, label: k }))} active={pick} onChange={(k) => { setPick(k); setN(0); }} />
+    {!subscribed && <div className="note" dir="rtl">متاح لك {FREE_YALLA_PER_LEVEL} أسئلة مجانية من كل مستوى ({(n % pool.length) + 1}/{pool.length}). اشترك معانا علشان تفتح باقي الأسئلة.</div>}
     <Card className="flashcard">
       <h2 dir="ltr" className="en" style={{ textAlign: 'center', lineHeight: 1.6 }}>{question}</h2>
       <div className="row" style={{ justifyContent: 'center', marginTop: '1rem' }}>
-        <Button onClick={() => setN((x) => x + 1 + Math.floor(Math.random() * (pool.length - 1)))}>سؤال جديد</Button>
+        <Button onClick={next}>سؤال جديد</Button>
         <Button variant="ghost" onClick={() => speakWord(question)}>🔊 اسمع السؤال</Button>
       </div>
     </Card>
+    <UpsellModal open={upsell} onClose={() => setUpsell(false)} what="باقي أسئلة يلا نتكلم" />
   </div>;
 }
 
@@ -816,9 +837,10 @@ export function TasksPage() {
   const otherTasks = mine.filter((t) => !(t.instructions || []).length);
   const weeks = [...new Set(levelTasks.map((t) => t.week || 1))].sort((a, b) => a - b);
   const level = data.levels.find((l) => l.id === user.levelId);
-  const taskLocked = (t: any) => user.subscribed === false && (t.week || 1) > 1;
+  const [upsell, setUpsell] = useState(false);
+  const taskLocked = (t: any) => !isSubscribed(user) && (t.week || 1) > FREE_TASK_WEEKS;
   async function toggle(t: any) {
-    if (taskLocked(t)) return;
+    if (taskLocked(t)) { setUpsell(true); return; }
     const existing = data.taskCompletions.find((c) => c.studentId === user!.id && c.taskId === t.id);
     if (existing) {
       if ((existing.status || 'approved') === 'approved') return; // approved by the teacher: can't be undone
@@ -853,19 +875,19 @@ export function TasksPage() {
                 <div><strong className="en">{topicName}</strong>{items[0]?.grammar && <div className="muted" style={{ fontSize: '.82rem' }}>{items[0].grammar}</div>}</div>
                 {items.map((t) => {
                   const done = isDone(t);
-                  return <div key={t.id} className={`task-item ${done ? 'is-done' : ''}`}>
+                  return <div key={t.id} className={`task-item ${done ? 'is-done' : ''} ${taskLocked(t) ? 'locked-item' : ''}`} onClick={taskLocked(t) ? () => setUpsell(true) : undefined}>
                     <div className="task-item-head">
-                      <button className={`task-check ${done ? 'checked' : ''}`} onClick={() => toggle(t)} disabled={taskLocked(t)} aria-label={done ? 'علّم إنها ما خلصتش' : 'علّم إنها خلصت'}>{done ? '✓' : ''}</button>
+                      <button className={`task-check ${done ? 'checked' : ''}`} onClick={() => toggle(t)} aria-label={done ? 'علّم إنها ما خلصتش' : 'علّم إنها خلصت'}>{done ? '✓' : ''}</button>
                       <div className="task-item-title" style={{ cursor: 'default' }}>
                         <span className="task-badge">{t.badge || t.kind}</span>
                         <strong>{t.title}</strong>
                         <span dir="rtl">{statusBadge(t)}</span>
                       </div>
                     </div>
-                    <div className="task-instructions" dir="ltr">
+                    {taskLocked(t) ? <div className="lock-cover" dir="rtl">🔒 اشترك معانا علشان تكمل</div> : <div className="task-instructions" dir="ltr">
                       {(t.instructions || []).map((ins, i) => <div key={i} className="task-ins"><span>{ins}</span></div>)}
                       {t.source === 'generated' && <div className="muted" dir="rtl" style={{ fontSize: '.78rem', marginTop: '.4rem', textAlign: 'right' }}>سؤال عام على موضوع السيشن — ملف السيشن مفيهوش سؤال محادثة لده.</div>}
-                    </div>
+                    </div>}
                   </div>;
                 })}
               </div>;
@@ -878,9 +900,10 @@ export function TasksPage() {
       <SectionTitle title="تاسكات تانية" />
       <div className="stack">{otherTasks.map((t) => <div key={t.id} className="row between section-card">
         <div><strong>{t.title}</strong>{t.dueAt && <div className="muted">{fmtDate(t.dueAt)} · {t.kind}</div>}</div>
-        {isDone(t) ? <>{statusBadge(t)}{statusOf(t) === 'rejected' && <Button size="sm" variant="ghost" onClick={() => toggle(t)}>حاول تاني</Button>}</> : <Button size="sm" onClick={() => toggle(t)} disabled={taskLocked(t)}>تم</Button>}
+        {isDone(t) ? <>{statusBadge(t)}{statusOf(t) === 'rejected' && <Button size="sm" variant="ghost" onClick={() => toggle(t)}>حاول تاني</Button>}</> : <Button size="sm" onClick={() => toggle(t)}>تم</Button>}
       </div>)}</div>
     </Card>}
+    <UpsellModal open={upsell} onClose={() => setUpsell(false)} what="تاسكات الأسابيع الجاية" />
   </div>;
 }
 
@@ -920,10 +943,14 @@ export function LeaderboardPage() {
   const mine = board.findIndex((b) => b.id === user.id) + 1;
   return <div className="stack">
     <div><h1>أبطال Speakozy</h1><p className="muted">الترتيب بالنقاط. الأسماء مختصرة حسب إعداد الخصوصية، ومفيش بيانات خاصة بتظهر.</p></div>
+    {!isSubscribed(user) && <Card className="shadow-inline" dir="rtl"><div className="stack" style={{ textAlign: 'center' }}>
+      <strong>الأبطال دول مشتركين معانا — ابعتلنا وابدأ خطوتك وكون جزء منهم 🚀</strong>
+      <div className="row" style={{ justifyContent: 'center' }}><SubscribeButtons /></div>
+    </div></Card>}
     <Tabs tabs={[{ id: 'weekly', label: 'أسبوعي' }, { id: 'monthly', label: 'شهري' }, { id: 'total', label: 'كل الوقت' }]} active={period} onChange={setPeriod} />
     {!data.settings.leaderboard.enabled ? <Card><Empty icon="🔒" title="لوحة الأبطال متوقفة حاليًا" hint="الأدمن قرر يخفيها مؤقتًا." /></Card> : <Card>
       {board.length ? <div className="stack">{board.map((b, i) => <div key={b.id} className={`row between section-card ${b.id === user.id ? 'done' : ''}`}>
-        <div className="row"><span className="node-num">{i + 1}</span><span className="champ-avatar">{b.avatar || '🧑‍🎓'}</span><strong>{b.name}</strong>{b.id === user.id && <Badge tone="green">أنت</Badge>}</div>
+        <div className="row"><span className="node-num">{i + 1}</span><span className="champ-avatar">{b.avatar || '🧑‍🎓'}</span><strong>{b.name}</strong><span className="verified-badge" title="طالب مشترك">✓</span>{b.id === user.id && <Badge tone="green">أنت</Badge>}</div>
         <strong className="green">{b.points} points</strong>
       </div>)}</div> : <Empty title="مفيش مشاركين لسه" />}
     </Card>}
@@ -1068,6 +1095,8 @@ export function LevelExamPage({ levelId }: any) {
 
   async function submit() {
     let auto = 0, max = 0, pending = 0;
+    const jobs: Promise<any>[] = [];
+    const marks: Record<string, boolean> = {};
     for (const q of qs) {
       const ans = answers[q.id] || '';
       const g = gradeQuestion(q, ans);

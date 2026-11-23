@@ -8,7 +8,10 @@ import { useApp } from '../lib/store';
 import { go } from '../App';
 import { Modal, Button, Badge, fmtDate } from './UI';
 import { engagementProgress, totalScore } from '../lib/domain';
-import { canInstall, isStandalone, isIos, onInstallChange, promptInstall, showBrowserNotification } from '../lib/pwa';
+import { canInstall, isStandalone, isIos, onInstallChange, promptInstall, showBrowserNotification, notificationPermission, requestNotifications } from '../lib/pwa';
+import { SubscribeButtons } from './Upsell';
+import { isSubscribed } from '../lib/subscription';
+import { usePullToRefresh } from '../lib/pullToRefresh';
 
 const WA_LINK = 'https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83%20%D9%81%D9%8A%20%D9%83%D9%88%D8%B1%D8%B3%20%D8%B3%D8%A8%D9%8A%D9%83%D9%88%D8%B2%D9%8A';
 
@@ -46,6 +49,8 @@ export function Layout({ current, children }: { current: string; children: React
   const [bell, setBell] = useState(false);
   const [profileMenu, setProfileMenu] = useState(false);
   const [showTop, setShowTop] = useState(false);
+  const [perm, setPerm] = useState(notificationPermission());
+  const pull = usePullToRefresh();
   const [, setTick] = useState(0);
   useEffect(() => onInstallChange(() => setTick((t) => t + 1)), []);
   useEffect(() => {
@@ -73,7 +78,7 @@ export function Layout({ current, children }: { current: string; children: React
   </button>;
 
   const side = <aside className={`side ${open ? 'open' : ''}`}>
-    <div className="brand"><span className="brand-dot" /> SPEAKOZY</div>
+    <div className="brand"><img className="brand-logo" src="./logo-on-dark.png" alt="Speakozy" /></div>
     <div className="nav-group">{admin ? 'لوحة الأدمن' : 'مساحة الطالب'}</div>
     <nav className="nav" onClick={() => setOpen(false)}>
       {nav.map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
@@ -95,9 +100,10 @@ export function Layout({ current, children }: { current: string; children: React
   </nav>;
 
   return <>
+    {pull.active && <div className="ptr"><span>{pull.ready ? 'سيب للتحديث ↻' : 'اسحب للتحديث ↓'}</span></div>}
     <div className="topbar">
       <button className="icon-btn" onClick={() => setOpen(true)} aria-label="القائمة"><Menu size={18} /></button>
-      <div className="auth-brand" style={{ color: 'var(--ink)' }}><span className="brand-dot" /> SPEAKOZY</div>
+      <div className="auth-brand"><img className="brand-logo" src="./logo-on-dark.png" alt="Speakozy" /></div>
     </div>
     <div className="shell">{side}<main className="main" id="app-main"><div className="content-bar">
       <div className="content-bar-row">
@@ -114,15 +120,21 @@ export function Layout({ current, children }: { current: string; children: React
         </div>
         {!admin && <strong className="sticky-points">{points} pts</strong>}
         {bellButton}
-        <button className="user-chip" onClick={() => setProfileMenu((m) => !m)} aria-label="الملف الشخصي"><span className="avatar">{user.avatar || (user.role === 'admin' ? '🧑‍💼' : '🧑‍🎓')}</span></button>
+        <button className="user-chip" onClick={() => setProfileMenu((m) => !m)} aria-label="الملف الشخصي"><span className="avatar">{user.avatar || (user.role === 'admin' ? '🧑‍💼' : '🧑‍🎓')}</span>{!admin && <span className="user-chip-name">{user.name.split(' ')[0]}{isSubscribed(user) && <span className="verified-badge" title="طالب مشترك">✓</span>}</span>}</button>
       </div>
-      {!admin && user.subscribed === false && <div className="sub-notice" dir="rtl">
-        <span>أنت غير مشترك بالكورس، تواصل معنا للتفاصيل والاشتراك</span>
+      {!admin && !isSubscribed(user) && <div className="sub-notice" dir="rtl">
+        <span>أنت غير مشترك معانا — ابدأ رحلتك وكمّل كل المحتوى</span>
+        <SubscribeButtons size="sm" />
       </div>}
+      {!admin && perm === 'default' && <div className="sub-notice" dir="rtl">
+        <span>🔔 افتح الإشعارات علشان نفكرك بمهامك</span>
+        <button className="btn btn-primary btn-sm" onClick={async () => setPerm(await requestNotifications())}>فعّل الإشعارات</button>
+      </div>}
+      {!admin && perm === 'denied' && <div className="sub-notice" dir="rtl"><span>🔕 الإشعارات مقفولة — فعّلها من إعدادات المتصفح عشان نفكرك بمهامك</span></div>}
     </div>{children}</main></div>
     {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 75 }} />}
     {mobile}
-    <a className="float-wa" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب" title="تواصل معانا على واتساب"><MessageCircle size={20} /></a>
+    {(admin || isSubscribed(user)) && <a className="float-wa" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب" title="تواصل معانا على واتساب"><MessageCircle size={20} /></a>}
     {showTop && <button className="to-top" onClick={() => { const main = document.getElementById('app-main'); if (main) main.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="العودة لأعلى">↑</button>}
     <Modal open={bell} title="الإشعارات" onClose={() => setBell(false)}>
       {notes.length ? <div className="stack">{notes.map((n) => <div key={n.id} className="section-card">
