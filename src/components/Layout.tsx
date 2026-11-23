@@ -34,9 +34,7 @@ const adminNav = [
   { path: '/admin/students', label: 'الطلاب', ic: Users },
   { path: '/admin/curriculum', label: 'المستويات والجلسات', ic: Layers },
   { path: '/admin/content', label: 'المحتوى', ic: FileText },
-  { path: '/admin/grammar', label: 'استوديو الجرامر', ic: PenLine },
-  { path: '/admin/words', label: 'الكلمات', ic: BookOpen },
-  { path: '/admin/quizzes', label: 'الكويزات', ic: ClipboardList },
+  { path: '/admin/lesson', label: 'تعديل السيشنات', ic: PenLine },
   { path: '/admin/reviews', label: 'مراجعة النتائج', ic: Inbox },
   { path: '/admin/task-reviews', label: 'مراجعة التاسكات', ic: ListChecks },
   { path: '/admin/operations', label: 'التاسكات والإشعارات', ic: ListChecks },
@@ -49,19 +47,10 @@ export function Layout({ current, children }: { current: string; children: React
   const [open, setOpen] = useState(false);
   const [bell, setBell] = useState(false);
   const [profileMenu, setProfileMenu] = useState(false);
-  const [showTop, setShowTop] = useState(false);
   const [perm, setPerm] = useState(notificationPermission());
   const pull = usePullToRefresh();
   const [, setTick] = useState(0);
   useEffect(() => onInstallChange(() => setTick((t) => t + 1)), []);
-  useEffect(() => {
-    const main = document.getElementById('app-main');
-    if (!main) return;
-    const onScroll = () => setShowTop(main.scrollTop > 300);
-    main.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => main.removeEventListener('scroll', onScroll);
-  }, [user]);
   if (!user) return <>{children}</>;
   const admin = user.role === 'admin';
   const nav = admin ? adminNav : studentNav;
@@ -92,7 +81,7 @@ export function Layout({ current, children }: { current: string; children: React
     </div>
   </aside>;
 
-  const shortLabel = (l: string) => ({ 'خريطة المستويات': 'المستويات', 'تجربة مجانية': 'تجربة', 'آراء طلابنا': 'آراء', 'المستويات والجلسات': 'المستويات', 'استوديو الجرامر': 'الجرامر', 'مراجعة النتائج': 'المراجعة', 'التاسكات والإشعارات': 'التاسكات', 'التاسكات اليومية': 'التاسكات', 'يلا نتكلم': 'نتكلم', 'العب واتعلم': 'العب' } as Record<string, string>)[l] || l.split(' ')[0];
+  const shortLabel = (l: string) => ({ 'خريطة المستويات': 'المستويات', 'تجربة مجانية': 'تجربة', 'آراء طلابنا': 'آراء', 'المستويات والجلسات': 'المستويات', 'استوديو الجرامر': 'الجرامر', 'تعديل السيشنات': 'السيشنات', 'مراجعة النتائج': 'المراجعة', 'التاسكات والإشعارات': 'التاسكات', 'التاسكات اليومية': 'التاسكات', 'يلا نتكلم': 'نتكلم', 'العب واتعلم': 'العب' } as Record<string, string>)[l] || l.split(' ')[0];
   const mobile = <nav className="mobile-nav">
     {nav.slice(0, 5).map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
       <Icon size={18} /><span>{shortLabel(n.label)}</span>
@@ -139,7 +128,6 @@ export function Layout({ current, children }: { current: string; children: React
       {!admin && !isSubscribed(user) && <a className="float-pricing" href={PRICING_URL} target="_blank" rel="noreferrer">شوف الباقات</a>}
       <a className="float-wa" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب" title="تواصل معانا على واتساب"><MessageCircle size={20} /></a>
     </div>
-    {showTop && <button className="to-top" onClick={() => { const main = document.getElementById('app-main'); if (main) main.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="العودة لأعلى">↑</button>}
     <Modal open={bell} title="الإشعارات" onClose={() => setBell(false)}>
       {notes.length ? <div className="stack">{notes.map((n) => <div key={n.id} className="section-card">
         <div className="row between"><strong>{n.title}</strong>{!n.read && <Badge tone="green">جديد</Badge>}</div>

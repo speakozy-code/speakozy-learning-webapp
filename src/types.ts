@@ -24,6 +24,8 @@ export interface Question {
   id: string; sessionId: string; levelId: string; scope: 'word' | 'grammar' | 'topic' | 'session' | 'level';
   type: QuestionType; prompt: string; options: string[]; correct: string | string[];
   points: number; explanation?: string;
+  /** Written by the admin lesson editor (extra question) */ admin?: boolean;
+  /** Admin marker that hides the built-in question with this id */ hide?: string;
 }
 
 export type AttemptStatus = 'pending' | 'approved' | 'rejected';
@@ -34,13 +36,14 @@ export interface Attempt {
 }
 
 export interface Progress { id: string; studentId: string; sessionId: string; sectionId: string; completedAt: string; }
-export interface GrammarNote { id: string; sessionId: string; order: number; title: string; rule: string; examples: string[]; detail?: string; }
+export interface GrammarNote { id: string; sessionId: string; order: number; title: string; rule: string; examples: string[]; detail?: string;
+  /** 'topic' = a grammar topic edited in the admin lesson editor; the session's topics then replace the built-in ones */ kind?: 'topic'; mistakes?: [string, string][]; }
 export interface Task { id: string; title: string; kind: string; dueAt: string; targetType: 'all'|'level'|'student'; targetId?: string; sessionIds?: string[]; active: boolean; week?: number; topic?: string; grammar?: string; badge?: string; instructions?: string[]; order?: number; source?: 'deck' | 'authored' | 'generated'; }
 export interface TaskCompletion { id: string; taskId: string; studentId: string; completedAt: string; /** missing = legacy record, treated as approved */ status?: 'pending' | 'approved' | 'rejected'; reviewedAt?: string; }
 export interface AppNotification { id: string; targetId: string; title: string; body: string; href: string; read: boolean; createdAt: string; }
 export interface Score { id: string; studentId: string; source: string; points: number; refId: string; createdAt: string; }
 export interface SavedWord { id: string; studentId: string; word: string; meaning: string; review: boolean; createdAt: string; transcript?: string; nextReview?: string; audioUrl?: string; }
-export interface DictionaryEntry { id: string; word: string; meaning: string; type: string; examples: string[]; arabic: string; audio?: string; sessionIds?: string[]; source?: 'local'|'global'|'manual'; phonetic?: string; audioUrl?: string; definitions?: string[]; synonyms?: string[]; nextReview?: string; addedBy?: string; }
+export interface DictionaryEntry { id: string; word: string; meaning: string; type: string; examples: string[]; arabic: string; audio?: string; sessionIds?: string[]; source?: 'local'|'global'|'manual'; admin?: boolean; hidden?: boolean; phonetic?: string; audioUrl?: string; definitions?: string[]; synonyms?: string[]; nextReview?: string; addedBy?: string; }
 export interface Certificate { id: string; studentId: string; levelIds: string[]; number: string; issuedAt: string; status: 'active'|'revoked'; reason?: string; }
 export interface AuditLog { id: string; actorId: string; action: string; target: string; createdAt: string; }
 export interface Settings {

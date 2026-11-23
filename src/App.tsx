@@ -10,6 +10,7 @@ import ResetPassword from './pages/ResetPassword';
 import { openedFromRecoveryLink, sbOnPasswordRecovery } from './lib/supabase';
 import ShadowingPage from './pages/Shadowing';
 import PlayPage from './pages/Play';
+import LessonEditor from './pages/LessonEditor';
 import TestimonialsPage from './pages/Testimonials';
 import { AdminDashboard, StudentsPage, CurriculumPage, ContentPage, GrammarStudioPage, QuizzesPage, ReviewsPage, OperationsPage, AdminSettingsPage, CertificatesPage, AdminWordsPage, TaskReviewsPage } from './pages/Admin';
 
@@ -60,6 +61,7 @@ export default function App() {
     else {
       switch (parts[1]) {
         case 'students': page = <StudentsPage />; break;
+        case 'lesson': page = <LessonEditor />; break;
         case 'curriculum': page = <CurriculumPage />; break;
         case 'content': page = <ContentPage />; break;
         case 'grammar': page = <GrammarStudioPage />; break;

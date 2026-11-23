@@ -4,7 +4,8 @@ import { seedData, PLANNED_LEVELS } from './seed';
 import { LEVEL_TASKS } from './levelTasks';
 import { buildDailyTasks } from './dailyTasks';
 import { UNIT_WORDS } from './unitWords';
-import { fixWords } from './wordFixes';
+import { mergeWords } from './wordFixes';
+import { setGrammarOverrides } from './grammar/index';
 import { uid, today, addScoreOnce, buildStudentAccount, dailyNotifications } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
 import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbCurrentAuth, sbEnsureProfile, sbSaveMyProfile, sbChangePassword, sbUpsertRecord, sbDeleteRecord } from './supabase';
@@ -56,9 +57,7 @@ function withLevelTasks(d0: AppData): AppData {
   const daily = buildDailyTasks(d.levels || [], d.sessions || []);
   // the old imported tasks (LEVEL_TASKS) are retired: drop them and rebuild daily tasks from the level's topics
   const taskIds = new Set([...LEVEL_TASKS.map((t) => t.id), ...daily.map((t) => t.id)]);
-  const wordKeys = new Set(UNIT_WORDS.map((w) => w.word.toLowerCase() + '|' + (w.sessionIds || [])[0]));
-  const customWords = (d.dictionary || []).filter((w) => !wordKeys.has(w.word.toLowerCase() + '|' + (w.sessionIds || [])[0]));
-  return { ...d, tasks: [...daily, ...((d.tasks || []).filter((t) => !taskIds.has(t.id)))], dictionary: fixWords([...UNIT_WORDS, ...customWords]) };
+  return { ...d, tasks: [...daily, ...((d.tasks || []).filter((t) => !taskIds.has(t.id)))], dictionary: mergeWords(UNIT_WORDS, d.dictionary || []) };
 }
 function saveDemo(data: AppData) {
   try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
@@ -312,5 +311,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }
 
-  return <AppCtx.Provider value={{ user, ready, demo, data, login, signup, logout, setUser, saveProfile, changePassword, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
+  // hidden words (deleted in the admin lesson editor) never reach any page; grammar edits are registered for every reader
+  const view = React.useMemo(() => { setGrammarOverrides(data.grammarNotes as any); return { ...data, dictionary: (data.dictionary || []).filter((w) => !w.hidden) } as AppData; }, [data]);
+  return <AppCtx.Provider value={{ user, ready, demo, data: view, login, signup, logout, setUser, saveProfile, changePassword, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
 }
