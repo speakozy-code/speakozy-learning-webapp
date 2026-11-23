@@ -2,7 +2,7 @@ import { SHADOWING_VIDEOS } from '../lib/videoSlots';
 import React, { useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, Stat, SectionTitle, Empty, Tabs, Field, Modal, Table, fmtDate, fmtDay, isLate } from '../components/UI';
-import { uid, today, totalScore, levelProgress, needsReview, buildStudentAccount, scoreRule } from '../lib/domain';
+import { uid, today, totalScore, levelProgress, needsReview, buildStudentAccount, scoreRule, subscriptionExpired, extendEnd, cairoToday } from '../lib/domain';
 import { grammarSlides } from '../lib/lessonContent';
 import { go } from '../App';
 
@@ -84,7 +84,7 @@ export function StudentsPage() {
         <td>{data.levels.find((l) => l.id === u.levelId)?.title || '—'}</td>
         <td>{data.levels.find((l) => l.id === u.maxLevelId)?.title || '—'}</td>
         <td>{totalScore(data, u.id)}</td>
-        <td>{u.role === 'admin' ? <Badge tone="blue">أدمن</Badge> : <button className="icon-btn" title="غيّر حالة الاشتراك" onClick={async () => { await put('users', { ...u, subscribed: u.subscribed === false }); await log('toggle-subscription', u.email); }}>{u.subscribed === false ? <Badge tone="amber">غير مشترك</Badge> : <Badge tone="green">مشترك ✓</Badge>}</button>}</td>
+        <td>{u.role === 'admin' ? <Badge tone="blue">أدمن</Badge> : <><button className="icon-btn" title="غيّر حالة الاشتراك" onClick={async () => { const ended = subscriptionExpired(u); await put('users', { ...u, subscribed: ended ? true : u.subscribed === false, ...(ended ? { subscriptionEnd: extendEnd(u.subscriptionEnd, 30) } : {}) }); await log(ended ? 'renew-subscription' : 'toggle-subscription', u.email); }}>{u.subscribed === false ? <Badge tone="amber">{subscriptionExpired(u) ? 'انتهى اشتراكه' : 'غير مشترك'}</Badge> : <Badge tone="green">مشترك ✓</Badge>}</button>{u.subscriptionEnd && <div className="muted" style={{ fontSize: '.78rem' }} dir="ltr">{subscriptionExpired(u) ? 'ended' : 'until'} {u.subscriptionEnd}</div>}</>}</td>
         <td><Badge tone={u.active ? 'green' : 'red'}>{u.active ? 'نشط' : 'موقوف'}</Badge></td>
         <td><div className="row"><Button size="sm" variant="ghost" onClick={() => copyEmail(u)}>انسخ الإيميل</Button><Button size="sm" variant="ghost" onClick={() => openEdit(u)}>تعديل</Button><Button size="sm" variant={u.active ? 'danger' : 'ghost'} onClick={() => toggle(u)}>{u.active ? 'إيقاف' : 'تفعيل'}</Button></div></td>
       </tr>)}
@@ -97,6 +97,13 @@ export function StudentsPage() {
         <Field label="الدور"><select value={form.role || 'student'} onChange={(e) => setForm({ ...form, role: e.target.value })}><option value="student">طالب</option><option value="admin">أدمن</option></select></Field>
         <Field label="الصلاحية"><select value={form.active === false ? '0' : '1'} onChange={(e) => setForm({ ...form, active: e.target.value === '1' })}><option value="1">نشط — يقدر يسجل دخول</option><option value="0">موقوف — محظور</option></select></Field>
         <Field label="اشتراك الكورس"><select value={form.subscribed === false ? '0' : '1'} onChange={(e) => setForm({ ...form, subscribed: e.target.value === '1' })}><option value="0">غير مشترك</option><option value="1">مشترك — وصول كامل لنطاق المستويات المسموح</option></select></Field>
+        <Field label="تاريخ انتهاء الاشتراك" hint="لما التاريخ يعدّي، الطالب بيبقى «غير مشترك» لوحده. سيبه فاضي لو الاشتراك مفتوح.">
+          <div className="row" style={{ flexWrap: 'wrap' }}>
+            <input type="date" dir="ltr" value={form.subscriptionEnd || ''} onChange={(e) => setForm({ ...form, subscriptionEnd: e.target.value, ...(e.target.value && e.target.value >= cairoToday() ? { subscribed: true } : {}) })} style={{ maxWidth: 190 }} />
+            {[30, 90, 180].map((d) => <Button key={d} size="sm" variant="ghost" type="button" onClick={() => setForm({ ...form, subscribed: true, subscriptionEnd: extendEnd(form.subscriptionEnd, d) })}>+{d} يوم</Button>)}
+            {form.subscriptionEnd && <Button size="sm" variant="ghost" type="button" onClick={() => setForm({ ...form, subscriptionEnd: '' })}>مفتوح</Button>}
+          </div>
+        </Field>
         <Field label="من ليفل (أول مستوى)" hint="كل المستويات من ده لحد «إلى ليفل» بتفتح كاملة للطالب المشترك: سيشنات، تاسكات، PDF، شادوينج…"><select value={form.levelId || ''} onChange={(e) => setForm({ ...form, levelId: e.target.value })}>{data.levels.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}</select></Field>
         <Field label="إلى ليفل (آخر مستوى)" hint="مثال: من E1 إلى Upper 1 = كل اللي بينهم مفتوح. اللي بره النطاق: أول سيشن/فيديو بس."><select value={form.maxLevelId || ''} onChange={(e) => setForm({ ...form, maxLevelId: e.target.value })}>{data.levels.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}</select></Field>
       </div>

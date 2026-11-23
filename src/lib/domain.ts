@@ -144,7 +144,7 @@ export function needsReview(attempts: Attempt[]) {
 export function buildStudentAccount(input: {
   id?: string; name?: string; email?: string; demoPassword?: string;
   role?: User['role']; active?: boolean; plan?: User['plan'];
-  levelId: string; maxLevelId: string; createdAt?: string; avatar?: string; subscribed?: boolean; phone?: string;
+  levelId: string; maxLevelId: string; createdAt?: string; avatar?: string; subscribed?: boolean; phone?: string; subscriptionEnd?: string;
 }): User {
   const name = String(input.name || '').trim();
   const email = String(input.email || '').trim().toLowerCase();
@@ -165,6 +165,7 @@ export function buildStudentAccount(input: {
     createdAt: input.createdAt || today(),
     avatar: input.avatar,
     ...(input.phone ? { phone: String(input.phone).trim() } : {}),
+    ...(input.subscriptionEnd ? { subscriptionEnd: String(input.subscriptionEnd).slice(0, 10) } : {}),
   };
 }
 
@@ -190,4 +191,23 @@ export function dailyNotifications(studentId: string, studentLevel: string, date
     { id: `daily-shadow-${studentId}-${d}`, targetId: studentId, title: 'شادوينج اليوم', body: 'اسمع وردّد ورا المتحدث في فيديو الشادوينج.', href: '#/shadowing', read: false, createdAt: `${d}T08:05:00.000Z` },
     { id: `daily-review-${studentId}-${d}`, targetId: studentLevel, title: 'ذاكر سيشناتك', body: 'راجع سيشنات مستواك اللي فاتت وكمّل اللي ما خلصتش.', href: '#/roadmap', read: false, createdAt: `${d}T08:10:00.000Z` },
   ];
+}
+
+/** Today's date in Egypt (YYYY-MM-DD). */
+export const cairoToday = (now = new Date()) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' }).format(now);
+
+/** The subscription ended: the end date is the last day, so it expires the day after. */
+export const subscriptionExpired = (u?: { role?: string; subscriptionEnd?: string } | null, today = cairoToday()) =>
+  !!u && u.role !== 'admin' && !!u.subscriptionEnd && u.subscriptionEnd < today;
+
+/** Applies the automatic expiry: an expired student becomes "not subscribed". */
+export function withExpiry<T extends { role?: string; subscribed?: boolean; subscriptionEnd?: string }>(u: T): T {
+  return subscriptionExpired(u) ? { ...u, subscribed: false } : u;
+}
+
+/** New end date when extending: from the current end if it is still in the future, otherwise from today. */
+export function extendEnd(current: string | undefined, days: number, today = cairoToday()) {
+  const base = current && current >= today ? current : today;
+  const d = new Date(base + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
 }
