@@ -616,3 +616,11 @@ input:-webkit-autofill,input:-webkit-autofill:focus,input:-webkit-autofill:hover
 .sub-banner-text small{display:block;color:var(--muted);font-size:.78rem;margin-top:.05rem}
 .sub-banner .btn-primary{border-radius:999px;padding:.4rem 1rem}
 @media(max-width:600px){.sub-banner{padding:.6rem .75rem}.sub-banner .sub-actions{width:100%}.sub-banner .sub-actions .btn{flex:1;text-align:center}}
+
+/* mobile menu: the user card + logout stay pinned and visible at the bottom */
+@media(max-width:980px){
+  .side{height:100dvh;max-height:100dvh}
+  .side .nav a{padding:.45rem .7rem;min-height:36px;font-size:.86rem}
+  .side-foot{position:sticky;bottom:0;background:var(--navy);padding-bottom:calc(env(safe-area-inset-bottom) + .7rem);margin-bottom:-.5rem;z-index:2}
+}
+.to-top{display:none!important}

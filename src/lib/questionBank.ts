@@ -46,12 +46,17 @@ let cache: { refs: any[]; bank: Map<string, SessionBank> } | null = null;
  * One pass over the whole curriculum, in level and session order, with a single "seen" set,
  * so no question (quiz, speaking, daily task, "يلا نتكلم") appears twice anywhere on the site.
  */
-export function getBank(data: Pick<AppData, 'levels' | 'sessions' | 'dictionary'>): Map<string, SessionBank> {
-  const refs = [data.levels, data.sessions, data.dictionary];
+export function getBank(data: Pick<AppData, 'levels' | 'sessions' | 'dictionary'> & Partial<Pick<AppData, 'questions' | 'grammarNotes'>>): Map<string, SessionBank> {
+  const refs = [data.levels, data.sessions, data.dictionary, data.questions, data.grammarNotes];
   if (cache && cache.refs.every((r, i) => r === refs[i])) return cache.bank;
   const seen = new Set<string>();
   const claim = (key: string) => { if (seen.has(key)) return false; seen.add(key); return true; };
   Object.values(TALK_QUESTIONS).flat().forEach((q) => claim(textKey(q)));
+
+  // admin lesson editor: extra questions per session and built-in questions the admin hid
+  const hidden = new Set<string>((data.questions || []).filter((q) => q.admin && q.hide).map((q) => q.hide as string));
+  const extra = (sid: string, scope: string): GeneratedQuestion[] => (data.questions || []).filter((q) => q.admin && !q.hide && q.sessionId === sid && q.scope === scope && q.type === 'mcq')
+    .map((q) => ({ id: q.id, scope: (scope === 'grammar' ? 'grammar' : 'word') as 'grammar' | 'word', type: 'mcq' as const, prompt: q.prompt, options: q.options, correct: String(Array.isArray(q.correct) ? q.correct[0] : q.correct), points: q.points || 10} as GeneratedQuestion));
 
   const bank = new Map<string, SessionBank>();
   const levels = [...data.levels].sort((a, b) => a.order - b.order);
@@ -78,17 +83,17 @@ export function getBank(data: Pick<AppData, 'levels' | 'sessions' | 'dictionary'
         // strict pass first; only if the lesson cannot fill its quota, a slightly looser pass (never beyond the next tier)
         for (const loose of [false, true]) {
           const c = loose ? { ...caps, prompt: caps.prompt + 3, opt: caps.opt + 2 } : caps;
-          for (const q of list) { if (out.length >= max) break; if (!out.includes(q) && fits(q, c) && claim(questionKey(q))) out.push(q); }
+          for (const q of list) { if (out.length >= max) break; if (!out.includes(q) && !hidden.has(q.id) && (q.id.startsWith('aq-') || fits(q, c)) && claim(questionKey(q))) out.push(q); }
         }
         return out;
       };
       const generated = grammarQuestions(s.id, topics, 60);
-      const grammar = take([...pool, ...generated], GRAMMAR_PRACTICE_SIZE);
+      const grammar = take([...extra(s.id, 'grammar'), ...pool, ...generated], GRAMMAR_PRACTICE_SIZE);
       const wordA = shuffle(wordQuizItems(words, s.id, levelPool, 'a', tier), s.id + 'wa');
       const wordBq = shuffle(wordQuizItems(words, s.id, levelPool, 'b', tier), s.id + 'wb');
-      const wordQs = take(wordA, Math.min(WORD_QUIZ_SIZE, Math.max(4, Math.ceil(words.length / 2))));
+      const wordQs = take([...extra(s.id, 'word'), ...wordA], Math.min(WORD_QUIZ_SIZE, Math.max(4, Math.ceil(words.length / 2))));
       // lesson quiz: words (second style, then leftovers) first, topped up with the remaining grammar questions
-      const fromWords = take([...wordBq, ...wordA], Math.min(10, SESSION_QUIZ_SIZE));
+      const fromWords = take([...extra(s.id, 'session'), ...wordBq, ...wordA], Math.min(10, SESSION_QUIZ_SIZE));
       const rest = take([...pool, ...generated], SESSION_QUIZ_SIZE - fromWords.length);
       const session = shuffle([...fromWords, ...rest], s.id + 'sq');
       if (session.length < SESSION_QUIZ_SIZE) {

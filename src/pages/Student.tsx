@@ -245,7 +245,7 @@ export function SessionPage({ sessionId }: any) {
   const locked = !sessionOpen(user, s, data.levels);
   const enMaterial = true;
   const done = data.progress.filter((p) => p.studentId === user.id && p.sessionId === s.id).map((p) => p.sectionId);
-  const qs = data.questions.filter((q) => q.sessionId === s.id);
+  const qs = data.questions.filter((q) => q.sessionId === s.id && !q.admin);
   const grammarQs = qs.filter((q) => q.scope === 'grammar');
   const st = sessionStatus(data, s, user.id);
   const words = data.dictionary.filter((w) => (w.sessionIds || []).includes(s.id));
@@ -1100,7 +1100,7 @@ export function LevelExamPage({ levelId }: any) {
   const [result, setResult] = useState<any>(null);
   if (!user) return null;
   const level = data.levels.find((l) => l.id === levelId);
-  const qs = data.questions.filter((q) => q.levelId === levelId);
+  const qs = data.questions.filter((q) => q.levelId === levelId && !q.admin);
   const locked = level ? !levelFullyOpen(user, level, data.levels) : false;
 
   async function submit() {

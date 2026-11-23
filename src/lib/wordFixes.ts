@@ -54,3 +54,12 @@ export function fixWords(list: DictionaryEntry[]): DictionaryEntry[] {
   }
   return out;
 }
+
+/** Built-in deck words + live words, cleaned; words edited/added/hidden in the admin lesson editor (admin: true) always win. */
+export function mergeWords(unitWords: DictionaryEntry[], live: DictionaryEntry[]): DictionaryEntry[] {
+  const unitKeys = new Set(unitWords.map((w) => w.word.toLowerCase() + '|' + (w.sessionIds || [])[0]));
+  const adminWords = (live || []).filter((w) => w.admin);
+  const adminIds = new Set(adminWords.map((w) => w.id));
+  const custom = (live || []).filter((w) => !w.admin && !unitKeys.has(w.word.toLowerCase() + '|' + (w.sessionIds || [])[0]));
+  return [...fixWords([...unitWords, ...custom]).filter((w) => !adminIds.has(w.id)), ...adminWords];
+}

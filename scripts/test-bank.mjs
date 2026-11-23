@@ -5,7 +5,8 @@ import { getBank, questionKey, GRAMMAR_PRACTICE_SIZE, SESSION_QUIZ_SIZE } from '
 import { GRAMMAR_QUESTIONS as G } from '../src/lib/content/grammarQuestions.ts';
 import { TASK_QUESTIONS as T } from '../src/lib/content/taskQuestions.ts';
 import { TALK_QUESTIONS } from '../src/lib/content/talk.ts';
-import { fixWords } from '../src/lib/wordFixes.ts';
+import { fixWords, mergeWords } from '../src/lib/wordFixes.ts';
+import { setGrammarOverrides, grammarFor } from '../src/lib/grammar/index.ts';
 import { UNIT_WORDS } from '../src/lib/unitWords.ts';
 import { buildDailyTasks } from '../src/lib/dailyTasks.ts';
 
@@ -124,6 +125,30 @@ t('word lists drop contractions, names and off-topic words', () => {
   const list = fixWords([...UNIT_WORDS]);
   for (const bad of ["he's", "can't", 'samy', 'vocabulary', 'egypt']) assert.ok(!list.some((w) => w.word.toLowerCase() === bad), bad);
   assert.ok(list.some((w) => w.word === 'mother' && w.sessionIds.includes('l1-s5')));
+});
+
+t('admin lesson editor: extra and hidden questions change the bank', () => {
+  const sid = 'l1-s2';
+  const first = bank.get(sid).grammar[0];
+  const extra = { id: 'aq-1', sessionId: sid, levelId: 'l1', scope: 'grammar', type: 'mcq', prompt: 'My brother ___ a teacher.', options: ['is', 'are', 'am'], correct: 'is', points: 10, admin: true };
+  const hide = { id: 'hide-' + first.id, sessionId: sid, levelId: 'l1', scope: 'grammar', type: 'mcq', prompt: '', options: [], correct: '', points: 0, admin: true, hide: first.id };
+  const b2 = getBank({ ...C, questions: [...C.questions, extra, hide] }).get(sid);
+  assert.equal(b2.grammar[0].id, 'aq-1', 'extra question comes first');
+  assert.ok(!b2.grammar.some((q) => q.id === first.id), 'hidden question is gone');
+  assert.equal(b2.grammar.length, GRAMMAR_PRACTICE_SIZE, 'quota is refilled');
+});
+
+t('admin lesson editor: words and grammar overrides', () => {
+  const unit = [{ id: 'uw-1', word: 'alpha', arabic: 'ا', meaning: 'ا', type: 'phrase', examples: [], sessionIds: ['l1-s1'] }];
+  const hidden = mergeWords(unit, [{ ...unit[0], admin: true, hidden: true }]);
+  assert.ok(hidden.some((w) => w.id === 'uw-1' && w.hidden), 'tombstone kept');
+  const edited = mergeWords(unit, [{ ...unit[0], arabic: 'ب', admin: true }]);
+  assert.equal(edited.filter((w) => w.id === 'uw-1').length, 1);
+  assert.equal(edited.find((w) => w.id === 'uw-1').arabic, 'ب');
+  setGrammarOverrides([{ sessionId: 'l1-s1', order: 1, kind: 'topic', title: 'Mine', rule: 'X', detail: 'شرح', examples: ['a'], mistakes: [] }]);
+  assert.equal(grammarFor('l1-s1')[0].title, 'Mine');
+  setGrammarOverrides([]);
+  assert.notEqual(grammarFor('l1-s1')[0]?.title, 'Mine');
 });
 
 console.log(`\n${pass} bank checks passed`);
