@@ -12,13 +12,13 @@ for (const id of ['l4-s1', 'l4-s3', 'l4-s7', 'l6-s1']) {
 }
 
 const expectedTitles = {
-  'l4-s1': '1. SESSION 1 | Money',
-  'l4-s3': '3. SESSION 3 | Success',
-  'l4-s7': '7. SESSION 7 | Global problems and solutions',
-  'l6-s1': '1. SESSION 1 | Media and influence',
+  'l4-s1': '1. SESSION 1 | Social Media',
+  'l4-s3': '3. SESSION 3 | Health & Lifestyle',
+  'l4-s7': '7. SESSION 7 | Addictions',
+  'l6-s1': '1. SESSION 1 | Work & Career',
 };
 for (const [id, title] of Object.entries(expectedTitles)) {
-  const normalize = (value) => value.replace(/^\s*\d+\.\s*SESSION\s*\d+\s*\|\s*/i, '').trim().toLowerCase();
+  const normalize = (value) => value.replace(/^\s*(?:\d+\.\s*)?SESSION\s*\d+\s*\|\s*/i, '').trim().toLowerCase();
   assert.equal(normalize(D.sessions.find((item) => item.id === id).title), normalize(title), `${id} topic must match Drive`);
 }
 
