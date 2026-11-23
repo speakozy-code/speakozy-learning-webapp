@@ -8,11 +8,11 @@ import { grammarQuestions } from '../src/lib/grammarQuiz.ts';
 let pass = 0;
 const t = (name, fn) => { fn(); pass++; console.log('ok -', name); };
 
-t('fourteen ordered levels with CEFR classification', () => {
-  assert.equal(C.levels.length, 14);
-  assert.deepEqual(C.levels.map(l => l.cefr), ['A0','A1','A1+','A2','A2+','A2++','B1','B1+','B1++','B2','B2+','B2++','C1','C1+']);
+t('eleven ordered levels with CEFR classification', () => {
+  assert.equal(C.levels.length, 11);
+  assert.deepEqual(C.levels.map(l => l.cefr), ['A0','A1','A1+','A2','A2+','A2++','B1','B1+','B1++','B2','B2+']);
   C.levels.forEach((l, i) => assert.equal(l.order, i + 1));
-  for (const l of C.levels.slice(0, 11)) {
+  for (const l of C.levels) {
     const list = C.sessions.filter(s => s.levelId === l.id);
     assert.ok(list.length >= 2, `${l.id} sessions`);
   }
@@ -61,7 +61,7 @@ t('Arabic fields do not leak Latin script', () => {
 
 t('seed exposes the imported curriculum to the app', () => {
   const d = seedData();
-  assert.equal(d.levels.length, 14);
+  assert.equal(d.levels.length, 11);
   assert.equal(d.sessions.length, C.sessions.length);
   assert.equal(d.dictionary.length, C.dictionary.length + 7, 'Only the two independently reviewed Drive vocabulary sets are added');
   assert.equal(d.grammarNotes.length, 0, 'auto-imported lesson objectives must not appear as grammar notes');
