@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, Stat, SectionTitle, Empty, Tabs, Field, Modal, Table, fmtDate, fmtDay, isLate } from '../components/UI';
-import { uid, today, totalScore, levelProgress, needsReview, buildStudentAccount } from '../lib/domain';
+import { uid, today, totalScore, levelProgress, needsReview, buildStudentAccount, scoreRule } from '../lib/domain';
 import { grammarSlides } from '../lib/lessonContent';
 import { go } from '../App';
 
@@ -212,13 +212,18 @@ export function QuizzesPage() {
 }
 
 export function ReviewsPage() {
-  const { data, put, log } = useApp();
+  const { data, put, log, grantScore } = useApp();
   const [tab, setTab] = useState('pending');
   const pending = data.attempts.filter((a) => a.status === 'pending');
   const reviewed = data.attempts.filter((a) => a.status !== 'pending');
   const list = tab === 'pending' ? pending : reviewed;
   async function decide(a: any, status: string) {
     await put('attempts', { ...a, status, reviewedBy: 'admin', reviewedAt: today() });
+    // Speaking / writing exercises only earn points once the teacher approves them.
+    const kind = String(a.questionId || '').split(':')[0];
+    if (status === 'approved' && (kind === 'speaking' || kind === 'writing')) {
+      await grantScore(a.studentId, 'exercise', scoreRule(data.settings.scoreRules, kind === 'speaking' ? 'speakingExercise' : 'writingExercise'), `approved-${a.questionId}-${a.studentId}`);
+    }
     await log(status === 'approved' ? 'approve-attempt' : 'reject-attempt', a.id);
   }
   return <div className="stack">
@@ -233,6 +238,50 @@ export function ReviewsPage() {
           <td>{a.autoScore}/{a.maxScore}</td><td>{a.status === 'pending' ? <div className="row"><Button size="sm" onClick={() => decide(a, 'approved')}>اعتماد</Button><Button size="sm" variant="danger" onClick={() => decide(a, 'rejected')}>رفض</Button></div> : <Badge tone={a.status === 'approved' ? 'green' : 'red'}>{a.status === 'approved' ? 'معتمد' : 'مرفوض'}</Badge>}</td></tr>;
       })}
     </Table> : <Empty title="مفيش نتايج هنا" />}</Card>
+  </div>;
+}
+
+export function TaskReviewsPage() {
+  const { data, put, remove, log, grantScore } = useApp();
+  const [tab, setTab] = useState('pending');
+  const [picked, setPicked] = useState<string[]>([]);
+  const statusOf = (c: any) => c.status || 'approved';
+  const rows = data.taskCompletions.filter((c) => statusOf(c) === tab);
+  async function decide(c: any, status: 'approved' | 'rejected') {
+    await put('taskCompletions', { ...c, status, reviewedAt: today() });
+    if (status === 'approved') await grantScore(c.studentId, 'task', scoreRule(data.settings.scoreRules, 'taskApproved'), `task-approved-${c.taskId}`);
+    else {
+      // rejected: take back the provisional point so points only come from approval
+      const prov = data.scores.find((x) => x.studentId === c.studentId && x.refId === `task-pending-${c.taskId}`);
+      if (prov) await remove('scores', prov.id);
+    }
+    await log(status === 'approved' ? 'approve-task' : 'reject-task', c.id);
+  }
+  async function approveSelected() {
+    for (const c of rows.filter((x) => picked.includes(x.id))) await decide(c, 'approved');
+    setPicked([]);
+  }
+  const pendingCount = data.taskCompletions.filter((c) => statusOf(c) === 'pending').length;
+  return <div className="stack">
+    <div><h1>مراجعة التاسكات اليومية</h1><p className="muted">الطالب بياخد نقطة مبدئية لما يسلّم، والنقاط الكاملة بتتحسب لما تعتمد التاسك هنا بعد ما تراجعه على الواتساب.</p></div>
+    <Tabs tabs={[{ id: 'pending', label: `بانتظار المراجعة (${pendingCount})` }, { id: 'approved', label: 'معتمدة' }, { id: 'rejected', label: 'مرفوضة' }]} active={tab} onChange={(t) => { setTab(t); setPicked([]); }} />
+    <Card>
+      {tab === 'pending' && rows.length > 0 && <div className="row" style={{ marginBottom: '.8rem' }}>
+        <Button size="sm" variant="ghost" onClick={() => setPicked(picked.length === rows.length ? [] : rows.map((r) => r.id))}>{picked.length === rows.length ? 'إلغاء التحديد' : 'تحديد الكل'}</Button>
+        <Button size="sm" onClick={approveSelected} disabled={!picked.length}>اعتماد المحدد ({picked.length})</Button>
+      </div>}
+      {rows.length ? <Table head={tab === 'pending' ? ['', 'الطالب', 'التاسك', 'التاريخ', 'إجراء'] : ['الطالب', 'التاسك', 'التاريخ']}>
+        {rows.map((c) => {
+          const st = data.users.find((u) => u.id === c.studentId);
+          const t = data.tasks.find((x) => x.id === c.taskId);
+          return <tr key={c.id}>
+            {tab === 'pending' && <td><input type="checkbox" checked={picked.includes(c.id)} onChange={() => setPicked((p) => p.includes(c.id) ? p.filter((x) => x !== c.id) : [...p, c.id])} style={{ width: 'auto' }} aria-label="تحديد" /></td>}
+            <td>{st?.name || '—'}</td><td dir="auto">{t?.title || c.taskId}</td><td>{fmtDate(c.completedAt)}</td>
+            {tab === 'pending' && <td><div className="row"><Button size="sm" onClick={() => decide(c, 'approved')}>اعتماد</Button><Button size="sm" variant="danger" onClick={() => decide(c, 'rejected')}>رفض</Button></div></td>}
+          </tr>;
+        })}
+      </Table> : <Empty title="مفيش تاسكات هنا" />}
+    </Card>
   </div>;
 }
 

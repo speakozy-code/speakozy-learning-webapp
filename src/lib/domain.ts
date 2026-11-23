@@ -112,6 +112,16 @@ export function leaderboard(data: AppData) {
     .sort((a, b) => b.points - a.points);
 }
 
+/** Points are a real share of the result: Math.round(score / max * base). Never negative, never above base. */
+export function proportionalScore(score: number, max: number, base: number) {
+  if (!(max > 0) || !(base > 0) || !(score > 0)) return 0;
+  return Math.round((Math.min(score, max) / max) * base);
+}
+
+/** Score-rule values with safe defaults for settings saved before a key existed. */
+export const DEFAULT_SCORE_RULES: Record<string, number> = { study: 0, exercise: 0, wordQuiz: 10, grammarQuiz: 10, sessionQuiz: 30, levelQuiz: 50, taskPending: 1, taskApproved: 5, speakingExercise: 5, writingExercise: 5 };
+export const scoreRule = (rules: Record<string, number> | undefined, key: string) => rules?.[key] ?? DEFAULT_SCORE_RULES[key] ?? 0;
+
 export function addScoreOnce(data: AppData, score: { studentId: string; source: string; points: number; refId: string }) {
   if (data.scores.some((s) => s.refId === score.refId && s.studentId === score.studentId)) return false;
   data.scores.push({ ...score, id: uid(), createdAt: today() });

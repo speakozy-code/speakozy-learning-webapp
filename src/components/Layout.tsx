@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Home, Map, FolderOpen, BookOpen, ListChecks, User,
   LayoutDashboard, Users, Layers, FileText, PenLine, ClipboardList,
-  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, Gift, MessageSquareHeart, MessageCircle,
+  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, Gift, MessageSquareHeart, MessageCircle, Layers2, Mic2,
 } from 'lucide-react';
 import { useApp } from '../lib/store';
 import { go } from '../App';
 import { Modal, Button, Badge, fmtDate } from './UI';
 import { engagementProgress, totalScore } from '../lib/domain';
+import { canInstall, isStandalone, isIos, onInstallChange, promptInstall, showBrowserNotification } from '../lib/pwa';
 
 const WA_LINK = 'https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83%20%D9%81%D9%8A%20%D9%83%D9%88%D8%B1%D8%B3%20%D8%B3%D8%A8%D9%8A%D9%83%D9%88%D8%B2%D9%8A';
 
@@ -16,7 +17,9 @@ const studentNav = [
   { path: '/roadmap', label: 'خريطة المستويات', ic: Map },
   { path: '/materials', label: 'الماتيريال', ic: FolderOpen },
   { path: '/dictionary', label: 'الديكشنري', ic: BookOpen },
-  { path: '/tasks', label: 'التاسكات', ic: ListChecks },
+  { path: '/words', label: 'الكلمات', ic: Layers2 },
+  { path: '/yalla-netkellem', label: 'يلا نتكلم', ic: Mic2 },
+  { path: '/tasks', label: 'التاسكات اليومية', ic: ListChecks },
   { path: '/shadowing', label: 'الشادوينج', ic: Headphones },
   { path: '/trial', label: 'تجربة مجانية', ic: Gift },
   { path: '/testimonials', label: 'آراء طلابنا', ic: MessageSquareHeart },
@@ -31,6 +34,7 @@ const adminNav = [
   { path: '/admin/words', label: 'الكلمات', ic: BookOpen },
   { path: '/admin/quizzes', label: 'الكويزات', ic: ClipboardList },
   { path: '/admin/reviews', label: 'مراجعة النتائج', ic: Inbox },
+  { path: '/admin/task-reviews', label: 'مراجعة التاسكات', ic: ListChecks },
   { path: '/admin/operations', label: 'التاسكات والإشعارات', ic: ListChecks },
   { path: '/admin/certificates', label: 'الشهادات', ic: Award },
   { path: '/admin/settings', label: 'الإعدادات', ic: Settings },
@@ -41,11 +45,24 @@ export function Layout({ current, children }: { current: string; children: React
   const [open, setOpen] = useState(false);
   const [bell, setBell] = useState(false);
   const [profileMenu, setProfileMenu] = useState(false);
+  const [showTop, setShowTop] = useState(false);
+  const [, setTick] = useState(0);
+  useEffect(() => onInstallChange(() => setTick((t) => t + 1)), []);
+  useEffect(() => {
+    const main = document.getElementById('app-main');
+    if (!main) return;
+    const onScroll = () => setShowTop(main.scrollTop > 300);
+    main.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => main.removeEventListener('scroll', onScroll);
+  }, [user]);
   if (!user) return <>{children}</>;
   const admin = user.role === 'admin';
   const nav = admin ? adminNav : studentNav;
   const notes = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id || n.targetId === user.levelId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const unread = notes.filter((n) => !n.read).length;
+  const unreadKey = notes.filter((n) => !n.read).map((n) => n.id).join('|');
+  useEffect(() => { notes.filter((n) => !n.read).slice(0, 3).forEach((n) => { void showBrowserNotification({ id: n.id, title: n.title, body: n.body, href: n.href }); }); }, [unreadKey]);
   const level = data.levels.find((l) => l.id === user.levelId) || data.levels[0];
   const pct = !admin && level ? engagementProgress(data, level.id, user.id) : 0;
   const points = admin ? 0 : totalScore(data, user.id);
@@ -64,12 +81,12 @@ export function Layout({ current, children }: { current: string; children: React
       </a>; })}
     </nav>
     <div className="side-foot">
-      <div className="who"><span className="avatar">{user.avatar || user.name.charAt(0)}</span><span>{user.name}<br /><small>{admin ? 'مدير الأكاديمية' : 'طالب'}</small></span></div>
+      <div className="who"><span className="avatar">{user.avatar || (user.role === 'admin' ? '🧑‍💼' : '🧑‍🎓')}</span><span>{user.name}<br /><small>{admin ? 'مدير الأكاديمية' : 'طالب'}</small></span></div>
       <button className="btn btn-ghost btn-sm" style={{ width: '100%' }} onClick={() => { logout(); go('/'); }}><LogOut size={14} /> تسجيل الخروج</button>
     </div>
   </aside>;
 
-  const shortLabel = (l: string) => ({ 'خريطة المستويات': 'المستويات', 'تجربة مجانية': 'تجربة', 'آراء طلابنا': 'آراء', 'المستويات والجلسات': 'المستويات', 'استوديو الجرامر': 'الجرامر', 'مراجعة النتائج': 'المراجعة', 'التاسكات والإشعارات': 'التاسكات' } as Record<string, string>)[l] || l.split(' ')[0];
+  const shortLabel = (l: string) => ({ 'خريطة المستويات': 'المستويات', 'تجربة مجانية': 'تجربة', 'آراء طلابنا': 'آراء', 'المستويات والجلسات': 'المستويات', 'استوديو الجرامر': 'الجرامر', 'مراجعة النتائج': 'المراجعة', 'التاسكات والإشعارات': 'التاسكات', 'التاسكات اليومية': 'التاسكات', 'يلا نتكلم': 'نتكلم' } as Record<string, string>)[l] || l.split(' ')[0];
   const mobile = <nav className="mobile-nav">
     {nav.slice(0, 5).map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
       <Icon size={18} /><span>{shortLabel(n.label)}</span>
@@ -87,6 +104,8 @@ export function Layout({ current, children }: { current: string; children: React
         {profileMenu && <div className="profile-menu">
           <button onClick={() => { setProfileMenu(false); go('/profile'); }}>تعديل الملف الشخصي</button>
           <button onClick={() => { setProfileMenu(false); go('/trial'); }}>تفاصيل الكورس</button>
+          {!isStandalone() && canInstall() && <button onClick={() => { setProfileMenu(false); void promptInstall(); }}>تثبيت التطبيق على الموبايل</button>}
+          {!isStandalone() && !canInstall() && isIos() && <button onClick={() => { setProfileMenu(false); alert('على الآيفون: اضغط زرار المشاركة في Safari ثم «إضافة إلى الشاشة الرئيسية».'); }}>تثبيت التطبيق على الموبايل</button>}
           <button onClick={() => { setProfileMenu(false); logout(); go('/'); }}>تسجيل الخروج / دخول حساب تاني</button>
         </div>}
         <div className="sticky-progress">
@@ -95,7 +114,7 @@ export function Layout({ current, children }: { current: string; children: React
         </div>
         {!admin && <strong className="sticky-points">{points} pts</strong>}
         {bellButton}
-        <button className="user-chip" onClick={() => setProfileMenu((m) => !m)} aria-label="الملف الشخصي"><span className="avatar">{user.avatar || user.name.charAt(0)}</span></button>
+        <button className="user-chip" onClick={() => setProfileMenu((m) => !m)} aria-label="الملف الشخصي"><span className="avatar">{user.avatar || (user.role === 'admin' ? '🧑‍💼' : '🧑‍🎓')}</span></button>
       </div>
       {!admin && user.subscribed === false && <div className="sub-notice" dir="rtl">
         <span>أنت غير مشترك بالكورس، تواصل معنا للتفاصيل والاشتراك</span>
@@ -104,7 +123,7 @@ export function Layout({ current, children }: { current: string; children: React
     {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 75 }} />}
     {mobile}
     <a className="float-wa" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب" title="تواصل معانا على واتساب"><MessageCircle size={20} /></a>
-    <button className="to-top" onClick={() => { const main = document.querySelector('.main'); if (main) main.scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="العودة لأعلى">↑</button>
+    {showTop && <button className="to-top" onClick={() => { const main = document.getElementById('app-main'); if (main) main.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="العودة لأعلى">↑</button>}
     <Modal open={bell} title="الإشعارات" onClose={() => setBell(false)}>
       {notes.length ? <div className="stack">{notes.map((n) => <div key={n.id} className="section-card">
         <div className="row between"><strong>{n.title}</strong>{!n.read && <Badge tone="green">جديد</Badge>}</div>

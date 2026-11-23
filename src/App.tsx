@@ -3,11 +3,13 @@ import { useApp } from './lib/store';
 import { Loading, Toast, useToast } from './components/UI';
 import Login from './pages/Login';
 import { Layout } from './components/Layout';
-import { StudentDashboard, Roadmap, SessionPage, QuizPage, LevelExamPage, DictionaryPage, TasksPage, NotificationsPage, LeaderboardPage, ProfilePage, MaterialsPage } from './pages/Student';
+import { StudentDashboard, Roadmap, SessionPage, QuizPage, LevelExamPage, DictionaryPage, WordsPage, YallaNetkellemPage, TasksPage, NotificationsPage, LeaderboardPage, ProfilePage, MaterialsPage } from './pages/Student';
 import TrialPage from './pages/Trial';
+import ResetPassword from './pages/ResetPassword';
+import { openedFromRecoveryLink, sbOnPasswordRecovery } from './lib/supabase';
 import ShadowingPage from './pages/Shadowing';
 import TestimonialsPage from './pages/Testimonials';
-import { AdminDashboard, StudentsPage, CurriculumPage, ContentPage, GrammarStudioPage, QuizzesPage, ReviewsPage, OperationsPage, AdminSettingsPage, CertificatesPage, AdminWordsPage } from './pages/Admin';
+import { AdminDashboard, StudentsPage, CurriculumPage, ContentPage, GrammarStudioPage, QuizzesPage, ReviewsPage, OperationsPage, AdminSettingsPage, CertificatesPage, AdminWordsPage, TaskReviewsPage } from './pages/Admin';
 
 class ErrorBoundary extends React.Component<any, { error: any }> {
   state = { error: null as any };
@@ -37,7 +39,10 @@ export default function App() {
   const { user, ready } = useApp();
   const route = useRoute();
   const toast = useToast();
+  const [recovering, setRecovering] = useState(openedFromRecoveryLink);
+  useEffect(() => sbOnPasswordRecovery(() => setRecovering(true)), []);
 
+  if (recovering) return <ResetPassword onDone={() => { setRecovering(false); window.location.hash = '#/'; window.location.reload(); }} />;
   if (!ready) return <Loading label="بنجهز Speakozy..." />;
   if (!user) {
     if (route === '/trial') return <><TrialPage />{toast.node}</>;
@@ -59,6 +64,7 @@ export default function App() {
         case 'words': page = <AdminWordsPage />; break;
         case 'quizzes': page = <QuizzesPage />; break;
         case 'reviews': page = <ReviewsPage />; break;
+        case 'task-reviews': page = <TaskReviewsPage />; break;
         case 'operations': page = <OperationsPage />; break;
         case 'settings': page = <AdminSettingsPage />; break;
         case 'certificates': page = <CertificatesPage />; break;
@@ -73,6 +79,8 @@ export default function App() {
       case 'quiz': page = <QuizPage sessionId={parts[1]} />; break;
       case 'exam': page = <LevelExamPage levelId={parts[1]} />; break;
       case 'dictionary': page = <DictionaryPage />; break;
+      case 'words': page = <WordsPage />; break;
+      case 'yalla-netkellem': page = <YallaNetkellemPage />; break;
       case 'tasks': page = <TasksPage />; break;
       case 'notifications': page = <NotificationsPage />; break;
       case 'leaderboard': page = <LeaderboardPage />; break;

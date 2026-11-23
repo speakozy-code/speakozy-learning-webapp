@@ -5,6 +5,8 @@ import { overviewOutline, sourceTranscript, letsTalk } from '../src/lib/lessonBr
 import { youglishWidgetQuery } from '../src/lib/youglish.ts';
 import { fromApi, fromWiktionary, parseWiktionaryExtras } from '../src/lib/dictionaryProvider.ts';
 import { wordQuizItems, sessionQuizItems } from '../src/lib/sessionQuizzes.ts';
+import { grammarQuestions } from '../src/lib/grammarQuiz.ts';
+import { speakingQuestions } from '../src/lib/lessonBrief.ts';
 import { buildStudentAccount } from '../src/lib/domain.ts';
 import { LEVEL_TASKS } from '../src/lib/levelTasks.ts';
 import { GRAMMAR } from '../src/lib/grammar/index.ts';
@@ -67,13 +69,13 @@ t('Wiktionary page extras yield transcript and synonyms', () => {
   assert.equal(parseWiktionaryExtras(withQualifier).phonetic, '/ˌsɛɹ.ənˈdɪp.ɪ.ti/');
 });
 
-t('session quiz is nine English questions on words and grammar, with no repeats', () => {
-  for (const id of ['l1-s2', 'l3-s3', 'l6-s1', 'l9-s4']) {
+t('session quiz is 20 English questions on words and grammar, with no repeats', () => {
+  for (const id of ['l1-s2', 'l3-s3', 'l2-s2', 'l9-s4']) {
     const words = C.dictionary.filter((w) => (w.sessionIds || []).includes(id));
     const qs = sessionQuizItems(words, GRAMMAR[id], id, C.dictionary);
-    assert.equal(qs.length, 9, `${id} got ${qs.length}`);
-    assert.ok(qs.filter((q) => q.scope === 'word').length >= 3, `${id} words`);
-    assert.ok(qs.filter((q) => q.scope === 'grammar').length >= 3, `${id} grammar`);
+    assert.equal(qs.length, 20, `${id} got ${qs.length}`);
+    assert.ok(qs.filter((q) => q.scope === 'word').length >= 5, `${id} words`);
+    assert.ok(qs.filter((q) => q.scope === 'grammar').length >= 5, `${id} grammar`);
     assert.equal(new Set(qs.map((q) => q.prompt + q.correct)).size, qs.length, `${id} repeated questions`);
     for (const q of qs) {
       assert.equal(q.type, 'mcq');
@@ -114,4 +116,31 @@ t('level tasks imported for 9 levels, no shadowing, all with instructions', () =
   assert.equal(LEVEL_TASKS.filter((x) => x.targetId === 'l2').length, 16);
 });
 
+
+t('every session has at most 20 quiz questions, never repeated, and most reach 20', () => {
+  let full = 0;
+  for (const sess of C.sessions) {
+    const words = C.dictionary.filter((w) => (w.sessionIds || []).includes(sess.id));
+    const qs = sessionQuizItems(words, GRAMMAR[sess.id], sess.id, C.dictionary);
+    assert.ok(qs.length <= 20 && qs.length > 0, `${sess.id} has ${qs.length}`);
+    assert.equal(new Set(qs.map((q) => q.prompt + q.correct)).size, qs.length, `${sess.id} repeats`);
+    if (qs.length === 20) full++;
+  }
+  assert.ok(full / C.sessions.length >= 0.8, `only ${full}/${C.sessions.length} sessions reach 20 questions`);
+});
+
+t('grammar practice is up to 10 questions per session', () => {
+  const sizes = C.sessions.map((sess) => grammarQuestions(sess.id, GRAMMAR[sess.id], 10).length);
+  assert.ok(sizes.every((n) => n <= 10 && n >= 1));
+  assert.ok(sizes.filter((n) => n === 10).length / sizes.length >= 0.7, 'most sessions should have 10');
+});
+
+t('speaking practice has at least 10 open questions for every session', () => {
+  for (const sess of C.sessions) {
+    const words = C.dictionary.filter((w) => (w.sessionIds || []).includes(sess.id)).map((w) => w.word);
+    const q = speakingQuestions(sess, words);
+    assert.ok(q.length >= 10, `${sess.id} has ${q.length}`);
+    assert.equal(new Set(q.map((x) => x.toLowerCase())).size, q.length);
+  }
+});
 console.log(`\n${pass} lesson-ui checks passed`);

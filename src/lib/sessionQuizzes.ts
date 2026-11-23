@@ -42,13 +42,15 @@ export function wordQuizItems(words: WordLike[], sessionId: string, pool: WordLi
   return items;
 }
 
-/** Nine English questions (no repeats): words first, topped up with grammar. */
-export function sessionQuizItems(words: WordLike[], topics: GrammarTopic[], sessionId: string, pool: WordLike[] = []): QuizItem[] {
-  const wq = shuffle(wordQuizItems(words, sessionId, pool), sessionId + 'w');
-  const gq = grammarQuestions(sessionId, topics, 5);
-  const wantG = Math.min(gq.length, Math.max(3, 9 - wq.length));
-  const wantW = Math.min(wq.length, 9 - wantG);
-  const picked = [...wq.slice(0, wantW), ...gq.slice(0, 9 - wantW)];
-  return shuffle(picked, sessionId + 'all');
+export const SESSION_QUIZ_SIZE = 20;
+export const GRAMMAR_QUIZ_SIZE = 10;
 
+/** Up to 20 English questions (no repeats) mixing words and grammar: about half each, and either side tops up the other. */
+export function sessionQuizItems(words: WordLike[], topics: GrammarTopic[], sessionId: string, pool: WordLike[] = [], total = SESSION_QUIZ_SIZE): QuizItem[] {
+  const wq = shuffle(wordQuizItems(words, sessionId, pool), sessionId + 'w');
+  const gq = grammarQuestions(sessionId, topics, total);
+  const half = Math.floor(total / 2);
+  const wantW = Math.min(wq.length, Math.max(half, total - gq.length));
+  const wantG = Math.min(gq.length, total - wantW);
+  return shuffle([...wq.slice(0, wantW), ...gq.slice(0, wantG)], sessionId + 'all');
 }

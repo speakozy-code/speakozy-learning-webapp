@@ -1,6 +1,7 @@
 // اختبارات منطق المجال - تعمل مباشرة على ملف TypeScript بفضل type stripping في Node الحديث
 import assert from 'node:assert/strict';
-import { gradeQuestion, sessionStatus, levelProgress, canOpenLevel, sessionOpen, totalScore, leaderboard, addScoreOnce, uid } from '../src/lib/domain.ts';
+import { gradeQuestion, sessionStatus, levelProgress, canOpenLevel, sessionOpen, totalScore, leaderboard, addScoreOnce, uid, proportionalScore, scoreRule } from '../src/lib/domain.ts';
+import { readFileSync } from 'node:fs';
 
 let pass = 0;
 const t = (name, fn) => { fn(); pass++; console.log('ok -', name); };
@@ -77,5 +78,24 @@ t('اللوحة تخفي الطلاب الموقوفين والمخفيين', ()
   assert.equal(b[0].points, 5);
 });
 t('معرّف فريد', () => { assert.notEqual(uid(), uid()); });
+
+// ---- نظام النقاط: مفيش نقاط مجانية ----
+const student = readFileSync(new URL('../src/pages/Student.tsx', import.meta.url), 'utf8');
+const fnBody = (name) => { const i = student.indexOf(`async function ${name}(`); assert.ok(i > 0, name); return student.slice(i, student.indexOf('\n  }\n', i)); };
+t('نقاط نسبية: كل صح = كل النقاط', () => assert.equal(proportionalScore(10, 10, 10), 10));
+t('نقاط نسبية: نص الدرجة = نص النقاط', () => assert.equal(proportionalScore(5, 10, 10), 5));
+t('نقاط نسبية: صفر = صفر نقاط', () => assert.equal(proportionalScore(0, 10, 10), 0));
+t('نقاط نسبية: لا تتخطى الحد الأقصى ولا تقل عن صفر', () => { assert.equal(proportionalScore(99, 10, 10), 10); assert.equal(proportionalScore(-3, 10, 10), 0); assert.equal(proportionalScore(5, 0, 10), 0); });
+t('mark() مفيهاش نقاط مجانية', () => assert.ok(!fnBody('mark').includes('grantScore')));
+t('markWord() مفيهاش نقاط مجانية', () => assert.ok(!fnBody('markWord').includes('grantScore')));
+t('savePractice() مفيهاش نقاط مجانية', () => assert.ok(!fnBody('savePractice').includes('grantScore')));
+t('submitGrammar() و submitWordQuiz() بيستخدموا النقاط النسبية', () => { for (const n of ['submitGrammar', 'submitWordQuiz']) assert.ok(fnBody(n).includes('proportionalScore'), n); });
+t('قواعد النقاط الجديدة ليها قيم افتراضية', () => { for (const k of ['taskPending', 'taskApproved', 'speakingExercise', 'writingExercise']) assert.ok(scoreRule({}, k) > 0, k); assert.equal(scoreRule({ taskApproved: 9 }, 'taskApproved'), 9); });
+t('نفس النشاط لا يتحسب مرتين (اعتماد التاسك)', () => {
+  const d = { scores: [] };
+  assert.equal(addScoreOnce(d, { studentId: 'a', source: 'task', points: 5, refId: 'task-approved-t1' }), true);
+  assert.equal(addScoreOnce(d, { studentId: 'a', source: 'task', points: 5, refId: 'task-approved-t1' }), false);
+  assert.equal(d.scores.length, 1);
+});
 
 console.log(`\n${pass} tests passed`);

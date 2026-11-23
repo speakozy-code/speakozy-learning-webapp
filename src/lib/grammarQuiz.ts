@@ -65,10 +65,25 @@ export function grammarQuestions(sessionId: string, topics: GrammarTopic[], n = 
     taken.add(ex);
     clozes.push({ id: `gq-${sessionId}-c${clozes.length}`, scope: 'grammar', type: 'mcq', prompt: c.prompt, options: c.options, correct: c.correct, points: 10 });
   }
-  // interleave the three formats so a quiz is never five of the same kind
+  // Extra formats built only from the hand-written examples/mistakes, used to fill up larger quizzes.
+  const wrongs = [...new Set(pairs.map((p) => p[0]))];
+  const examples = [...new Set(topics.flatMap((t) => t.examples).filter((ex) => ex.split(/\s+/).length >= 3 && !/\s→\s|\(/.test(ex)))];
+  const examplePicks: GeneratedQuestion[] = [];
+  const exampleJudges: GeneratedQuestion[] = [];
+  examples.forEach((ex, i) => {
+    const bad = shuffle(wrongs.filter((w) => w !== ex), sessionId + 'xp' + i).slice(0, 2);
+    if (bad.length === 2) examplePicks.push({ id: `gq-${sessionId}-xp${i}`, scope: 'grammar', type: 'mcq', prompt: 'Which sentence uses the grammar of this lesson correctly?', options: shuffle([ex, ...bad], sessionId + 'xo' + i), correct: ex, points: 10 });
+    exampleJudges.push({ id: `gq-${sessionId}-xj${i}`, scope: 'grammar', type: 'mcq', prompt: `Is this sentence correct? “${ex}”`, options: ['Correct', 'Incorrect'], correct: 'Correct', points: 10 });
+  });
+  // interleave the formats so a quiz is never ten of the same kind; the extra formats only fill the gap
   const out: GeneratedQuestion[] = [];
-  for (let i = 0; out.length < n && i < Math.max(picks.length, judges.length, clozes.length); i++) {
-    for (const list of [picks, clozes, judges]) if (list[i] && out.length < n) out.push(list[i]);
+  const lists = [picks, clozes, judges, examplePicks, exampleJudges];
+  const seen = new Set<string>();
+  for (let i = 0; out.length < n && i < Math.max(...lists.map((l) => l.length)); i++) {
+    for (const list of lists) {
+      const q = list[i];
+      if (q && out.length < n && !seen.has(q.prompt + '|' + q.correct)) { seen.add(q.prompt + '|' + q.correct); out.push(q); }
+    }
   }
   return out;
 }
