@@ -20,6 +20,8 @@ import { priorFor, correctText } from '../lib/review';
 import { schedule, previewLabel, dueWords, type Grade } from '../lib/srs';
 import { UpsellModal, SubscribeButtons } from '../components/Upsell';
 import { isSubscribed, FREE_YALLA_PER_LEVEL, FREE_TASK_WEEKS, waGroupShare } from '../lib/subscription';
+import { pushSupported, pushEnabled, enablePush, disablePush } from '../lib/push';
+import { isStandalone, isIos } from '../lib/pwa';
 import { Play, Volume2, Star, Check, BookOpen, X, Trash2 } from 'lucide-react';
 
 const statusTone: Record<string, string> = { locked: 'muted', available: 'blue', progress: 'amber', done: 'blue', review: 'amber', approved: 'green' };
@@ -1016,6 +1018,34 @@ export function LeaderboardPage() {
 
 export const AVATARS = ['🦁','🐯','🦊','🐼','🐨','🦄','🐬','🦅','🐺','🦖','🐙','🦋','🐢','🦜','🐝','🦩','🐳','🦈','🐸','🦉','🌟','🚀','🎯','⚡','🌈','🎧','⚽','📚','🏀','🎮','🎸','🎨','🏆','🥇','🎓','✏️','🧠','💡','🔥','💎','🌙','☀️','🌊','🍀','🌵','🍕','🍩','🧋','🦸','🧑‍🚀','🧑‍🎤','🧑‍💻','🥷','🤖','👑','🎩','🕶️','🧢','👟','🛹','🚲','✈️','🗺️','🧭','⛰️','🏝️','🎪','🎢','🪁','🎲','🧩','🪄'];
 
+function PushCard() {
+  const [on, setOn] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  useEffect(() => { void pushEnabled().then(setOn); }, []);
+  const ios = isIos() && !isStandalone();
+  async function toggle() {
+    setBusy(true); setMsg('');
+    if (on) { await disablePush(); setOn(false); }
+    else {
+      const r = await enablePush();
+      if (r === 'ok') { setOn(true); setMsg('✓ الإشعارات اتفعّلت على الجهاز ده'); }
+      else if (r === 'denied') setMsg('الإذن اترفض. فعّله من إعدادات المتصفح للموقع ده وجرّب تاني.');
+      else if (r === 'unsupported') setMsg('المتصفح ده مش بيدعم الإشعارات.');
+      else setMsg('حصلت مشكلة، جرّب تاني.');
+    }
+    setBusy(false);
+  }
+  return <Card>
+    <SectionTitle title="إشعارات على جهازك" />
+    <p className="muted" style={{ marginTop: 0 }}>هيجيلك إشعار بالكلمات المستحقة للمراجعة وتنبيه قبل انتهاء اشتراكك، حتى لو التطبيق مقفول.</p>
+    {!pushSupported() || ios
+      ? <div className="muted">{ios ? 'على الآيفون: ضيف التطبيق للشاشة الرئيسية الأول (زرار المشاركة ← Add to Home Screen) وافتحه منها.' : 'المتصفح ده مش بيدعم الإشعارات.'}</div>
+      : <div className="row"><Button onClick={toggle} disabled={busy}>{busy ? '…' : on ? 'إيقاف الإشعارات' : 'فعّل الإشعارات'}</Button>{on && <Badge tone="green">شغّالة</Badge>}</div>}
+    {msg && <div className="muted" style={{ marginTop: '.4rem' }}>{msg}</div>}
+  </Card>;
+}
+
 export function ProfilePage() {
   const { user, data, resetDemo, demo, saveProfile, changePassword } = useApp();
   const [savingAvatar, setSavingAvatar] = useState('');
@@ -1065,6 +1095,7 @@ export function ProfilePage() {
         {(expired || soon) && <div className="muted" style={{ marginTop: '.3rem' }}>تواصل معانا على واتساب علشان تجدّد.</div>}
       </Card>;
     })()}
+    <PushCard />
     <Card>
       <SectionTitle title="اسمك" />
       <div className="row">
