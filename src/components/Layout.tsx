@@ -8,6 +8,7 @@ import { useApp } from '../lib/store';
 import { go } from '../App';
 import { Modal, Button, Badge, fmtDate } from './UI';
 import { engagementProgress, totalScore } from '../lib/domain';
+import { pushSupported, pushEnabled, enablePush } from '../lib/push';
 import { canInstall, isStandalone, isIos, onInstallChange, promptInstall, showBrowserNotification, notificationPermission, requestNotifications } from '../lib/pwa';
 import { SubscribeButtons } from './Upsell';
 import { isSubscribed, PRICING_URL } from '../lib/subscription';
@@ -58,7 +59,16 @@ export function Layout({ current, children }: { current: string; children: React
   const notes = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id || n.targetId === user.levelId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const unread = notes.filter((n) => !n.read).length;
   const unreadKey = notes.filter((n) => !n.read).map((n) => n.id).join('|');
-  useEffect(() => { notes.filter((n) => !n.read).slice(0, 3).forEach((n) => { void showBrowserNotification({ id: n.id, title: n.title, body: n.body, href: n.href }); }); }, [unreadKey]);
+  // never burst several system notifications at once (Chrome flags that as spam): one notification, or one daily summary
+  useEffect(() => {
+    const fresh = notes.filter((n) => !n.read);
+    if (fresh.length === 1) void showBrowserNotification({ id: fresh[0].id, title: fresh[0].title, body: fresh[0].body, href: fresh[0].href });
+    else if (fresh.length > 1) void showBrowserNotification({ id: `summary-${user.id}-${new Date().toISOString().slice(0, 10)}`, title: 'Speakozy', body: `عندك ${fresh.length} إشعارات جديدة`, href: '#/notifications' });
+  }, [unreadKey]);
+  const [pushOn, setPushOn] = useState<boolean | null>(null);
+  const [pushMsg, setPushMsg] = useState('');
+  useEffect(() => { if (user && !admin) void pushEnabled().then(setPushOn); }, [user?.id, perm]);
+  const showPushCard = !admin && pushSupported() && pushOn === false && perm !== 'denied' && !(isIos() && !isStandalone());
   const level = data.levels.find((l) => l.id === user.levelId) || data.levels[0];
   const pct = !admin && level ? engagementProgress(data, level.id, user.id) : 0;
   const points = admin ? 0 : totalScore(data, user.id);
@@ -117,9 +127,10 @@ export function Layout({ current, children }: { current: string; children: React
         <div className="sub-banner-text"><span className="sub-banner-ic" aria-hidden="true">✨</span><div><strong>انت غير مشترك في الكورس</strong><small>لتفاصيل الاشتراك</small></div></div>
         <SubscribeButtons size="sm" />
       </div>}
-      {!admin && perm === 'default' && <div className="sub-notice" dir="rtl">
-        <span>🔔 افتح الإشعارات علشان نفكرك بمهامك</span>
-        <button className="btn btn-primary btn-sm" onClick={async () => setPerm(await requestNotifications())}>فعّل الإشعارات</button>
+      {showPushCard && <div className="sub-notice" dir="rtl">
+        <span>🔔 فعّل الإشعارات علشان نفكرك باللي فاتك: كلمات المراجعة، المهام، وانتهاء الاشتراك — حتى لو التطبيق مقفول</span>
+        <button className="btn btn-primary btn-sm" onClick={async () => { const r = await enablePush(); setPerm(notificationPermission()); if (r === 'ok') setPushOn(true); else setPushMsg(r === 'denied' ? '' : 'حصلت مشكلة، جرّب تاني'); }}>فعّل الإشعارات</button>
+        {pushMsg && <small>{pushMsg}</small>}
       </div>}
       {!admin && perm === 'denied' && <div className="sub-notice" dir="rtl"><span>🔕 الإشعارات مقفولة — فعّلها من إعدادات المتصفح عشان نفكرك بمهامك</span></div>}
     </div>{children}</main></div>
