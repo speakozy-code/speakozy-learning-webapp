@@ -172,6 +172,25 @@ function firstSuccess<T>(tasks: Promise<T>[]): Promise<T> {
 }
 
 // محلي أولًا للسرعة، ثم المصدر الأساسي، ثم ويكشنري، ثم ترجمة المعنى، ثم إدخال يدوي.
+export const isArabicText = (s: string) => /[\u0600-\u06FF]/.test(s);
+/** Arabic normalisation for matching: strips diacritics/tatweel and unifies alef, ya and ta marbuta forms. */
+export const normAr = (s: string) => String(s || '').replace(/[\u064B-\u0652\u0640]/g, '').replace(/[إأآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').toLowerCase();
+
+/** Arabic → English: the main translation plus the alternatives Google lists (nouns, verbs, ...). */
+export async function arabicToEnglish(q: string): Promise<string[]> {
+  const term = q.trim();
+  if (!term) return [];
+  try {
+    const data = await fetchJson(`${TRANSLATE}?client=gtx&sl=ar&tl=en&dt=t&dt=bd&q=${encodeURIComponent(term)}`, 5000);
+    const out: string[] = [];
+    const main = (data?.[0] || []).map((x: any) => x?.[0]).filter(Boolean).join('').trim();
+    if (main) out.push(main);
+    (data?.[1] || []).forEach((grp: any) => (grp?.[1] || []).forEach((w: string) => out.push(w)));
+    const seen = new Set<string>();
+    return out.map((w) => w.trim()).filter((w) => w && w.split(/\s+/).length <= 3 && !seen.has(w.toLowerCase()) && (seen.add(w.toLowerCase()), true)).slice(0, 8);
+  } catch { return []; }
+}
+
 export async function lookupWord(word: string, local: DictionaryEntry[]): Promise<LookupEntry | undefined> {
   const w = word.trim().toLowerCase();
   if (!w) return undefined;
