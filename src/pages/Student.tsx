@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, Progress, Stat, SectionTitle, Empty, Tabs, Field, Modal, fmtDate, fmtDay, isLate } from '../components/UI';
-import { sessionStatus, levelProgress, engagementProgress, sessionOpen, levelFullyOpen, pdfAllowed, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, proportionalScore, scoreRule, uid, today, levelLabel, cefrOf } from '../lib/domain';
+import { sessionStatus, levelProgress, engagementProgress, sessionOpen, levelFullyOpen, pdfAllowed, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, proportionalScore, scoreRule, uid, today, levelLabel, cefrOf, subscriptionDaysLeft, arabicDate } from '../lib/domain';
 import { go } from '../App';
 import { lookupWord, allCached, type LookupEntry } from '../lib/dictionaryProvider';
 import { WORD_MEANINGS } from '../lib/wordMeanings';
@@ -1055,6 +1055,16 @@ export function ProfilePage() {
     <Card className="row" style={{ gap: '1rem' }}><span className="avatar" style={{ width: 56, height: 56, fontSize: '1.3rem' }}>{user.avatar || '🧑‍🎓'}</span>
       <div><h2>{user.name}</h2><div className="muted">{user.email}</div><div className="row" style={{ marginTop: '.4rem' }}><Badge tone="green">{level?.title || '—'}</Badge><Badge>آخر مستوى: {data.levels.find((l) => l.id === user.maxLevelId)?.title || '—'}</Badge></div></div>
     </Card>
+    {user.subscriptionEnd && (() => {
+      const left = subscriptionDaysLeft(user.subscriptionEnd);
+      const expired = left !== null && left < 0;
+      const soon = left !== null && left >= 0 && left <= 7;
+      return <Card style={{ borderColor: expired ? 'var(--red, #ef4444)' : soon ? 'var(--amber, #f59e0b)' : undefined }}>
+        <strong>{expired ? `اشتراكك انتهى يوم ${arabicDate(user.subscriptionEnd)}` : `اشتراكك هينتهي يوم ${arabicDate(user.subscriptionEnd)}`}</strong>
+        {!expired && left !== null && <div className="muted">{left === 0 ? 'النهارده آخر يوم' : left === 1 ? 'فاضل يوم واحد' : `فاضل ${left} يوم`}</div>}
+        {(expired || soon) && <div className="muted" style={{ marginTop: '.3rem' }}>تواصل معانا على واتساب علشان تجدّد.</div>}
+      </Card>;
+    })()}
     <Card>
       <SectionTitle title="اسمك" />
       <div className="row">

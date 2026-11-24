@@ -6,7 +6,7 @@ import { buildDailyTasks } from './dailyTasks';
 import { UNIT_WORDS } from './unitWords';
 import { mergeWords } from './wordFixes';
 import { setGrammarOverrides } from './grammar/index';
-import { uid, today, addScoreOnce, buildStudentAccount, dailyNotifications, withExpiry } from './domain';
+import { uid, today, addScoreOnce, buildStudentAccount, dailyNotifications, withExpiry, subscriptionDaysLeft, cairoToday, arabicDate } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
 import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbSaveSettings, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbCurrentAuth, sbEnsureProfile, sbSaveMyProfile, sbChangePassword, sbUpsertRecord, sbDeleteRecord } from './supabase';
 import { englishify } from './translate';
@@ -37,6 +37,13 @@ function withDailyNotes(d: AppData, user: any): AppData {
   if (dueCount > 0) {
     const day = nowIso.slice(0, 10);
     notes.push({ id: `daily-srs-${user.id}-${day}`, targetId: user.id, title: 'مراجعة الكلمات', body: `عندك ${dueCount} كلمة مستحقة للمراجعة دلوقتي — راجعها قبل ما تنساها.`, href: '#/words', read: false, createdAt: nowIso });
+  }
+  // subscription ending: a daily reminder during the last 7 days
+  const left = subscriptionDaysLeft(user.subscriptionEnd);
+  if (left !== null && left >= 0 && left <= 7) {
+    const day = cairoToday();
+    const when = left === 0 ? 'النهارده' : left === 1 ? 'بكرة' : `بعد ${left} أيام`;
+    notes.push({ id: `daily-subend-${user.id}-${day}`, targetId: user.id, title: 'اشتراكك قرب ينتهي', body: `اشتراكك هينتهي ${when} (آخر يوم ${arabicDate(user.subscriptionEnd)}). جدّد علشان تكمّل من غير توقف.`, href: '#/profile', read: false, createdAt: nowIso });
   }
   const ids = new Set(notes.map((n) => n.id));
   return { ...d, notifications: [...notes, ...((d.notifications || []).filter((n: any) => !ids.has(n.id)))] };
