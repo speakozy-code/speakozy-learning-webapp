@@ -20,3 +20,11 @@ self.addEventListener('notificationclick', (e) => {
     return self.clients.openWindow(target);
   }));
 });
+self.addEventListener('push', (e) => {
+  let m = {};
+  try { m = e.data ? e.data.json() : {}; } catch { m = { body: e.data && e.data.text() }; }
+  e.waitUntil(self.registration.showNotification(m.title || 'Speakozy', {
+    body: m.body || '', icon: './icons/icon-192.png', badge: './icons/icon-192.png', dir: 'rtl', lang: 'ar',
+    tag: m.tag || undefined, data: { href: m.href || './' },
+  }));
+});
