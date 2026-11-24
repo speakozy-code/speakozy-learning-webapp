@@ -633,7 +633,7 @@ export function DictionaryPage() {
     setGlobalHit(null); setArCands([]);
     if (term.length < 2) return;
     if (isArabicText(term)) {
-      const t = setTimeout(async () => { const c = await arabicToEnglish(term); if (alive) setArCands(c); }, 600);
+      const t = setTimeout(async () => { const c = await arabicToEnglish(term); if (alive) setArCands(c); }, 350);
       return () => { alive = false; clearTimeout(t); };
     }
     const timer = setTimeout(async () => {
@@ -651,10 +651,14 @@ export function DictionaryPage() {
       setDetail(null); setLooking(true);
       const cands = arCands.length ? arCands : await arabicToEnglish(word);
       setArCands(cands);
-      for (const c of cands.slice(0, 3)) {
-        const entry = await lookupWord(c, all);
-        if (entry) { setLooking(false); setDetail(entry); setGlobalHit(entry.source === 'global' ? entry : null); return; }
-      }
+      // look the top candidates up in parallel and open the first one that resolves
+      const tries = cands.slice(0, 3).map((c) => lookupWord(c, all).then((e) => { if (!e) throw new Error('none'); return e; }));
+      const entry = await new Promise<LookupEntry | undefined>((resolve) => {
+        let left = tries.length;
+        if (!left) resolve(undefined);
+        tries.forEach((t) => t.then(resolve, () => { left -= 1; if (left === 0) resolve(undefined); }));
+      });
+      if (entry) { setLooking(false); setDetail(entry); setGlobalHit(entry.source === 'global' ? entry : null); return; }
       setLooking(false);
       setManual({ word: cands[0] || '', meaning: word.trim(), type: 'noun', examples: '' });
       return;
