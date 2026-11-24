@@ -133,6 +133,16 @@ export async function sbLoadAll(keys: string[]): Promise<Record<string, any[]>> 
   return out;
 }
 
+// Fallback path (before the SQL migration is applied): serialize whole-document
+// read-modify-write cycles so a client's own edits never overwrite each other.
+let docQueue: Promise<unknown> = Promise.resolve();
+const queued = <T,>(fn: () => Promise<T>): Promise<T> => {
+  const run = docQueue.then(fn, fn);
+  docQueue = run.catch(() => undefined);
+  return run;
+};
+const rpcMissing = (e: any) => !!e && (e.code === 'PGRST202' || e.code === '42883' || /could not find the function/i.test(e.message || ''));
+
 export async function sbWrite(collectionName: string, id: string, record: any) {
   if (!sb) return;
   const role = await currentRole();
@@ -153,12 +163,17 @@ export async function sbWrite(collectionName: string, id: string, record: any) {
     if (error) throw error;
     return;
   }
-  const doc = await sbLoadDoc();
-  const list: any[] = Array.isArray(doc[collectionName]) ? doc[collectionName] : [];
-  const idx = list.findIndex((x) => x && x.id === id);
-  if (idx >= 0) list[idx] = record; else list.push(record);
-  doc[collectionName] = list;
-  await sbSaveDoc(doc);
+  const { error: rpcErr } = await sb.rpc('admin_upsert_record', { p_key: collectionName, p_record: record });
+  if (!rpcErr) return;
+  if (!rpcMissing(rpcErr)) throw rpcErr;
+  await queued(async () => {
+    const doc = await sbLoadDoc();
+    const list: any[] = Array.isArray(doc[collectionName]) ? doc[collectionName] : [];
+    const idx = list.findIndex((x) => x && x.id === id);
+    if (idx >= 0) list[idx] = record; else list.push(record);
+    doc[collectionName] = list;
+    await sbSaveDoc(doc);
+  });
 }
 
 export async function sbDelete(collectionName: string, id: string) {
@@ -174,7 +189,16 @@ export async function sbDelete(collectionName: string, id: string) {
     if (error) throw error;
     return;
   }
-  const doc = await sbLoadDoc();
-  doc[collectionName] = (doc[collectionName] || []).filter((x: any) => x && x.id !== id);
-  await sbSaveDoc(doc);
+  const { error: rpcErr } = await sb.rpc('admin_delete_record', { p_key: collectionName, p_id: id });
+  if (!rpcErr) return;
+  if (!rpcMissing(rpcErr)) throw rpcErr;
+  await queued(async () => {
+    const doc = await sbLoadDoc();
+    doc[collectionName] = (doc[collectionName] || []).filter((x: any) => x && x.id !== id);
+    await sbSaveDoc(doc);
+  });
+}
+
+export async function sbSaveSettings(settings: any): Promise<void> {
+  await queued(async () => { const doc = await sbLoadDoc(); doc.settings = settings; await sbSaveDoc(doc); });
 }

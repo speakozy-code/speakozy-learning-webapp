@@ -8,7 +8,7 @@ import { mergeWords } from './wordFixes';
 import { setGrammarOverrides } from './grammar/index';
 import { uid, today, addScoreOnce, buildStudentAccount, dailyNotifications, withExpiry } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
-import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbCurrentAuth, sbEnsureProfile, sbSaveMyProfile, sbChangePassword, sbUpsertRecord, sbDeleteRecord } from './supabase';
+import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbSaveSettings, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbCurrentAuth, sbEnsureProfile, sbSaveMyProfile, sbChangePassword, sbUpsertRecord, sbDeleteRecord } from './supabase';
 import { englishify } from './translate';
 
 const KEY = 'speakozy-demo-v12';
@@ -244,7 +244,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const nextList = idx >= 0 ? list.map((x) => (x.id === id ? record : x)) : [...list, record];
         return { ...prev, [collectionName]: nextList } as AppData;
       });
-      void sbWrite(collectionName, id, record).catch((e) => { console.error('write failed', e); void refresh(); });
+      void sbWrite(collectionName, id, record).catch((e) => { console.error('write failed', e); try { alert('⚠️ التعديل ماتحفظش — جرّب تاني'); } catch {} void refresh(); });
     } else {
       setData((prev) => {
         const list = ((prev as any)[collectionName] || []) as any[];
@@ -293,7 +293,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const next = readDemo(); next.settings = s; saveDemo(next); setData(next);
     } else if (CLOUD === 'supabase') {
       setData((prev) => ({ ...prev, settings: s } as AppData));
-      void sbLoadDoc().then((doc) => { doc.settings = s; return sbSaveDoc(doc); }).catch((e) => { console.error('settings failed', e); void refresh(); });
+      void sbSaveSettings(s).catch((e) => { console.error('settings failed', e); void refresh(); });
     } else await fbWrite('settings', 'ledger', s);
   }
 
