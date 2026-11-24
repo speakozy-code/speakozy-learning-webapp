@@ -3,7 +3,7 @@ import { useApp } from '../lib/store';
 import { Card, Button, Badge, Progress, Stat, SectionTitle, Empty, Tabs, Field, Modal, fmtDate, fmtDay, isLate } from '../components/UI';
 import { sessionStatus, levelProgress, engagementProgress, sessionOpen, levelFullyOpen, pdfAllowed, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, proportionalScore, scoreRule, uid, today, levelLabel, cefrOf, subscriptionDaysLeft, arabicDate } from '../lib/domain';
 import { go } from '../App';
-import { lookupWord, allCached, type LookupEntry } from '../lib/dictionaryProvider';
+import { lookupWord, allCached, isArabicText, normAr, arabicToEnglish, type LookupEntry } from '../lib/dictionaryProvider';
 import { WORD_MEANINGS } from '../lib/wordMeanings';
 import { grammarFor } from '../lib/grammar/index.ts';
 import { overviewOutline, sourceTranscript, letsTalk, voicePrompts, speakingQuestions } from '../lib/lessonBrief';
@@ -599,6 +599,7 @@ export function DictionaryPage() {
   const [reviewIdx, setReviewIdx] = useState(0);
   const [globalHit, setGlobalHit] = useState<LookupEntry | null>(null);
   const [globalTick, setGlobalTick] = useState(0);
+  const [arCands, setArCands] = useState<string[]>([]);
   const [yg, setYg] = useState<{ word: string; accent: string } | null>(null);
   if (!user) return null;
 
@@ -606,8 +607,11 @@ export function DictionaryPage() {
   const saved = data.savedWords.filter((w) => w.studentId === user.id);
   const globalEntries = allCached();
   const matches = (d: any) => {
+    if (!q) return true;
+    const term = q.trim();
+    if (isArabicText(term)) return normAr(d.arabic + ' ' + d.meaning).includes(normAr(term));
     const hay = (d.word + ' ' + d.meaning + ' ' + d.arabic + ' ' + (d.examples || []).join(' ')).toLowerCase();
-    return !q || hay.includes(q.trim().toLowerCase());
+    return hay.includes(term.toLowerCase());
   };
   const seen = new Set<string>();
   const localResults = [...all, ...globalEntries].filter((d: any) => {
@@ -615,7 +619,7 @@ export function DictionaryPage() {
     if (seen.has(key) || !matches(d)) return false;
     seen.add(key); return true;
   }).slice(0, 40);
-  const savedResults = saved.filter((d) => !q || (d.word + d.meaning).toLowerCase().includes(q.toLowerCase()));
+  const savedResults = saved.filter((d) => !q || (d.word + d.meaning).toLowerCase().includes(q.toLowerCase()) || (isArabicText(q) && normAr(d.meaning).includes(normAr(q.trim()))));
   const suggestions = q.trim().length >= 1
     ? all.filter((d) => d.word.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 8)
     : [];
@@ -626,8 +630,12 @@ export function DictionaryPage() {
   useEffect(() => {
     let alive = true;
     const term = q.trim();
-    setGlobalHit(null);
+    setGlobalHit(null); setArCands([]);
     if (term.length < 2) return;
+    if (isArabicText(term)) {
+      const t = setTimeout(async () => { const c = await arabicToEnglish(term); if (alive) setArCands(c); }, 600);
+      return () => { alive = false; clearTimeout(t); };
+    }
     const timer = setTimeout(async () => {
       const entry = await lookupWord(term, all);
       if (alive && entry && entry.source !== 'local') setGlobalHit(entry);
@@ -688,13 +696,17 @@ export function DictionaryPage() {
     <div><h1>الديكشنري</h1><p className="muted">تقدر تحفظ أي كلمة، أو تسمعها من المتحدثين الأصليين على YouGlish. الديكشنري فيه آلاف الكلمات الجاهزة، ولو مش موجودة بنجيب معناها من المصدر العالمي.</p></div>
 
     <Card className="search-hero">
-      <div className="row"><span style={{ fontSize: '1.4rem' }}>🔎</span><input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) showWord(q); }} placeholder="اكتب أي كلمة... مثال: serendipity" aria-label="دوّر في الديكشنري" /></div>
+      <div className="row"><span style={{ fontSize: '1.4rem' }}>🔎</span><input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) { if (isArabicText(q) && arCands[0]) showWord(arCands[0]); else showWord(q); } }} placeholder="اكتب أي كلمة بالإنجليزي أو العربي... مثال: serendipity" aria-label="دوّر في الديكشنري" /></div>
       {suggestions.length > 0 && <div className="dict-suggest">{suggestions.map((d) => <button key={d.id} type="button" className="dict-suggest-item en" dir="ltr" onClick={() => { setQ(d.word); showWord(d.word); }}>{d.word}</button>)}</div>}
       <div className="row" style={{ marginTop: '.7rem', justifyContent: 'flex-end' }}>
         <div className="row"><Button size="sm" variant="ghost" onClick={() => setManual({ word: q.trim(), meaning: '', type: 'noun', examples: '' })}>+ ضيف كلمة</Button><Button size="sm" onClick={() => q.trim() && showWord(q)} disabled={!q.trim() || looking}>{looking ? 'بندوّر...' : 'دوّر عالميًا'}</Button></div>
       </div>
       {q.trim() && !looking && <div className="muted" style={{ marginTop: '.5rem', fontSize: '.82rem' }}>
         نتايج محلية: {localResults.length} · <button className="icon-btn" onClick={() => showWord(q)}>دوّر عالميًا عن "{q}" ←</button>
+      </div>}
+      {arCands.length > 0 && <div className="global-hit">
+        <small className="muted">معناها بالإنجليزي</small>
+        <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{arCands.map((w) => <button key={w} type="button" className="word-chip en" dir="ltr" onClick={() => showWord(w)}>{w}</button>)}</div>
       </div>}
       {globalHit && <div className="global-hit">
         <div className="row between"><div><small className="muted">الديكشنري العالمي</small>
