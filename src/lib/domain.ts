@@ -211,3 +211,10 @@ export function extendEnd(current: string | undefined, days: number, today = cai
   const d = new Date(base + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
+
+/** Days left until the last subscription day (0 = today is the last day, negative = expired). null when no end date. */
+export function subscriptionDaysLeft(end?: string, today = cairoToday()): number | null {
+  if (!end || !/^\d{4}-\d{2}-\d{2}$/.test(end)) return null;
+  return Math.round((Date.parse(end + 'T00:00:00Z') - Date.parse(today + 'T00:00:00Z')) / 86400000);
+}
+export const arabicDate = (iso: string) => new Date(iso + 'T12:00:00Z').toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
