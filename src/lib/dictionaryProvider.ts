@@ -183,9 +183,11 @@ export async function arabicToEnglish(q: string): Promise<string[]> {
   try {
     const data = await fetchJson(`${TRANSLATE}?client=gtx&sl=ar&tl=en&dt=t&dt=bd&q=${encodeURIComponent(term)}`, 5000);
     const out: string[] = [];
-    const main = (data?.[0] || []).map((x: any) => x?.[0]).filter(Boolean).join('').trim();
-    if (main) out.push(main);
+    // dictionary alternatives (base forms) first, then the sentence-style main translation cleaned up
     (data?.[1] || []).forEach((grp: any) => (grp?.[1] || []).forEach((w: string) => out.push(w)));
+    const main = (data?.[0] || []).map((x: any) => x?.[0]).filter(Boolean).join('').trim()
+      .replace(/^(to|he|she|it|they|we|you|i|the|a|an)\s+/i, '').replace(/[.!?؟]+$/, '');
+    if (main) out.push(main);
     const seen = new Set<string>();
     return out.map((w) => w.trim()).filter((w) => w && w.split(/\s+/).length <= 3 && !seen.has(w.toLowerCase()) && (seen.add(w.toLowerCase()), true)).slice(0, 8);
   } catch { return []; }

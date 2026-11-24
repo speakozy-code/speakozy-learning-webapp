@@ -646,6 +646,19 @@ export function DictionaryPage() {
   function isSaved(word: string) { return saved.some((w) => w.word.toLowerCase() === word.toLowerCase()); }
 
   async function showWord(word: string) {
+    if (isArabicText(word)) {
+      // an Arabic query never goes to the English dictionary as-is: translate it, then open the best English word
+      setDetail(null); setLooking(true);
+      const cands = arCands.length ? arCands : await arabicToEnglish(word);
+      setArCands(cands);
+      for (const c of cands.slice(0, 3)) {
+        const entry = await lookupWord(c, all);
+        if (entry) { setLooking(false); setDetail(entry); setGlobalHit(entry.source === 'global' ? entry : null); return; }
+      }
+      setLooking(false);
+      setManual({ word: cands[0] || '', meaning: word.trim(), type: 'noun', examples: '' });
+      return;
+    }
     setDetail(null); setLooking(true);
     const entry = await lookupWord(word, all);
     setLooking(false);
@@ -699,7 +712,7 @@ export function DictionaryPage() {
       <div className="row"><span style={{ fontSize: '1.4rem' }}>🔎</span><input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) { if (isArabicText(q) && arCands[0]) showWord(arCands[0]); else showWord(q); } }} placeholder="اكتب أي كلمة بالإنجليزي أو العربي... مثال: serendipity" aria-label="دوّر في الديكشنري" /></div>
       {suggestions.length > 0 && <div className="dict-suggest">{suggestions.map((d) => <button key={d.id} type="button" className="dict-suggest-item en" dir="ltr" onClick={() => { setQ(d.word); showWord(d.word); }}>{d.word}</button>)}</div>}
       <div className="row" style={{ marginTop: '.7rem', justifyContent: 'flex-end' }}>
-        <div className="row"><Button size="sm" variant="ghost" onClick={() => setManual({ word: q.trim(), meaning: '', type: 'noun', examples: '' })}>+ ضيف كلمة</Button><Button size="sm" onClick={() => q.trim() && showWord(q)} disabled={!q.trim() || looking}>{looking ? 'بندوّر...' : 'دوّر عالميًا'}</Button></div>
+        <div className="row"><Button size="sm" variant="ghost" onClick={() => setManual(isArabicText(q) ? { word: '', meaning: q.trim(), type: 'noun', examples: '' } : { word: q.trim(), meaning: '', type: 'noun', examples: '' })}>+ ضيف كلمة</Button><Button size="sm" onClick={() => q.trim() && showWord(q)} disabled={!q.trim() || looking}>{looking ? 'بندوّر...' : 'دوّر عالميًا'}</Button></div>
       </div>
       {q.trim() && !looking && <div className="muted" style={{ marginTop: '.5rem', fontSize: '.82rem' }}>
         نتايج محلية: {localResults.length} · <button className="icon-btn" onClick={() => showWord(q)}>دوّر عالميًا عن "{q}" ←</button>
