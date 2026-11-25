@@ -13,10 +13,10 @@ import { englishify } from './translate';
 
 const KEY = 'speakozy-demo-v12';
 const CLOUD = isSupabase ? 'supabase' : isFirebase ? 'firebase' : 'demo';
-const COLLECTIONS = ['users','levels','sessions','questions','attempts','progress','tasks','taskCompletions','notifications','scores','savedWords','dictionary','certificates','logs','grammarNotes','testimonials','listenClips'];
+const COLLECTIONS = ['users','levels','sessions','questions','attempts','progress','tasks','taskCompletions','notifications','scores','savedWords','dictionary','certificates','logs','grammarNotes','testimonials','listenClips','notificationReads'];
 
 function emptyData(): AppData {
-  return { users: [], levels: [], sessions: [], questions: [], attempts: [], progress: [], tasks: [], taskCompletions: [], notifications: [], scores: [], savedWords: [], dictionary: [], certificates: [], logs: [], grammarNotes: [], testimonials: [], listenClips: [], settings: seedData().settings };
+  return { users: [], levels: [], sessions: [], questions: [], attempts: [], progress: [], tasks: [], taskCompletions: [], notifications: [], scores: [], savedWords: [], dictionary: [], certificates: [], logs: [], grammarNotes: [], testimonials: [], listenClips: [], notificationReads: [], settings: seedData().settings };
 }
 
 function readDemo(): AppData {
@@ -28,22 +28,44 @@ function readDemo(): AppData {
   saveDemo(seeded);
   return withLevelTasks(englishify(seeded));
 }
+const DAY_MS = 86400000;
+/** One word per day, the same for everybody: single English words that have an Arabic meaning. */
+function wordOfDay(dict: any[], day: string) {
+  const pool = (dict || []).filter((w: any) => !w.hidden && /^[A-Za-z]{3,}$/.test(w.word || '') && (w.arabic || '').trim());
+  if (!pool.length) return null;
+  const n = Math.floor(new Date(day + 'T00:00:00Z').getTime() / DAY_MS);
+  return pool[(n * 7919) % pool.length];
+}
 function withDailyNotes(d: AppData, user: any): AppData {
   if (!user || user.role !== 'student') return d;
-  const notes = dailyNotifications(user.id, user.levelId);
+  const reads = new Set(((d as any).notificationReads || []).filter((r: any) => r.studentId === user.id && r.read).map((r: any) => r.notificationId));
+  const notes: any[] = [];
+  // the last 7 days: today's are always listed, older ones stay until the student taps them
+  for (let i = 0; i < 7; i++) {
+    const when = new Date(Date.now() - i * DAY_MS);
+    const day = cairoToday(when);
+    const day0 = Math.floor(new Date(day + 'T00:00:00Z').getTime() / DAY_MS);
+    const list: any[] = dailyNotifications(user.id, user.levelId, when);
+    const w = wordOfDay(d.dictionary, day);
+    if (w) list.push({ id: `daily-wotd-${user.id}-${day}`, targetId: user.id, title: 'كلمة اليوم', body: `${w.word} — ${w.arabic}`, href: '#/dictionary', read: false, createdAt: `${day}T07:00:00.000Z` });
+    if (day0 % 3 === 0) list.push({ id: `daily-score-${user.id}-${day}`, targetId: user.id, title: 'اشتغل على نفسك', body: 'اشتغل على نفسك علشان تاخد أعلى سكور — كمّل الشادوينج والكويزات والكلمات.', href: '#/', read: false, createdAt: `${day}T09:00:00.000Z` });
+    for (const n of list) { const read = reads.has(n.id); if (i === 0 || !read) notes.push({ ...n, read }); }
+  }
   // spaced repetition: remind the student when saved words are due for review
   const nowIso = new Date().toISOString();
   const dueCount = (d.savedWords || []).filter((w: any) => w.studentId === user.id && (!w.nextReview || w.nextReview <= nowIso)).length;
   if (dueCount > 0) {
     const day = nowIso.slice(0, 10);
-    notes.push({ id: `daily-srs-${user.id}-${day}`, targetId: user.id, title: 'مراجعة الكلمات', body: `عندك ${dueCount} كلمة مستحقة للمراجعة دلوقتي — راجعها قبل ما تنساها.`, href: '#/words', read: false, createdAt: nowIso });
+    const id = `daily-srs-${user.id}-${day}`;
+    notes.push({ id, targetId: user.id, title: 'مراجعة الكلمات', body: `عندك ${dueCount} كلمة مستحقة للمراجعة دلوقتي — راجعها قبل ما تنساها.`, href: '#/words', read: reads.has(id), createdAt: nowIso });
   }
   // subscription ending: a daily reminder during the last 7 days
   const left = subscriptionDaysLeft(user.subscriptionEnd);
   if (left !== null && left >= 0 && left <= 7) {
     const day = cairoToday();
     const when = left === 0 ? 'النهارده' : left === 1 ? 'بكرة' : `بعد ${left} أيام`;
-    notes.push({ id: `daily-subend-${user.id}-${day}`, targetId: user.id, title: 'اشتراكك قرب ينتهي', body: `اشتراكك هينتهي ${when} (آخر يوم ${arabicDate(user.subscriptionEnd)}). جدّد علشان تكمّل من غير توقف.`, href: '#/profile', read: false, createdAt: nowIso });
+    const id = `daily-subend-${user.id}-${day}`;
+    notes.push({ id, targetId: user.id, title: 'اشتراكك قرب ينتهي', body: `اشتراكك هينتهي ${when} (آخر يوم ${arabicDate(user.subscriptionEnd)}). جدّد علشان تكمّل من غير توقف.`, href: '#/profile', read: reads.has(id), createdAt: nowIso });
   }
   const ids = new Set(notes.map((n) => n.id));
   return { ...d, notifications: [...notes, ...((d.notifications || []).filter((n: any) => !ids.has(n.id)))] };
