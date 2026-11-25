@@ -128,7 +128,7 @@ export function proportionalScore(score: number, max: number, base: number) {
 }
 
 /** Score-rule values with safe defaults for settings saved before a key existed. */
-export const DEFAULT_SCORE_RULES: Record<string, number> = { study: 0, exercise: 0, wordQuiz: 10, grammarQuiz: 10, sessionQuiz: 30, levelQuiz: 50, taskPending: 1, taskApproved: 5, speakingExercise: 5, writingExercise: 5 };
+export const DEFAULT_SCORE_RULES: Record<string, number> = { study: 0, exercise: 0, wordQuiz: 10, grammarQuiz: 10, sessionQuiz: 30, levelQuiz: 50, taskPending: 1, taskApproved: 5, speakingExercise: 5, writingExercise: 5, listenClip: 1 };
 export const scoreRule = (rules: Record<string, number> | undefined, key: string) => rules?.[key] ?? DEFAULT_SCORE_RULES[key] ?? 0;
 
 export function addScoreOnce(data: AppData, score: { studentId: string; source: string; points: number; refId: string }) {

@@ -69,6 +69,7 @@ export function seedData(): AppData {
       { id: 'w1', studentId: 'stu-1', word: 'coffee', meaning: 'قهوة', review: false, createdAt: '2026-11-16T10:00:00.000Z' },
     ],
     certificates: [],
+    listenClips: [],
     testimonials: [
       { id: 'tst1', name: 'Mariem A.', level: 'E1', date: '2026-11-10', text: 'The sessions are short and I can actually speak now. I loved the group — nobody laughs when I make mistakes.', role: 'student', createdAt: '2026-11-10T10:00:00.000Z' },
       { id: 'tst2', name: 'Yousef M.', level: 'E2', date: '2026-11-14', text: 'The daily tasks made me practise every day. The teacher explains grammar in a simple way.', role: 'student', createdAt: '2026-11-14T10:00:00.000Z' },
@@ -78,7 +79,7 @@ export function seedData(): AppData {
       { id: 'lg1', actorId: 'admin-1', action: 'load-curriculum', target: `${LEVELS.length} levels / ${SESSIONS.length} sessions / ${DICTIONARY.length} words`, createdAt: '2026-11-18T09:00:00.000Z' },
     ],
     settings: {
-      scoreRules: { wordQuiz: 10, grammarQuiz: 10, sessionQuiz: 30, levelQuiz: 50, taskPending: 1, taskApproved: 5, speakingExercise: 5, writingExercise: 5 },
+      scoreRules: { wordQuiz: 10, grammarQuiz: 10, sessionQuiz: 30, levelQuiz: 50, taskPending: 1, taskApproved: 5, speakingExercise: 5, writingExercise: 5, listenClip: 1 },
       leaderboard: { enabled: true, nameMode: 'first', period: 'weekly', hidden: [] },
       quizDefaults: { attempts: 2, passScore: 70, durationMin: 10 },
       reminders: { inactivityDays: 3, reminderHours: 24 },

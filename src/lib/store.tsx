@@ -13,10 +13,10 @@ import { englishify } from './translate';
 
 const KEY = 'speakozy-demo-v12';
 const CLOUD = isSupabase ? 'supabase' : isFirebase ? 'firebase' : 'demo';
-const COLLECTIONS = ['users','levels','sessions','questions','attempts','progress','tasks','taskCompletions','notifications','scores','savedWords','dictionary','certificates','logs','grammarNotes','testimonials'];
+const COLLECTIONS = ['users','levels','sessions','questions','attempts','progress','tasks','taskCompletions','notifications','scores','savedWords','dictionary','certificates','logs','grammarNotes','testimonials','listenClips'];
 
 function emptyData(): AppData {
-  return { users: [], levels: [], sessions: [], questions: [], attempts: [], progress: [], tasks: [], taskCompletions: [], notifications: [], scores: [], savedWords: [], dictionary: [], certificates: [], logs: [], grammarNotes: [], testimonials: [], settings: seedData().settings };
+  return { users: [], levels: [], sessions: [], questions: [], attempts: [], progress: [], tasks: [], taskCompletions: [], notifications: [], scores: [], savedWords: [], dictionary: [], certificates: [], logs: [], grammarNotes: [], testimonials: [], listenClips: [], settings: seedData().settings };
 }
 
 function readDemo(): AppData {
