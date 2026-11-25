@@ -635,3 +635,8 @@ input:-webkit-autofill,input:-webkit-autofill:focus,input:-webkit-autofill:hover
 .tab-ic{display:inline-flex;align-items:center;gap:.35rem}
 .btn svg{vertical-align:-3px;margin-inline-end:.25rem}
 h1 svg{vertical-align:-3px;color:var(--green);margin-inline-end:.3rem}
+
+/* back-to-top: sits right above the WhatsApp button */
+.to-top-btn{width:2.5rem;height:2.5rem;border-radius:50%;border:1px solid var(--line,#ffffff22);background:var(--panel,#111827);color:inherit;display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow);order:-1}
+.float-stack.split{position:fixed}
+@media(max-width:980px){.float-stack.split .to-top-btn{position:absolute;bottom:100%;left:0;margin-bottom:.5rem}}

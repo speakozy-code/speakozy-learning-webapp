@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Home, Map, FolderOpen, BookOpen, ListChecks, User,
   LayoutDashboard, Users, Layers, FileText, PenLine, ClipboardList,
-  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, Gift, MessageSquareHeart, MessageCircle, Layers2, Mic2, Gamepad2, Library, Brain, ClipboardCheck, BellRing,
+  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, ArrowUp, Gift, MessageSquareHeart, MessageCircle, Layers2, Mic2, Gamepad2, Library, Brain, ClipboardCheck, BellRing,
 } from 'lucide-react';
 import { useApp } from '../lib/store';
 import { go } from '../App';
@@ -138,6 +138,7 @@ export function Layout({ current, children }: { current: string; children: React
     {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 75 }} />}
     {mobile}
     <div className={`float-stack${!admin && !isSubscribed(user) ? ' split' : ''}`}>
+      <button className="to-top-btn" aria-label="طلوع لأول الصفحة" title="طلوع لأول الصفحة" onClick={() => { document.getElementById('app-main')?.scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><ArrowUp size={18} /></button>
       {!admin && !isSubscribed(user) && <a className="float-pricing" href={PRICING_URL} target="_blank" rel="noreferrer">شوف الباقات</a>}
       <a className="float-wa" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب" title="تواصل معانا على واتساب"><MessageCircle size={20} /></a>
     </div>
