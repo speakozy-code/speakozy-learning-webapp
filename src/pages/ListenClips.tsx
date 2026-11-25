@@ -22,12 +22,14 @@ export function parseLines(text: string): ListenLine[] {
     const l = raw.trim(); if (!l) continue;
     const a = l.match(/^(\d+):(\d{1,2}(?:\.\d+)?)\s+(.+)$/);
     const b = l.match(/^(\d+(?:\.\d+)?)\s+(.+)$/);
-    if (a) out.push({ t: Number(a[1]) * 60 + Number(a[2]), text: a[3].trim() });
-    else if (b) out.push({ t: Number(b[1]), text: b[2].trim() });
+    const m = a || b; if (!m) continue;
+    const t = a ? Number(a[1]) * 60 + Number(a[2]) : Number(b![1]);
+    const [text, say, note] = (m[m.length - 1] as string).split('|').map((x) => x.trim());
+    out.push({ t, text, ...(say ? { say } : {}), ...(note ? { note } : {}) });
   }
   return out.sort((x, y) => x.t - y.t);
 }
-const linesToText = (ls: ListenLine[]) => ls.map((l) => `${fmt(l.t)} ${l.text}`).join('\n');
+const linesToText = (ls: ListenLine[]) => ls.map((l) => `${fmt(l.t)} ${l.text}${l.say || l.note ? ` | ${l.say || ''} | ${l.note || ''}` : ''}`).join('\n');
 
 let apiPromise: Promise<any> | null = null;
 function loadYT(): Promise<any> {
@@ -120,7 +122,7 @@ function WordCard({ word, onClose }: { word: string; onClose: () => void }) {
   </Card>;
 }
 
-function Lines({ clip, now, onLine, onWord }: { clip: Pick<ListenClip, 'lines' | 'end'>; now: number; onLine: (i: number) => void; onWord?: (w: string) => void }) {
+function Lines({ clip, now, onLine, onWord, sel }: { clip: Pick<ListenClip, 'lines' | 'end'>; now: number; onLine: (i: number) => void; onWord?: (w: string) => void; sel?: number | null }) {
   const active = clip.lines.reduce((acc, l, i) => (l.t <= now + 0.05 ? i : acc), -1);
   return <div className="stack">{clip.lines.map((l, i) => <div key={i} dir="ltr" onClick={() => onLine(i)}
     style={{ textAlign: 'left', padding: '.5rem .7rem', borderRadius: 10, cursor: 'pointer', background: i === active ? '#fef3c7' : 'transparent', border: '1px solid #0001' }}>
@@ -128,6 +130,10 @@ function Lines({ clip, now, onLine, onWord }: { clip: Pick<ListenClip, 'lines' |
       const w = tok.replace(/[^A-Za-z']/g, '').replace(/^'+|'+$/g, '');
       return /^\s+$/.test(tok) || !w ? <span key={k}>{tok}</span> : <span key={k} onClick={(e) => { e.stopPropagation(); onWord(w); }} style={{ textDecoration: 'underline dotted', textUnderlineOffset: 3 }}>{tok}</span>;
     }) : l.text}
+    {(i === sel || (sel == null && i === active)) && (l.say || l.note) && <div style={{ marginTop: '.5rem', paddingTop: '.5rem', borderTop: '1px dashed #0002' }}>
+      {l.say && <div style={{ fontSize: '.95rem', color: '#92400e' }}><b>إزاي تقولها:</b> {l.say}</div>}
+      {l.note && <div dir="rtl" className="muted" style={{ textAlign: 'right', marginTop: '.25rem' }}>{l.note}</div>}
+    </div>}
   </div>)}</div>;
 }
 
@@ -164,7 +170,7 @@ function ClipView({ clip, onBack }: { clip: ListenClip; onBack: () => void }) {
         <Button variant={loop ? 'primary' : 'ghost'} onClick={() => setLoop(!loop)}><Repeat size={16} /> {loop ? 'تكرار ✓' : 'كرّر الجملة'}</Button>
       </div>
       <p className="muted">دوس على أي جملة تسمعها. دوس على أي كلمة تعرف نطقها ومعناها.</p>
-      <Lines clip={clip} now={now} onLine={playLine} onWord={setWord} />
+      <Lines clip={clip} now={now} onLine={playLine} onWord={setWord} sel={sel} />
       {word && <WordCard word={word} onClose={() => setWord(null)} />}
       <Button onClick={finish} disabled={done}>{done ? 'خلّصت الكليب ✓' : 'خلّصت الكليب'}</Button>
     </>}
@@ -228,7 +234,7 @@ export function ListenAdminPage() {
 
   return <div className="stack">
     <div><h1><Headphones size={22} /> مقاطع الاستماع</h1>
-      <p className="muted">كل كليب فيه جمل، وكل جملة سطر: الوقت بالثواني أو دقيقة:ثانية ثم النص. مثال: <span dir="ltr">1:23.5 Hello, my name is Bruce.</span></p></div>
+      <p className="muted">كل كليب فيه جمل، وكل جملة سطر: الوقت بالثواني أو دقيقة:ثانية ثم النص، وبعده اختياريًا ‘| إزاي تتقال | شرح بالعربي’. مثال: <span dir="ltr">1:23.5 Hello, my name is Bruce. | HEL-lo, my NAME-is BRUCE | name is بتتوصل</span></p></div>
     <Card>
       <SectionTitle title={d.id ? 'تعديل كليب' : 'كليب جديد'} />
       <div className="stack">
@@ -248,7 +254,7 @@ export function ListenAdminPage() {
             <Button size="sm" variant="ghost" onClick={() => setD({ ...d, lines: (d.lines ? d.lines + '\n' : '') + fmt(now) + ' ' })}>+ سطر بالوقت الحالي</Button>
           </div>
         </>}
-        <Field label="الجمل (سطر لكل جملة)"><textarea dir="ltr" rows={12} value={d.lines} onChange={(e) => setD({ ...d, lines: e.target.value })} /></Field>
+        <Field label="الجمل (سطر لكل جملة)"><textarea dir="ltr" rows={14} value={d.lines} onChange={(e) => setD({ ...d, lines: e.target.value })} /></Field>
         {ytId && parsed.length > 0 && <Lines clip={preview} now={now} onLine={(i) => api.current?.playRange(parsed[i].t - 0.15, i + 1 < parsed.length ? parsed[i + 1].t : end)} />}
         <label className="row" style={{ gap: '.4rem' }}><input type="checkbox" checked={d.active} onChange={(e) => setD({ ...d, active: e.target.checked })} /> ظاهر للطلبة</label>
         {err && <p style={{ color: '#b91c1c' }}>{err}</p>}
