@@ -60,7 +60,10 @@ export interface AppData {
   attempts: Attempt[]; progress: Progress[]; tasks: Task[]; taskCompletions: TaskCompletion[];
   notifications: AppNotification[]; scores: Score[]; savedWords: SavedWord[];
   dictionary: DictionaryEntry[]; certificates: Certificate[]; logs: AuditLog[]; settings: Settings; grammarNotes: GrammarNote[];
-  testimonials: Testimonial[];
+  testimonials: Testimonial[]; listenClips: ListenClip[];
 }
+
+export interface ListenLine { t: number; text: string; say?: string; note?: string; }
+export interface ListenClip { id: string; youtubeId: string; start: number; end: number; title: string; lines: ListenLine[]; levelId: string; active: boolean; createdAt: string; }
 
 export interface Testimonial { id: string; studentId?: string; name: string; level: string; date: string; text: string; role: 'student'|'admin'; rating?: number; createdAt: string; }

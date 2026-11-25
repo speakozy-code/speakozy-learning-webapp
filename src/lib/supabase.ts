@@ -8,7 +8,7 @@ export const isSupabase = Boolean(url && anon);
 export const sb = isSupabase ? createClient(url, anon) : null;
 const DOC_ID = 'academy/main';
 const STUDENT_KEYS = ['progress', 'attempts', 'taskCompletions', 'savedWords', 'notificationReads'];
-const STUDENT_IGNORED = ['logs', 'dictionary', 'notifications', 'certificates', 'users', 'levels', 'sessions', 'questions', 'settings', 'tasks', 'grammarNotes', 'testimonials'];
+const STUDENT_IGNORED = ['logs', 'dictionary', 'notifications', 'certificates', 'users', 'levels', 'sessions', 'questions', 'settings', 'tasks', 'grammarNotes', 'testimonials', 'listenClips'];
 
 async function currentRole(): Promise<'admin' | 'student' | null> {
   if (!sb) return null;
