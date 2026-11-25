@@ -11,7 +11,8 @@
   ],
   "rewrites": [
     { "source": "/app/", "destination": "/app/index.html" },
-    { "source": "/(pricing|register)/?", "destination": "/index.html" }
+    { "source": "/pricing", "destination": "/index.html" },
+    { "source": "/register", "destination": "/index.html" }
   ],
   "headers": [
     { "source": "/app/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }, { "key": "Service-Worker-Allowed", "value": "/app/" }] },
