@@ -57,7 +57,8 @@ export function Layout({ current, children }: { current: string; children: React
   if (!user) return <>{children}</>;
   const admin = user.role === 'admin';
   const nav = admin ? adminNav : studentNav;
-  const notes = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id || n.targetId === user.levelId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const readSet = new Set((data.notificationReads || []).filter((r) => r.studentId === user.id && r.read).map((r) => r.notificationId));
+  const notes = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id || n.targetId === user.levelId).map((n) => ({ ...n, read: n.read || readSet.has(n.id) })).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const unread = notes.filter((n) => !n.read).length;
   const unreadKey = notes.filter((n) => !n.read).map((n) => n.id).join('|');
   // never burst several system notifications at once (Chrome flags that as spam): one notification, or one daily summary
@@ -143,12 +144,10 @@ export function Layout({ current, children }: { current: string; children: React
       <a className="float-wa" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب" title="تواصل معانا على واتساب"><MessageCircle size={20} /></a>
     </div>
     <Modal open={bell} title="الإشعارات" onClose={() => setBell(false)}>
-      {notes.length ? <div className="stack">{notes.map((n) => <div key={n.id} className="section-card">
-        <div className="row between"><strong>{n.title}</strong>{!n.read && <Badge tone="green">جديد</Badge>}</div>
-        <p className="muted" style={{ margin: '.4rem 0' }}>{n.body}</p>
-        <div className="row"><small className="muted">{fmtDate(n.createdAt)}</small>
-          <Button size="sm" variant="ghost" onClick={async () => { if (!n.read) { if (admin) await put('notifications', { ...n, read: true }); else await put('notificationReads', { id: `${user.id}-${n.id}`, studentId: user.id, notificationId: n.id, read: true }); } if (n.href) { setBell(false); go(n.href.replace('#', '')); } }}>افتح</Button>
-        </div>
+      {notes.length ? <div className="notif-list">{notes.map((n) => <div key={n.id} role="button" tabIndex={0} className={`notif-item${n.read ? '' : ' unread'}`}
+        onClick={async () => { if (!n.read) { if (admin) await put('notifications', { ...n, read: true }); else await put('notificationReads', { id: `${user.id}-${n.id}`, studentId: user.id, notificationId: n.id, read: true }); } if (n.href) { setBell(false); go(n.href.replace('#', '')); } }}>
+        <div className="notif-main"><strong>{n.title}</strong><span className="muted"> — {n.body}</span></div>
+        <div className="row between"><small className="muted">{fmtDate(n.createdAt)}</small>{!n.read && <span className="notif-dot" />}</div>
       </div>)}</div> : <div className="empty">مفيش إشعارات</div>}
     </Modal>
   </>;

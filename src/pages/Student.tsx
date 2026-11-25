@@ -998,7 +998,8 @@ export function NotificationsPage() {
   const { user, data, put } = useApp();
   const [perm, setPerm] = useState(notificationPermission());
   if (!user) return null;
-  const list = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id || n.targetId === user.levelId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const readSet = new Set((data.notificationReads || []).filter((r) => r.studentId === user.id && r.read).map((r) => r.notificationId));
+  const list = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id || n.targetId === user.levelId).map((n) => ({ ...n, read: n.read || readSet.has(n.id) })).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   async function markRead(n: any) {
     if (n.read) return;
     if (user!.role === 'admin') await put('notifications', { ...n, read: true });
