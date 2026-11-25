@@ -38,7 +38,7 @@ const Navbar = () => {
 
         <div className="hidden md:flex items-center gap-3">
           <ThemeToggle />
-          <a href="/app/" target="_blank" rel="noreferrer">
+          <a href="/app/">
             <Button variant="heroOutline" size="sm" className="px-6 rounded-full font-bold">تسجيل الدخول</Button>
           </a>
           <Link to="/pricing">
@@ -64,7 +64,7 @@ const Navbar = () => {
           <Link to="/pricing" onClick={() => setIsMenuOpen(false)} className="py-2 hover:text-primary border-b border-border/50">الباقات</Link>
           <Link to="/#testimonials" onClick={() => setIsMenuOpen(false)} className="py-2 hover:text-primary border-b border-border/50">آراء الطلاب</Link>
           <Link to="/#faq" onClick={() => setIsMenuOpen(false)} className="py-2 hover:text-primary border-b border-border/50">أسئلة شائعة</Link>
-          <a href="/app/" target="_blank" rel="noreferrer" onClick={() => setIsMenuOpen(false)} className="pt-2 block">
+          <a href="/app/" onClick={() => setIsMenuOpen(false)} className="pt-2 block">
             <Button variant="heroOutline" className="w-full">تسجيل الدخول</Button>
           </a>
           <Link to="/pricing" onClick={() => setIsMenuOpen(false)} className="pt-2">
@@ -164,7 +164,7 @@ const HeroSection = () => (
               <Link to="/pricing" className="w-full sm:w-auto">
                 <Button variant="hero" size="lg" className="w-full text-lg px-10 py-7">شوف الباقات ←</Button>
               </Link>
-              <a href="/app/" target="_blank" rel="noreferrer" className="w-full sm:w-auto">
+              <a href="/app/" className="w-full sm:w-auto">
                 <Button variant="heroOutline" size="lg" className="w-full text-lg px-10 py-7">تسجيل الدخول</Button>
               </a>
             </div>

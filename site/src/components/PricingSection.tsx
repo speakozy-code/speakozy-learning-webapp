@@ -111,8 +111,6 @@ const PricingSection = () => (
                 <FeatureList items={groupFeatures} />
                 <a
                   href="/app/"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 mt-4 mr-9 font-bold text-primary hover:underline"
                 >
                   <LogIn className="w-4 h-4" />
