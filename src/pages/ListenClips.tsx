@@ -146,8 +146,8 @@ export function ShadowClipView({ clip, canComplete, onBack }: { clip: ListenClip
   const { user, data, put, remove, grantScore } = useApp();
   const main = useRef<PlayerApi>(null);
   const card = useRef<PlayerApi>(null);
-  const [rate, setRate] = useState(1);
-  const [loop, setLoop] = useState(false);
+  const [slow, setSlow] = useState<Record<number, boolean>>({});
+  const [loops, setLoops] = useState<Record<number, boolean>>({});
   const pk = `shadowplays:${user?.id}:${clip.id}`;
   const [plays, setPlays] = useState<Record<number, number>>(() => { try { return JSON.parse(localStorage.getItem(pk) || '{}'); } catch { return {}; } });
   useEffect(() => { try { localStorage.setItem(pk, JSON.stringify(plays)); } catch {} }, [plays]);
@@ -169,11 +169,11 @@ export function ShadowClipView({ clip, canComplete, onBack }: { clip: ListenClip
     main.current?.pause();
     setPlays((p) => ({ ...p, [i]: (p[i] || 0) + 1 }));
     if (active !== i) { setActive(i); return; } // the player mounts, then starts by itself (onReady)
-    const [a, b] = range(i); card.current?.playRange(a, b, rate, loop);
+    const [a, b] = range(i); card.current?.playRange(a, b, slow[i] ? 0.6 : 1, !!loops[i]);
   }
-  function startActive() { if (active === null) return; const [a, b] = range(active); card.current?.playRange(a, b, rate, loop); }
-  useEffect(() => { startActive(); }, [rate, loop]);
-  function playAll() { card.current?.pause(); setActive(null); main.current?.playRange(clip.start, clip.end, rate, false); }
+  function startActive() { if (active === null) return; const [a, b] = range(active); card.current?.playRange(a, b, slow[active] ? 0.6 : 1, !!loops[active]); }
+  useEffect(() => { startActive(); }, [slow[active ?? -1], loops[active ?? -1]]);
+  function playAll() { card.current?.pause(); setActive(null); main.current?.playRange(clip.start, clip.end, 1, false); }
   async function reveal(i: number) {
     if (opened(i)) return;
     await put('attempts', { id: uid(), studentId: user!.id, sessionId: 'shadow', questionId: `shadowopen:${clip.id}:${i}`, answer: 'open', autoScore: 0, maxScore: 0, status: 'approved', createdAt: today() });
@@ -211,10 +211,6 @@ export function ShadowClipView({ clip, canComplete, onBack }: { clip: ListenClip
 
       <div dir="rtl"><b>المقاطع الصغيرة</b>
         <p className="muted" style={{ margin: 0 }}>اسمع كل مقطع {MIN_PLAYS} مرات، بعدها ظهّر الجملة وشرح نطقها. ردّدها لحد ما تتقنها، وبعدين دوس «اتقنتها».</p></div>
-      <div className="row" style={{ gap: '.5rem', flexWrap: 'wrap' }}>
-        <Button variant={rate < 1 ? 'primary' : 'ghost'} onClick={() => setRate(rate < 1 ? 1 : 0.6)}><Snail size={16} /> {rate < 1 ? 'بطيء ✓' : 'بطيء'}</Button>
-        <Button variant={loop ? 'primary' : 'ghost'} onClick={() => setLoop(!loop)}><Repeat size={16} /> {loop ? 'تكرار ✓' : 'كرّر الجملة'}</Button>
-      </div>
       <div className="row between"><b>الجمل ({doneCount} / {clip.lines.length})</b><Badge tone={all ? 'green' : ''}>{all ? 'اتقنت الكل' : 'كمّل'}</Badge></div>
       <div style={{ height: 8, background: '#0001', borderRadius: 8, overflow: 'hidden' }}><div style={{ width: `${clip.lines.length ? (100 * doneCount) / clip.lines.length : 0}%`, height: '100%', background: '#16a34a' }} /></div>
 
@@ -227,6 +223,8 @@ export function ShadowClipView({ clip, canComplete, onBack }: { clip: ListenClip
             : <div onClick={() => playCard(i)} style={{ aspectRatio: '16/9', background: '#111', borderRadius: 12, display: 'grid', placeItems: 'center', color: '#fff', cursor: 'pointer' }}><Play size={36} /></div>}
           <div className="row" style={{ gap: '.5rem', flexWrap: 'wrap' }}>
             <Button size="sm" onClick={() => playCard(i)}><Play size={14} /> اسمع</Button>
+            <Button size="sm" variant={slow[i] ? 'primary' : 'ghost'} onClick={() => setSlow({ ...slow, [i]: !slow[i] })}><Snail size={14} /> {slow[i] ? 'بطيء ✓' : 'بطيء'}</Button>
+            <Button size="sm" variant={loops[i] ? 'primary' : 'ghost'} onClick={() => setLoops({ ...loops, [i]: !loops[i] })}><Repeat size={14} /> {loops[i] ? 'تكرار ✓' : 'كرّر'}</Button>
             {!open && <><span className="muted">سمعتها {n} / {MIN_PLAYS}</span>
               <Button size="sm" variant="ghost" disabled={!can} onClick={() => reveal(i)}>{can ? 'أظهر الجملة' : `${MIN_PLAYS - n} كمان`}</Button></>}
           </div>
