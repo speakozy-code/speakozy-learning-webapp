@@ -1,4 +1,4 @@
-// Sends the daily Web Push notifications: SRS words due + subscription ending (last 7 days).
+// Sends the daily Web Push notifications: word of the day (+ a score nudge every 3rd day), SRS words due, subscription ending (last 7 days).
 // Secrets: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, CRON_SECRET (SUPABASE_URL / SERVICE_ROLE_KEY are provided).
 // Test one student: POST {"test":true,"email":"student@mail.com"} with the x-cron-secret header.
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -11,6 +11,15 @@ const cairoToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Ca
 const daysLeft = (end?: string) => (end && /^\d{4}-\d{2}-\d{2}$/.test(end))
   ? Math.round((Date.parse(end + 'T00:00:00Z') - Date.parse(cairoToday() + 'T00:00:00Z')) / 86400000) : null;
 const arDate = (iso: string) => new Date(iso + 'T12:00:00Z').toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+const DAY_MS = 86400000;
+/** Same pick as the app (src/lib/store.tsx wordOfDay): one single English word per day that has an Arabic meaning. */
+function wordOfDay(dict: any[], day: string) {
+  const pool = (dict || []).filter((w: any) => !w.hidden && /^[A-Za-z]{3,}$/.test(w.word || '') && String(w.arabic || '').trim());
+  if (!pool.length) return null;
+  const n = Math.floor(Date.parse(day + 'T00:00:00Z') / DAY_MS);
+  return pool[(n * 7919) % pool.length];
+}
 
 Deno.serve(async (req) => {
   if (req.headers.get('x-cron-secret') !== Deno.env.get('CRON_SECRET')) return new Response('forbidden', { status: 403 });
@@ -29,6 +38,12 @@ Deno.serve(async (req) => {
   for (const u of users) {
     if (u.role !== 'student' || u.active === false) continue;
     if (body.test) { if ((u.email || '').toLowerCase() === String(body.email || '').toLowerCase()) add(u.id, { title: 'Speakozy', body: 'الإشعارات شغّالة ✅', href: './', tag: 'test' }); continue; }
+    const day = cairoToday();
+    const w = wordOfDay(doc.dictionary, day);
+    if (w) {
+      const nudge = Math.floor(Date.parse(day + 'T00:00:00Z') / DAY_MS) % 3 === 0 ? '\nاشتغل على نفسك علشان تاخد أعلى سكور.' : '';
+      add(u.id, { title: 'كلمة اليوم', body: `${w.word} — ${w.arabic}${nudge}`, href: './#/dictionary', tag: 'wotd' });
+    }
     const due = (doc.savedWords || []).filter((w: any) => w.studentId === u.id && (!w.nextReview || w.nextReview <= nowIso)).length;
     if (due > 0) add(u.id, { title: 'مراجعة الكلمات', body: `عندك ${due} كلمة مستحقة للمراجعة دلوقتي — راجعها قبل ما تنساها.`, href: './#/words', tag: 'srs' });
     const left = daysLeft(u.subscriptionEnd);

@@ -30,8 +30,9 @@ function readDemo(): AppData {
 }
 const DAY_MS = 86400000;
 /** One word per day, the same for everybody: single English words that have an Arabic meaning. */
+let RAW_DICT: any[] = []; // the live document's dictionary as stored (the daily push picks from the same list)
 function wordOfDay(dict: any[], day: string) {
-  const pool = (dict || []).filter((w: any) => !w.hidden && /^[A-Za-z]{3,}$/.test(w.word || '') && (w.arabic || '').trim());
+  const pool = (RAW_DICT.length ? RAW_DICT : (dict || [])).filter((w: any) => !w.hidden && /^[A-Za-z]{3,}$/.test(w.word || '') && String(w.arabic || '').trim());
   if (!pool.length) return null;
   const n = Math.floor(new Date(day + 'T00:00:00Z').getTime() / DAY_MS);
   return pool[(n * 7919) % pool.length];
@@ -132,6 +133,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   async function refresh() {
     if (demo) { setData(withDailyNotes(readDemo(), user)); return; }
     const loaded = CLOUD === 'supabase' ? await sbLoadAll(COLLECTIONS) : await fbLoadAll(COLLECTIONS);
+    RAW_DICT = Array.isArray((loaded as any).dictionary) ? (loaded as any).dictionary : [];
     setData(withDailyNotes(withLevelTasks(englishify({ ...emptyData(), ...loaded } as AppData)), user));
   }
 
