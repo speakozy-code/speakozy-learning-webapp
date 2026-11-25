@@ -43,7 +43,7 @@ export default function TrialPage() {
       <SectionTitle title="السيشن التجريبية" action={<Badge tone="green"><Play size={12} /> فيديو</Badge>} />
       <p className="muted" style={{ marginTop: 0 }}>هنشرح فيها نظام كل سيشن ونظام الكورس بيكون ماشي إزاي.</p>
       {TRIAL_VIDEO.youtubeId ? <div className="video-frame">
-        <iframe src={youtubeEmbed(TRIAL_VIDEO.youtubeId)} title={TRIAL_VIDEO.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+        <iframe referrerPolicy="strict-origin-when-cross-origin" src={youtubeEmbed(TRIAL_VIDEO.youtubeId)} title={TRIAL_VIDEO.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
       </div> : <div className="video-placeholder">
         <Play size={34} />
         <strong>السيشن التجريبية هتضاف هنا قريبًا</strong>
