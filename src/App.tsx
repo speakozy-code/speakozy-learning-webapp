@@ -8,7 +8,7 @@ import { StudentDashboard, Roadmap, SessionPage, QuizPage, LevelExamPage, Dictio
 import TrialPage from './pages/Trial';
 import ResetPassword from './pages/ResetPassword';
 import { openedFromRecoveryLink, sbOnPasswordRecovery } from './lib/supabase';
-import { ListenPage, ListenAdminPage } from './pages/ListenClips';
+import { ListenAdminPage } from './pages/ListenClips';
 import ShadowingPage from './pages/Shadowing';
 import PlayPage from './pages/Play';
 import ResourcesPage from './pages/Resources';
@@ -93,7 +93,7 @@ export default function App() {
       case 'leaderboard': page = <LeaderboardPage />; break;
       case 'profile': page = <ProfilePage />; break;
       case 'trial': page = <TrialPage />; break;
-      case 'listen': page = <ListenPage />; break;
+      case 'listen': page = <ShadowingPage />; break;
       case 'shadowing': page = <ShadowingPage />; break;
       case 'play': page = <PlayPage />; break;
       case 'resources': page = <ResourcesPage />; break;

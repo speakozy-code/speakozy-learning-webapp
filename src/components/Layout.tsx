@@ -24,7 +24,6 @@ const studentNav = [
   { path: '/words', label: 'الكلمات', ic: Brain },
   { path: '/yalla-netkellem', label: 'يلا نتكلم', ic: Mic2 },
   { path: '/tasks', label: 'التاسكات اليومية', ic: ListChecks },
-  { path: '/listen', label: 'مقاطع الاستماع', ic: Headphones },
   { path: '/shadowing', label: 'الشادوينج', ic: Headphones },
   { path: '/play', label: 'العب واتعلم', ic: Gamepad2 },
   { path: '/resources', label: 'المصادر', ic: Library },
@@ -41,7 +40,7 @@ const adminNav = [
   { path: '/admin/reviews', label: 'مراجعة النتائج', ic: Inbox },
   { path: '/admin/task-reviews', label: 'مراجعة التاسكات', ic: ClipboardCheck },
   { path: '/admin/operations', label: 'التاسكات والإشعارات', ic: BellRing },
-  { path: '/admin/listen', label: 'مقاطع الاستماع', ic: Headphones },
+  { path: '/admin/listen', label: 'كليبات الشادوينج', ic: Headphones },
   { path: '/admin/certificates', label: 'الشهادات', ic: Award },
   { path: '/admin/settings', label: 'الإعدادات', ic: Settings },
 ];
