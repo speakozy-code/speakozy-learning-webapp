@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, SectionTitle, Empty, Tabs } from '../components/UI';
-import { SHADOWING_VIDEOS, youtubeEmbed } from '../lib/videoSlots';
+import { ShadowClipView } from './ListenClips';
 import { Headphones, Lock } from 'lucide-react';
 import { UpsellModal, SubscribeButtons } from '../components/Upsell';
 import { isSubscribed, FREE_SHADOWING_VIDEOS } from '../lib/subscription';
@@ -23,22 +23,14 @@ export default function ShadowingPage() {
   const levels = allLevels;
   const [tab, setTab] = useState(user?.levelId || allLevels[0]?.id);
   const [upsell, setUpsell] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
   if (!user) return null;
   const subscribed = isSubscribed(user);
-  const sid = (v: { youtubeId: string }) => `shadow-${v.youtubeId}`;
-  const mineDone = (v: { youtubeId: string }) => data.taskCompletions.find((c) => c.studentId === user.id && c.taskId === sid(v));
-  async function done(v: { youtubeId: string }) {
-    if (!subscribed || !ownLevel || mineDone(v)) return;
-    await put('taskCompletions', { taskId: sid(v), studentId: user!.id, completedAt: new Date().toISOString().slice(0, 10), status: 'pending' });
-    await grantScore(user!.id, 'task', scoreRule(data.settings.scoreRules, 'taskPending'), `task-pending-${sid(v)}`);
-  }
-  async function undo(v: { youtubeId: string }) {
-    const c = mineDone(v);
-    if (c && (c.status || 'approved') !== 'approved') await remove('taskCompletions', c.id);
-  }
-  const videos = SHADOWING_VIDEOS[tab] || [];
+  const clips = [...(data.listenClips || [])].filter((c) => c.levelId === tab && (c.active || admin)).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const doneLines = (id: string) => data.attempts.filter((a) => a.studentId === user.id && a.questionId.startsWith(`shadowline:${id}:`)).length;
   const level = levels.find((l) => l.id === tab);
   // every level inside the student's allowed range (first → last level) is fully open, not only one level
+  const openClip = clips.find((c) => c.id === openId);
   const ownLevel = admin || (!!level && levelFullyOpen(user, level, allLevels));
   return <div className="stack">
     <div><h1><Headphones size={22} /> الشادوينج</h1>
@@ -59,29 +51,23 @@ export default function ShadowingPage() {
       ? `ليفل ${level?.title || ''} مفتوح ليك — تقدر تعمل شادوينج وتدوس «تم الإنجاز» على فيديوهاته.`
       : 'اختار الليفل بتاعك علشان تقدر تعمل شادوينج. باقي الليفلات تقدر تشوف فيها أول فيديو بس، والباقي مقفول.'}</div>}
 
-    <Card>
-      <SectionTitle title={`فيديوهات ${level?.title || ''}`} action={<Badge tone="blue">{videos.length} فيديو</Badge>} />
-      <p className="muted" dir="rtl" style={{ marginTop: 0 }}>لو حاسس إن المحتوى مش مناسب ليك، ممكن تعمل نفس الخطوات دي مع فيلمك المفضل.</p>
-      {videos.length ? <div className="grid g2">
-        {videos.map((v, i) => {
-          // own level: everything for subscribers; any other level (or not subscribed): the first video only
+    {openClip ? <ShadowClipView clip={openClip} canComplete={subscribed && ownLevel && !admin} onBack={() => setOpenId(null)} /> : <Card>
+      <SectionTitle title={`كليبات ${level?.title || ''}`} action={<Badge tone="blue">{clips.length} كليب</Badge>} />
+      {clips.length ? <div className="stack">
+        {clips.map((c, i) => {
           const locked = !admin && !(subscribed && ownLevel) && i >= FREE_SHADOWING_VIDEOS;
-          const c = mineDone(v);
-          const st = c ? (c.status || 'approved') : '';
-          return <div key={v.youtubeId} className={`section-card ${locked ? 'locked-item' : ''}`} onClick={locked && !subscribed ? () => setUpsell(true) : undefined}>
-            {locked ? <div className="lock-cover" style={{ minHeight: 160 }}><Lock size={20} /> {subscribed ? 'مقفول — الليفل ده مش مفتوح ليك' : 'اشترك معانا علشان تكمل'}</div>
-              : <div className="video-frame"><iframe referrerPolicy="strict-origin-when-cross-origin" src={youtubeEmbed(v.youtubeId)} title={v.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>}
-            <strong style={{ display: 'block', marginTop: '.6rem' }}>{v.title}</strong>
-            {!locked && !admin && ownLevel && subscribed && <div className="row" style={{ marginTop: '.5rem' }}>
-              {!c && <Button size="sm" onClick={() => done(v)}>تم الإنجاز ✓</Button>}
-              {st === 'pending' && <><Badge tone="amber">بانتظار المدرّس</Badge><Button size="sm" variant="ghost" onClick={() => undo(v)}>تراجع</Button></>}
-              {st === 'approved' && <Badge tone="green">معتمد</Badge>}
-              {st === 'rejected' && <><Badge tone="red">اتردّ — جرّب تاني</Badge><Button size="sm" variant="ghost" onClick={() => undo(v)}>حاول تاني</Button></>}
-            </div>}
+          const n = doneLines(c.id);
+          return <div key={c.id} className={`section-card ${locked ? 'locked-item' : ''}`} onClick={locked && !subscribed ? () => setUpsell(true) : undefined}>
+            <div className="row between" style={{ gap: '.5rem' }}>
+              <div><strong>{c.title}</strong><div className="muted" style={{ fontSize: '.85rem' }}>{Math.round((c.end - c.start) / 60 * 10) / 10} دقيقة · {c.lines.length} جملة {!c.active && '· مخفي عن الطلبة'}</div></div>
+              {locked ? <span className="muted"><Lock size={16} /> {subscribed ? 'مقفول' : 'للمشتركين'}</span> : <div className="row" style={{ gap: '.4rem' }}>
+                {n > 0 && <Badge tone={n === c.lines.length ? 'green' : 'amber'}>{n} / {c.lines.length}</Badge>}
+                <Button size="sm" onClick={() => setOpenId(c.id)}>{n ? 'كمّل' : 'ابدأ'}</Button></div>}
+            </div>
           </div>;
         })}
-      </div> : <Empty icon="🎬" title={`فيديوهات الشادوينج لمستوى ${level?.title || ''} هتضاف قريبًا`} hint="بنجهز فيديوهات مختارة لكل مستوى — هتظهر هنا أول ما تتضاف." />}
-    </Card>
+      </div> : <Empty icon="🎬" title={`كليب الشادوينج لمستوى ${level?.title || ''} هيضاف قريبًا`} hint="بنجهز كليب لكل مستوى — هيظهر هنا أول ما يتضاف." />}
+    </Card>}
 
     <UpsellModal open={upsell} onClose={() => setUpsell(false)} what="الشادوينج" />
     {!subscribed && <Card className="row between">

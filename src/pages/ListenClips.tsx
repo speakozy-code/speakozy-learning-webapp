@@ -1,13 +1,11 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, SectionTitle, Empty, Field } from '../components/UI';
-import { isSubscribed } from '../lib/subscription';
-import { uid, today } from '../lib/domain';
+import { uid, today, scoreRule } from '../lib/domain';
 import { lookupWord, type LookupEntry } from '../lib/dictionaryProvider';
 import type { ListenClip, ListenLine } from '../types';
 import { Headphones, Play, Snail, Repeat, Bookmark, Volume2, ExternalLink } from 'lucide-react';
 
-const FREE_CLIPS = 1;
 
 export function parseYoutubeId(input: string): string {
   const t = input.trim();
@@ -138,68 +136,103 @@ function Lines({ clip, now, onLine, onWord, sel }: { clip: Pick<ListenClip, 'lin
 }
 
 const lineEnd = (c: Pick<ListenClip, 'lines' | 'end'>, i: number) => (i + 1 < c.lines.length ? c.lines[i + 1].t : c.end);
+const MIN_PLAYS = 3;
 
-function ClipView({ clip, onBack }: { clip: ListenClip; onBack: () => void }) {
-  const { user, data, put } = useApp();
+/** Shadowing flow for one big clip: listen to all of it, master it sentence by sentence, then shadow it whole. */
+export function ShadowClipView({ clip, canComplete, onBack }: { clip: ListenClip; canComplete: boolean; onBack: () => void }) {
+  const { user, data, put, remove, grantScore } = useApp();
   const api = useRef<PlayerApi>(null);
-  const [now, setNow] = useState(clip.start);
   const [rate, setRate] = useState(1);
   const [loop, setLoop] = useState(false);
-  const [sel, setSel] = useState<number | null>(null);
+  const [plays, setPlays] = useState<Record<number, number>>({});
+  const [shown, setShown] = useState<Record<number, boolean>>({});
   const [word, setWord] = useState<string | null>(null);
   const [broken, setBroken] = useState(false);
-  const done = data.attempts.some((a) => a.studentId === user!.id && a.questionId === `listen:${clip.id}`);
+  const [cur, setCur] = useState<number | null>(null);
+  if (!user) return null;
+  const key = (i: number) => `shadowline:${clip.id}:${i}`;
+  const mastered = (i: number) => data.attempts.find((a) => a.studentId === user.id && a.questionId === key(i));
+  const doneCount = clip.lines.filter((_, i) => mastered(i)).length;
+  const all = clip.lines.length > 0 && doneCount === clip.lines.length;
+  const taskId = `shadow-${clip.id}`;
+  const comp = data.taskCompletions.find((c) => c.studentId === user.id && c.taskId === taskId);
+  const st = comp ? (comp.status || 'approved') : '';
 
-  function playLine(i: number) { setSel(i); api.current?.playRange(clip.lines[i].t - 0.15, lineEnd(clip, i), rate, loop); }
-  function playAll() { setSel(null); api.current?.playRange(clip.start, clip.end, rate, false); }
-  useEffect(() => { if (sel !== null) api.current?.playRange(clip.lines[sel].t - 0.15, lineEnd(clip, sel), rate, loop); }, [rate, loop]);
-  async function finish() {
-    if (done || !user) return;
-    await put('attempts', { id: uid(), studentId: user.id, sessionId: 'listen', questionId: `listen:${clip.id}`, answer: 'done', autoScore: 0, maxScore: 0, status: 'approved', createdAt: today() });
+  function playLine(i: number) { setCur(i); setPlays((p) => ({ ...p, [i]: (p[i] || 0) + 1 })); api.current?.playRange(clip.lines[i].t - 0.15, lineEnd(clip, i), rate, loop); }
+  useEffect(() => { if (cur !== null) api.current?.playRange(clip.lines[cur].t - 0.15, lineEnd(clip, cur), rate, loop); }, [rate, loop]);
+  function playAll() { setCur(null); api.current?.playRange(clip.start, clip.end, rate, false); }
+  async function master(i: number) {
+    if (mastered(i)) return;
+    await put('attempts', { id: uid(), studentId: user!.id, sessionId: 'shadow', questionId: key(i), answer: 'mastered', autoScore: 0, maxScore: 0, status: 'approved', createdAt: today() });
+  }
+  async function unmaster(i: number) { const a = mastered(i); if (a) await remove('attempts', a.id); }
+  async function complete() {
+    if (!canComplete || comp) return;
+    await put('taskCompletions', { taskId, studentId: user!.id, completedAt: new Date().toISOString().slice(0, 10), status: 'pending' });
+    await grantScore(user!.id, 'task', scoreRule(data.settings.scoreRules, 'taskPending'), `task-pending-${taskId}`);
   }
 
   return <div className="stack">
     <div className="row between"><Button variant="ghost" size="sm" onClick={onBack}>→ كل الكليبات</Button>
       <a href={`https://www.youtube.com/watch?v=${clip.youtubeId}&t=${Math.floor(clip.start)}s`} target="_blank" rel="noreferrer" className="muted" style={{ fontSize: '.85rem' }}><ExternalLink size={14} /> المصدر على يوتيوب</a></div>
     <h2 style={{ margin: 0 }}>{clip.title}</h2>
-    {broken ? <Card><Empty title="الفيديو مش متاح دلوقتي" text="هنصلّحه قريب." /></Card> : <>
-      <ClipPlayer ref={api} videoId={clip.youtubeId} start={clip.start} onTime={setNow} onBroken={() => setBroken(true)} />
+    <Card>
+      <div className="stack" dir="rtl">
+        <div><b>1) اسمع الكليب كله</b> من غير ما تبص على الكتابة، وركّز على النغمة والسرعة.</div>
+        <div><b>2) اتقن كل جملة:</b> اسمعها {MIN_PLAYS} مرات، بعدها تقدر تظهّر الجملة وشرح نطقها. ردّدها لحد ما تبقى زي المتحدث، وبعدين دوس «اتقنتها».</div>
+        <div><b>3) لما تتقن كل الجمل،</b> شادو الكليب كله مرة واحدة ورا المتحدث، ودوس «عملتها».</div>
+      </div>
+    </Card>
+    {broken ? <Card><Empty title="الفيديو مش متاح دلوقتي" hint="هنصلّحه قريب." /></Card> : <>
+      <ClipPlayer ref={api} videoId={clip.youtubeId} start={clip.start} onBroken={() => setBroken(true)} />
       <div className="row" style={{ gap: '.5rem', flexWrap: 'wrap' }}>
-        <Button onClick={playAll}><Play size={16} /> شغّل الكليب</Button>
+        <Button onClick={playAll}><Play size={16} /> شغّل الكليب كله</Button>
         <Button variant={rate < 1 ? 'primary' : 'ghost'} onClick={() => setRate(rate < 1 ? 1 : 0.6)}><Snail size={16} /> {rate < 1 ? 'بطيء ✓' : 'بطيء'}</Button>
         <Button variant={loop ? 'primary' : 'ghost'} onClick={() => setLoop(!loop)}><Repeat size={16} /> {loop ? 'تكرار ✓' : 'كرّر الجملة'}</Button>
       </div>
-      <p className="muted">دوس على أي جملة تسمعها. دوس على أي كلمة تعرف نطقها ومعناها.</p>
-      <Lines clip={clip} now={now} onLine={playLine} onWord={setWord} sel={sel} />
-      {word && <WordCard word={word} onClose={() => setWord(null)} />}
-      <Button onClick={finish} disabled={done}>{done ? 'خلّصت الكليب ✓' : 'خلّصت الكليب'}</Button>
-    </>}
-  </div>;
-}
-
-export function ListenPage() {
-  const { user, data } = useApp();
-  const [openId, setOpenId] = useState<string | null>(null);
-  if (!user) return null;
-  const admin = user.role === 'admin';
-  const subscribed = isSubscribed(user) || admin;
-  const all = [...(data.listenClips || [])].filter((c) => (c.active || admin) && (!c.levelId || c.levelId === user.levelId || admin))
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  const done = new Set(data.attempts.filter((a) => a.studentId === user.id && a.questionId.startsWith('listen:')).map((a) => a.questionId.slice(7)));
-  const open = all.find((c) => c.id === openId);
-  if (open) return <ClipView clip={open} onBack={() => setOpenId(null)} />;
-  return <div className="stack">
-    <div><h1><Headphones size={22} /> مقاطع الاستماع</h1>
-      <p className="muted">كليبات من أفلام حقيقية، من الأبطأ للأسرع. اسمع، اقرا الجملة، كرّرها، واتعلم كلماتها.</p></div>
-    {!all.length ? <Card><Empty title="لسه مفيش كليبات" text="الكليبات هتظهر هنا أول ما تتضاف." /></Card> :
-      <div className="stack">{all.map((c, i) => {
-        const locked = !subscribed && i >= FREE_CLIPS;
-        return <Card key={c.id}><div className="row between" style={{ gap: '.5rem' }}>
-          <div><b>{i + 1}. {c.title}</b><div className="muted" style={{ fontSize: '.85rem' }}>{Math.round(c.end - c.start)} ثانية · {c.lines.length} جملة {!c.active && '· مخفي عن الطلبة'}</div></div>
-          <div className="row" style={{ gap: '.4rem' }}>{done.has(c.id) && <Badge tone="green">خلّصته</Badge>}
-            {locked ? <Badge tone="danger">للمشتركين</Badge> : <Button size="sm" onClick={() => setOpenId(c.id)}>افتح</Button>}</div>
+      <div className="row between"><b>الجمل ({doneCount} / {clip.lines.length})</b><Badge tone={all ? 'green' : ''}>{all ? 'اتقنت الكل' : 'كمّل'}</Badge></div>
+      <div style={{ height: 8, background: '#0001', borderRadius: 8, overflow: 'hidden' }}><div style={{ width: `${clip.lines.length ? (100 * doneCount) / clip.lines.length : 0}%`, height: '100%', background: '#16a34a' }} /></div>
+      <div className="stack">{clip.lines.map((l, i) => {
+        const ok = !!mastered(i); const n = plays[i] || 0; const can = ok || n >= MIN_PLAYS; const open = ok || shown[i];
+        return <Card key={i}><div className="stack">
+          <div className="row between" style={{ gap: '.5rem', flexWrap: 'wrap' }}>
+            <b>جملة {i + 1}</b>
+            <div className="row" style={{ gap: '.4rem' }}>
+              {ok && <Badge tone="green">اتقنتها ✓</Badge>}
+              <Button size="sm" onClick={() => playLine(i)}><Play size={14} /> اسمع</Button>
+            </div>
+          </div>
+          {!open && <div className="row" style={{ gap: '.5rem', flexWrap: 'wrap' }}>
+            <span className="muted">سمعتها {n} / {MIN_PLAYS}</span>
+            <Button size="sm" variant="ghost" disabled={!can} onClick={() => setShown({ ...shown, [i]: true })}>{can ? 'أظهر الجملة' : `اسمعها ${MIN_PLAYS - n} مرة كمان`}</Button>
+          </div>}
+          {open && <div className="stack">
+            <div dir="ltr" style={{ textAlign: 'left', fontSize: '1.05rem' }}>{l.text.split(/(\s+)/).map((tok, k) => {
+              const w = tok.replace(/[^A-Za-z']/g, '').replace(/^'+|'+$/g, '');
+              return /^\s+$/.test(tok) || !w ? <span key={k}>{tok}</span> : <span key={k} onClick={() => setWord(w)} style={{ textDecoration: 'underline dotted', textUnderlineOffset: 3, cursor: 'pointer' }}>{tok}</span>;
+            })}</div>
+            {l.say && <div dir="ltr" style={{ textAlign: 'left', color: '#92400e' }}><b>How it's said:</b> {l.say}</div>}
+            {l.note && <div dir="rtl" className="muted" style={{ textAlign: 'right' }}>{l.note}</div>}
+            <div className="row" style={{ gap: '.5rem' }}>
+              {!ok ? <Button size="sm" onClick={() => master(i)}>اتقنتها ✓</Button> : <Button size="sm" variant="ghost" onClick={() => unmaster(i)}>ارجع للتدريب</Button>}
+            </div>
+          </div>}
         </div></Card>;
-      })}</div>}
+      })}</div>
+      {word && <WordCard word={word} onClose={() => setWord(null)} />}
+      <Card>
+        <div className="stack" dir="rtl">
+          <b>الخطوة الأخيرة: شادو الكليب كله مرة واحدة</b>
+          {!all ? <p className="muted" style={{ margin: 0 }}>اتقن كل الجمل الأول ({doneCount} / {clip.lines.length}).</p> : <div className="row" style={{ gap: '.5rem', flexWrap: 'wrap' }}>
+            <Button onClick={playAll}><Play size={16} /> شغّل وشادو</Button>
+            {canComplete && !comp && <Button onClick={complete}>عملتها ✓</Button>}
+            {st === 'pending' && <Badge tone="amber">بانتظار المدرّس</Badge>}
+            {st === 'approved' && <Badge tone="green">معتمد</Badge>}
+            {st === 'rejected' && <Badge tone="red">اتردّ — جرّب تاني</Badge>}
+          </div>}
+        </div>
+      </Card>
+    </>}
   </div>;
 }
 
