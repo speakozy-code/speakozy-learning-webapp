@@ -81,7 +81,7 @@ export function Layout({ current, children }: { current: string; children: React
   </button>;
 
   const side = <aside className={`side ${open ? 'open' : ''}`}>
-    <div className="brand"><img className="brand-logo" src="./logo-on-dark.png" alt="Speakozy" /></div>
+    <div className="brand"><a href="/" title="موقع Speakozy"><img className="brand-logo" src="./logo-on-dark.png" alt="Speakozy" /></a></div>
     <div className="nav-group">{admin ? 'لوحة الأدمن' : 'مساحة الطالب'}</div>
     <nav className="nav" onClick={() => setOpen(false)}>
       {nav.map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
