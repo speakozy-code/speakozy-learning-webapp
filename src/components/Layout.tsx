@@ -41,6 +41,7 @@ const adminNav = [
   { path: '/admin/task-reviews', label: 'مراجعة التاسكات', ic: ClipboardCheck },
   { path: '/admin/operations', label: 'التاسكات والإشعارات', ic: BellRing },
   { path: '/admin/listen', label: 'كليبات الشادوينج', ic: Headphones },
+  { path: '/admin/pdfs', label: 'ملفات PDF', ic: FileText },
   { path: '/admin/certificates', label: 'الشهادات', ic: Award },
   { path: '/admin/settings', label: 'الإعدادات', ic: Settings },
 ];

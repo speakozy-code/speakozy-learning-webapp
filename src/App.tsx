@@ -9,6 +9,7 @@ import TrialPage from './pages/Trial';
 import ResetPassword from './pages/ResetPassword';
 import { openedFromRecoveryLink, sbOnPasswordRecovery } from './lib/supabase';
 import { ListenAdminPage } from './pages/ListenClips';
+import { PdfAdminPage } from './pages/PdfAdmin';
 import ShadowingPage from './pages/Shadowing';
 import PlayPage from './pages/Play';
 import ResourcesPage from './pages/Resources';
@@ -74,6 +75,7 @@ export default function App() {
         case 'operations': page = <OperationsPage />; break;
         case 'settings': page = <AdminSettingsPage />; break;
         case 'listen': page = <ListenAdminPage />; break;
+        case 'pdfs': page = <PdfAdminPage />; break;
         case 'certificates': page = <CertificatesPage />; break;
         default: page = <AdminDashboard />;
       }

@@ -1,3 +1,4 @@
+import { pdfLinkFor } from '../lib/pdfLinks';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, Progress, Stat, SectionTitle, Empty, Tabs, Field, Modal, fmtDate, fmtDay, isLate } from '../components/UI';
@@ -50,7 +51,7 @@ const MATERIAL_PDF: Record<string, string> = {
   'l9-s7': './materials/7-%20Shopping.pdf',
 };
 function materialPdf(s: any): string {
-  return s?.pdfUrl || MATERIAL_PDF[s?.id] || `./lesson-pdfs/${s?.id}.pdf`;
+  return pdfLinkFor(s) || MATERIAL_PDF[s?.id] || '';
 }
 
 /** Open / download buttons for a lesson PDF; locked for anyone outside their allowed levels. */
@@ -65,8 +66,7 @@ function PdfActions({ s, stop = false, extra = null }: { s: any; stop?: boolean;
     <UpsellModal open={upsell} onClose={() => setUpsell(false)} what={user.subscribed === false ? 'ملفات PDF' : 'PDF المستويات التانية'} />
   </>;
   return <>
-    <a className="btn btn-primary btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer" {...st}>افتح PDF ↗</a>
-    <a className="btn btn-ghost btn-sm" href={materialPdf(s)} download {...st}>نزّل PDF ⬇</a>
+    <a className="btn btn-primary btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer" {...st}>PDF</a>
     {extra}
   </>;
 }
