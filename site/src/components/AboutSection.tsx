@@ -69,7 +69,7 @@ const AboutSection = () => (
         <Reveal delay={200}>
           <div className="flex flex-col items-center">
             <GraduationCap className="w-8 h-8 text-muted-foreground mb-4 opacity-50" />
-            <CountUp target={8} suffix="" />
+            <CountUp target={6} suffix="" />
             <p className="font-semibold text-foreground/80">طلاب حد أقصى للمجموعة</p>
           </div>
         </Reveal>

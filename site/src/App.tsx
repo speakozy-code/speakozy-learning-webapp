@@ -10,6 +10,7 @@ import Register from "./pages/Register.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import FloatingButtons from "./components/FloatingButtons";
 import ScrollToTop from "./components/ScrollToTop";
+import Analytics from "./components/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <ScrollToTop />
+          <Analytics />
           <FloatingButtons />
           <Routes>
             <Route path="/" element={<Index />} />

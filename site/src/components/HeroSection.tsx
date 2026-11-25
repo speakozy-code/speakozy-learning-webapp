@@ -131,7 +131,7 @@ const HeroSection = () => (
         <Reveal className="w-full md:w-5/12 flex justify-center mt-8 md:mt-0" delay={200}>
           <div className="w-full max-w-sm aspect-[9/16] bg-black border-2 border-primary/30 rounded-[2.5rem] shadow-2xl overflow-hidden transition-transform hover:scale-[1.02]">
             <iframe
-              src="https://www.youtube.com/embed/JaGCrGHmkwA?rel=0&modestbranding=1&playsinline=1"
+              src="https://www.youtube.com/embed/GFrNp1Xi2TQ?rel=0&modestbranding=1&playsinline=1"
               title="Speakozy Reel"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
