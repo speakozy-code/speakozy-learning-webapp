@@ -5,7 +5,7 @@ import { readFileSync, existsSync, statSync } from 'node:fs';
 let pass = 0;
 const t = (name, fn) => { fn(); pass++; console.log('ok -', name); };
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
-const manifest = JSON.parse(read('public/manifest.webmanifest'));
+const manifest = JSON.parse(read('public/app/manifest.webmanifest'));
 
 t('manifest is installable (name, standalone, start_url, 192 and 512 icons)', () => {
   assert.ok(manifest.name && manifest.short_name);
@@ -17,18 +17,18 @@ t('manifest is installable (name, standalone, start_url, 192 and 512 icons)', ()
 });
 t('every manifest icon exists and is a non-empty PNG', () => {
   for (const i of manifest.icons) {
-    const f = `public/${i.src.replace('./', '')}`;
+    const f = `public/app/${i.src.replace('./', '')}`;
     assert.ok(existsSync(new URL(`../${f}`, import.meta.url)), f);
     assert.ok(statSync(new URL(`../${f}`, import.meta.url)).size > 500, f);
     assert.equal(readFileSync(new URL(`../${f}`, import.meta.url)).subarray(1, 4).toString(), 'PNG');
   }
 });
 t('index.html links the manifest and apple icon', () => {
-  const html = read('index.html');
+  const html = read('app/index.html');
   assert.ok(html.includes('manifest.webmanifest') && html.includes('apple-touch-icon'));
 });
 t('service worker has a fetch handler and a notification click handler', () => {
-  const sw = read('public/sw.js');
+  const sw = read('public/app/sw.js');
   assert.ok(sw.includes("'fetch'") && sw.includes('notificationclick'));
 });
 t('password reset: login has a forgot flow and the reset page saves via Supabase', () => {
