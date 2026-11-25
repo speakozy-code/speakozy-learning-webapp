@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, SectionTitle, Empty } from '../components/UI';
 import { FileText, ExternalLink } from 'lucide-react';
-import { PDF_LINKS } from '../lib/pdfLinks';
+import { pdfLinkFor } from '../lib/pdfLinks';
 import type { Session } from '../types';
 
 const DRIVE_FOLDER = 'https://drive.google.com/drive/folders/1MynshnpHik2IrKuLfrq3jPuAgV7stEQF';
@@ -16,7 +16,7 @@ export function PdfAdminPage() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState('');
   const sessions = useMemo(() => data.sessions.filter((s) => s.levelId === levelId).sort((a, b) => a.order - b.order), [data.sessions, levelId]);
-  const current = (s: Session) => s.pdfUrl || PDF_LINKS[s.id] || '';
+  const current = (s: Session) => pdfLinkFor(s);
   const value = (s: Session) => (s.id in drafts ? drafts[s.id] : current(s));
   const withLink = data.sessions.filter((s) => current(s)).length;
 
@@ -40,7 +40,7 @@ export function PdfAdminPage() {
       <SectionTitle title={`الجلسات (${sessions.length}) · عليها لينك: ${withLink} من ${data.sessions.length}`} />
       {!sessions.length ? <Empty title="مفيش جلسات في المستوى ده" text="" /> :
         <div className="stack">{sessions.map((s) => {
-          const dirty = s.id in drafts && drafts[s.id].trim() !== (s.pdfUrl || '');
+          const dirty = s.id in drafts && drafts[s.id].trim() !== current(s);
           const has = !!value(s).trim();
           return <div key={s.id} className="row" style={{ gap: '.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ minWidth: 190, flex: '0 0 190px' }}>{s.order}. {s.title}</span>

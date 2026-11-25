@@ -1,4 +1,4 @@
-import { PDF_LINKS } from '../lib/pdfLinks';
+import { pdfLinkFor } from '../lib/pdfLinks';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, Progress, Stat, SectionTitle, Empty, Tabs, Field, Modal, fmtDate, fmtDay, isLate } from '../components/UI';
@@ -51,8 +51,7 @@ const MATERIAL_PDF: Record<string, string> = {
   'l9-s7': './materials/7-%20Shopping.pdf',
 };
 function materialPdf(s: any): string {
-  // Drive link (admin page) first; the bundled file is only a fallback until lesson-pdfs is removed
-  return s?.pdfUrl || PDF_LINKS[s?.id] || MATERIAL_PDF[s?.id] || `./lesson-pdfs/${s?.id}.pdf`;
+  return pdfLinkFor(s) || MATERIAL_PDF[s?.id] || '';
 }
 
 /** Open / download buttons for a lesson PDF; locked for anyone outside their allowed levels. */
