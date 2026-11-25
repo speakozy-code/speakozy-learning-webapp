@@ -65,7 +65,7 @@ export default function ResourcesPage() {
 
     <Card>
       <SectionTitle title="مصادر الشادوينج" action={<Badge tone="green"><Headphones size={12} /> شادوينج</Badge>} />
-      <div className="video-frame"><iframe src={youtubeEmbed(SHADOW_VIDEO)} title="Shadowing resource" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>
+      <div className="video-frame"><iframe referrerPolicy="strict-origin-when-cross-origin" src={youtubeEmbed(SHADOW_VIDEO)} title="Shadowing resource" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>
       <p className="muted" style={{ marginBottom: '.4rem' }}>بلاي ليستات شادوينج على يوتيوب:</p>
       <LinkGrid items={SHADOW_PLAYLISTS} label="Playlist" href={playlistUrl} />
     </Card>

@@ -70,7 +70,7 @@ export default function ShadowingPage() {
           const st = c ? (c.status || 'approved') : '';
           return <div key={v.youtubeId} className={`section-card ${locked ? 'locked-item' : ''}`} onClick={locked && !subscribed ? () => setUpsell(true) : undefined}>
             {locked ? <div className="lock-cover" style={{ minHeight: 160 }}><Lock size={20} /> {subscribed ? 'مقفول — الليفل ده مش مفتوح ليك' : 'اشترك معانا علشان تكمل'}</div>
-              : <div className="video-frame"><iframe src={youtubeEmbed(v.youtubeId)} title={v.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>}
+              : <div className="video-frame"><iframe referrerPolicy="strict-origin-when-cross-origin" src={youtubeEmbed(v.youtubeId)} title={v.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>}
             <strong style={{ display: 'block', marginTop: '.6rem' }}>{v.title}</strong>
             {!locked && !admin && ownLevel && subscribed && <div className="row" style={{ marginTop: '.5rem' }}>
               {!c && <Button size="sm" onClick={() => done(v)}>تم الإنجاز ✓</Button>}
