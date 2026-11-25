@@ -8,13 +8,6 @@ import { isSubscribed, FREE_SHADOWING_VIDEOS } from '../lib/subscription';
 import { scoreRule, levelFullyOpen } from '../lib/domain';
 
 
-const STEPS = [
-  { n: '1', t: 'اسمع', d: 'شغّل الفيديو واسمع المقطع مرة كاملة من غير ما تتكلم — ركّز على النغمة والسرعة.' },
-  { n: '2', t: 'ردّد', d: 'اسمع تاني وردّد ورا المتحدث في نفس اللحظة — قلّد النطق والإيقاع بالظبط.' },
-  { n: '3', t: 'سجّل', d: 'سجّل صوتك وأنت بتعمل شادوينج للمقطع، واسمع تسجيلك وقارنه بالأصل.' },
-  { n: '4', t: 'ابعت', d: 'ابعت التسجيل على الجروب لما تحس إنك جاهز — المدرب بيتابع ويصحح.' },
-];
-
 export default function ShadowingPage() {
   const { user, data, put, remove, grantScore } = useApp();
   const admin = user?.role === 'admin';
@@ -35,16 +28,6 @@ export default function ShadowingPage() {
   return <div className="stack">
     <div><h1><Headphones size={22} /> الشادوينج</h1>
       <p className="muted">اتكلم إنجليزي زي المتحدثين الأصليين — اسمع، ردّد، سجّل، وابعت. فيديوهات مختارة لكل مستوى.</p></div>
-
-    <Card>
-      <SectionTitle title="طريقة الشادوينج" action={<Badge tone="green">4 خطوات</Badge>} />
-      <div className="grid g4">
-        {STEPS.map((s) => <div key={s.n} className="section-card">
-          <div className="row" style={{ marginBottom: '.3rem' }}><span className="node-num">{s.n}</span><strong>{s.t}</strong></div>
-          <p className="muted" style={{ margin: 0, lineHeight: 1.7, fontSize: '.85rem' }}>{s.d}</p>
-        </div>)}
-      </div>
-    </Card>
 
     <Tabs tabs={levels.map((l) => ({ id: l.id, label: l.title }))} active={tab} onChange={setTab} />
     {!admin && <div className="note" dir="rtl">{ownLevel
