@@ -1,10 +1,8 @@
 import React from 'react';
 import { Card, SectionTitle, Badge } from '../components/UI';
-import { youtubeEmbed } from '../lib/videoSlots';
 import { Library, Headphones, Mic2 } from 'lucide-react';
 
 // مصادر إضافية: بلاي ليستات شادوينج + قنوات بودكاست.
-const SHADOW_VIDEO = 'iJpojFbxHqY';
 const SHADOW_PLAYLISTS = [
   'PLA7lNLNvxTzig5dqfGl8DGbLOvUI08yXg',
   'PLL8rrkKVLqeRdeFKmygYujTkwOefatZ6G',
@@ -65,7 +63,6 @@ export default function ResourcesPage() {
 
     <Card>
       <SectionTitle title="مصادر الشادوينج" action={<Badge tone="green"><Headphones size={12} /> شادوينج</Badge>} />
-      <div className="video-frame"><iframe referrerPolicy="strict-origin-when-cross-origin" src={youtubeEmbed(SHADOW_VIDEO)} title="Shadowing resource" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>
       <p className="muted" style={{ marginBottom: '.4rem' }}>بلاي ليستات شادوينج على يوتيوب:</p>
       <LinkGrid items={SHADOW_PLAYLISTS} label="Playlist" href={playlistUrl} />
     </Card>

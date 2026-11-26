@@ -6,7 +6,7 @@ import { buildDailyTasks } from './dailyTasks';
 import { UNIT_WORDS } from './unitWords';
 import { mergeWords } from './wordFixes';
 import { setGrammarOverrides } from './grammar/index';
-import { uid, today, addScoreOnce, buildStudentAccount, dailyNotifications, withExpiry, subscriptionDaysLeft, cairoToday, arabicDate } from './domain';
+import { uid, today, addScoreOnce, buildStudentAccount, dailyNotifications, withExpiry, withCurrentLevel, subscriptionDaysLeft, cairoToday, arabicDate } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
 import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbSaveSettings, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbCurrentAuth, sbEnsureProfile, sbSaveMyProfile, sbChangePassword, sbUpsertRecord, sbDeleteRecord } from './supabase';
 import { englishify } from './translate';
@@ -106,7 +106,7 @@ type Ctx = {
   signup: (name: string, email: string, password: string, phone?: string) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (u: User | null) => void;
-  saveProfile: (updates: { avatar?: string; name?: string; phone?: string }) => Promise<void>;
+  saveProfile: (updates: { avatar?: string; name?: string; phone?: string; currentLevelId?: string }) => Promise<void>;
   changePassword: (newPassword: string) => Promise<void>;
   put: (collectionName: string, value: any) => Promise<void>;
   remove: (collectionName: string, id: string) => Promise<void>;
@@ -226,7 +226,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }
 
-  async function saveProfile(updates: { avatar?: string; name?: string; phone?: string }) {
+  async function saveProfile(updates: { avatar?: string; name?: string; phone?: string; currentLevelId?: string }) {
     if (!user) return;
     if (demo) {
       const d = readDemo();
@@ -351,5 +351,5 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // hidden words (deleted in the admin lesson editor) never reach any page; grammar edits are registered for every reader
   const view = React.useMemo(() => { setGrammarOverrides(data.grammarNotes as any); return { ...data, users: (data.users || []).map(withExpiry), dictionary: (data.dictionary || []).filter((w) => !w.hidden) } as AppData; }, [data]);
-  return <AppCtx.Provider value={{ user: user ? withExpiry(user) : null, ready, demo, data: view, login, signup, logout, setUser, saveProfile, changePassword, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
+  return <AppCtx.Provider value={{ user: user ? withCurrentLevel(withExpiry(user), view.levels) : null, ready, demo, data: view, login, signup, logout, setUser, saveProfile, changePassword, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
 }

@@ -4,7 +4,7 @@ import { gradeQuestion, sessionStatus, levelProgress, canOpenLevel, sessionOpen,
 import { priorFor } from '../src/lib/review.ts';
 import { schedule, dueWords } from '../src/lib/srs.ts';
 import { levelFullyOpen } from '../src/lib/domain.ts';
-import { subscriptionExpired, withExpiry, extendEnd } from '../src/lib/domain.ts';
+import { subscriptionExpired, withExpiry, extendEnd, withCurrentLevel, pickableLevels, scoreLevelId, levelScore, engagementProgress } from '../src/lib/domain.ts';
 import { readFileSync } from 'node:fs';
 
 let pass = 0;
@@ -148,6 +148,38 @@ t('انتهاء الاشتراك تلقائي بعد آخر يوم', () => {
   assert.equal(subscriptionExpired({ role: 'admin', subscriptionEnd: '2020-01-01' }, '2026-01-01'), false);
   assert.equal(extendEnd('2026-03-10', 30, '2026-03-20'), '2026-04-19'); // expired → from today
   assert.equal(extendEnd('2026-04-01', 30, '2026-03-20'), '2026-05-01'); // still active → from the end date
+});
+
+t('المستوى الحالي: النقاط والتقدم على المستوى المختار بس', () => {
+  const levels = [1, 2, 3, 4, 5, 6].map((n) => ({ id: 'l' + n, order: n, title: 'L' + n, description: '', active: true }));
+  const u = { id: 'u1', role: 'student', levelId: 'l4', maxLevelId: 'l6', currentLevelId: 'l6' };
+  const v = withCurrentLevel(u, levels);
+  assert.equal(v.levelId, 'l6'); assert.equal(v.rangeStartId, 'l4');
+  assert.equal(withCurrentLevel({ ...u, currentLevelId: 'l2' }, levels).levelId, 'l4'); // outside his range: ignored
+  assert.deepEqual(pickableLevels(u, levels).map((l) => l.id), ['l4', 'l5', 'l6']);
+  assert.equal(levelFullyOpen(v, levels[3], levels), true); // range still starts at l4
+  const data = {
+    levels, users: [], dictionary: [], progress: [], attempts: [],
+    sessions: [{ id: 'l4-s1', levelId: 'l4', order: 1 }, { id: 'l6-s1', levelId: 'l6', order: 1 }],
+    tasks: [{ id: 't4', active: true, targetType: 'level', targetId: 'l4' }, { id: 't6a', active: true, targetType: 'level', targetId: 'l6' }, { id: 't6b', active: true, targetType: 'all', sessionIds: ['l6-s1'] }],
+    listenClips: [{ id: 'c6', levelId: 'l6', active: true }],
+    taskCompletions: [{ taskId: 't6a', studentId: 'u1', status: 'pending' }, { taskId: 'shadow-c6', studentId: 'u1', status: 'approved' }, { taskId: 't6b', studentId: 'u1', status: 'rejected' }],
+    scores: [
+      { studentId: 'u1', refId: 'sessionquiz-l4-s1-u1', points: 30 },
+      { studentId: 'u1', refId: 'sessionquiz-l6-s1-u1', points: 20 },
+      { studentId: 'u1', refId: 'shadow-line-c6-3-u1', points: 1 },
+      { studentId: 'u1', refId: 'shadow-done-c6-u1', points: 10 },
+      { studentId: 'u1', refId: 'task-approved-t6a', points: 5 },
+      { studentId: 'u1', refId: 'approved-speaking:l6-s1:2-u1', points: 5 },
+      { studentId: 'u1', refId: 'exam-l4-u1', points: 50 },
+    ],
+  };
+  assert.equal(scoreLevelId(data, data.scores[2]), 'l6');
+  assert.equal(levelScore(data, 'u1', 'l6'), 41);
+  assert.equal(levelScore(data, 'u1', 'l4'), 80);
+  // l6: 1 session*5 + exam 1 + 2 tasks + 1 clip = 9 items; done = task t6a (pending counts) + clip = 2
+  assert.equal(engagementProgress(data, 'l6', 'u1'), Math.round((2 / 9) * 100));
+  assert.equal(engagementProgress(data, 'l4', 'u1'), 0);
 });
 
 console.log(`\n${pass} tests passed`);
