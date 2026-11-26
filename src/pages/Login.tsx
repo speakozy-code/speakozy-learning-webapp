@@ -1,3 +1,4 @@
+import { ThemeToggle } from '../components/ThemeToggle';
 import React, { useState } from 'react';
 import { useApp } from '../lib/store';
 import { Button, Field, Card } from '../components/UI';
@@ -73,6 +74,7 @@ export default function Login() {
   return <div className="auth">
     <div className="auth-hero">{hero}</div>
     <div className="auth-panel">
+      <div className="auth-theme"><ThemeToggle /></div>
       <div className="auth-card">
         <div className="auth-mobile-hero">{hero}</div>
         <div className="auth-tabs">

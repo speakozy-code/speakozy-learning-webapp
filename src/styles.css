@@ -181,66 +181,99 @@ tbody tr:last-child td{border-bottom:0}
 .global-hit{margin-top:.9rem;padding:.85rem 1rem;border:1px solid #bfe9d8;border-radius:12px;background:#f3fdf9}
 
 
-/* ================= Dark navy theme (dominant) ================= */
-:root{
+/* ================= Dark theme (opt-in via html[data-theme="dark"]) ================= */
+html[data-theme="dark"]{
   --green:#12ce90; --green-dark:#12ce90; --navy:#0b1220; --navy-2:#131d31;
   --bg:#070d18; --card:#101a2c; --ink:#e8eef7; --muted:#9aabc4; --line:#24334c;
   --danger:#ff6b6b; --warn:#f5b942; --info:#6aa5ff;
   --shadow:0 8px 28px rgba(0,0,0,.35);
 }
-body{background:var(--bg);color:var(--ink)}
-.card,.section-card,.node,.quiz-opt,.word-row,.table-wrap,table,th,td,
-.modal,.auth-card,.search-hero,.stat,.global-hit,.flashcard,.empty,.word-day{
+html[data-theme="dark"] body{background:var(--bg);color:var(--ink)}
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .section-card,
+html[data-theme="dark"] .node,
+html[data-theme="dark"] .quiz-opt,
+html[data-theme="dark"] .word-row,
+html[data-theme="dark"] .table-wrap,
+html[data-theme="dark"] table,
+html[data-theme="dark"] th,
+html[data-theme="dark"] td,
+html[data-theme="dark"] .modal,
+html[data-theme="dark"] .auth-card,
+html[data-theme="dark"] .search-hero,
+html[data-theme="dark"] .stat,
+html[data-theme="dark"] .global-hit,
+html[data-theme="dark"] .flashcard,
+html[data-theme="dark"] .empty,
+html[data-theme="dark"] .word-day{
   color:var(--ink);
 }
-.card,.section-card,.node,.quiz-opt,.word-row,.table-wrap,table,
-.modal,.global-hit,.flashcard,.empty{background:var(--card);border-color:var(--line)}
-th{background:#0e1728;color:var(--muted)}
-td{border-bottom-color:var(--line)}
-tbody tr:last-child td{border-bottom:0}
-input,select,textarea{background:#0d1728;color:var(--ink);border-color:var(--line)}
-input::placeholder,textarea::placeholder{color:#6f819c}
-input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(18,206,144,.15)}
-option{background:#101a2c;color:var(--ink)}
-.btn{background:#1b2940;color:var(--ink)}
-.btn:hover{background:#243553}
-.btn-primary{background:var(--green);color:#04231a}
-.btn-primary:hover{background:#17dd9c}
-.btn-navy{background:#1b2940;color:#fff}
-.btn-ghost{background:transparent;border-color:var(--line);color:var(--ink)}
-.btn-danger{background:rgba(255,107,107,.12);color:var(--danger)}
-.badge{background:#1b2940;color:#bcd0e8}
-.badge-green{background:rgba(18,206,144,.16);color:var(--green)}
-.badge-amber{background:rgba(245,185,66,.16);color:var(--warn)}
-.badge-red{background:rgba(255,107,107,.16);color:var(--danger)}
-.badge-blue{background:rgba(106,165,255,.16);color:var(--info)}
-.progress{background:#1b2940}
-.stat-value.green,.green,.node-num{color:var(--green)}
-.muted,small,.field-hint{color:var(--muted)}
-.section-body{color:#c8d6e8}
-.note{background:rgba(245,185,66,.1);border-color:rgba(245,185,66,.3);color:#f3d29a}
-.result-good{background:rgba(18,206,144,.14);color:var(--green)}
-.result-bad{background:rgba(255,107,107,.14);color:var(--danger)}
-.danger-zone{border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.06)}
-.modal-backdrop{background:rgba(0,0,0,.7)}
-.tabs{border-bottom-color:var(--line)}
-.tab{color:var(--muted)}
-.tab.active{background:rgba(18,206,144,.16);color:var(--green)}
-.quiz-opt:hover{border-color:var(--green)}
-.quiz-opt.selected{border-color:var(--green);background:rgba(18,206,144,.08)}
-.section-card.done{border-color:rgba(18,206,144,.45);background:rgba(18,206,144,.06)}
-.node.locked{opacity:.55}
-.node:before{background:var(--green);box-shadow:0 0 0 2px var(--green)}
-.node.locked:before{background:#40506a;box-shadow:0 0 0 2px #40506a}
-.search-hero{background:linear-gradient(135deg,#101a2c,#122a25);border-color:#215445}
-.word-day{background:linear-gradient(135deg,#0b1220,#16243c);color:#fff;border:0}
-.auth-panel{background:var(--bg)}
-.demo-box{border-color:var(--line);background:#0d1728}
-.global-hit{border-color:rgba(18,206,144,.4);background:rgba(18,206,144,.07)}
-.flashcard{background:#0d1728;border-color:var(--line)}
-.flashcard h2{color:var(--green)}
-.topbar{background:rgba(7,13,24,.94);border-bottom-color:var(--line)}
-.mobile-nav{background:#0b1424;border-top-color:var(--line)}
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .section-card,
+html[data-theme="dark"] .node,
+html[data-theme="dark"] .quiz-opt,
+html[data-theme="dark"] .word-row,
+html[data-theme="dark"] .table-wrap,
+html[data-theme="dark"] table,
+html[data-theme="dark"] .modal,
+html[data-theme="dark"] .global-hit,
+html[data-theme="dark"] .flashcard,
+html[data-theme="dark"] .empty{background:var(--card);border-color:var(--line)}
+html[data-theme="dark"] th{background:#0e1728;color:var(--muted)}
+html[data-theme="dark"] td{border-bottom-color:var(--line)}
+html[data-theme="dark"] tbody tr:last-child td{border-bottom:0}
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea{background:#0d1728;color:var(--ink);border-color:var(--line)}
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder{color:#6f819c}
+html[data-theme="dark"] input:focus,
+html[data-theme="dark"] select:focus,
+html[data-theme="dark"] textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(18,206,144,.15)}
+html[data-theme="dark"] option{background:#101a2c;color:var(--ink)}
+html[data-theme="dark"] .btn{background:#1b2940;color:var(--ink)}
+html[data-theme="dark"] .btn:hover{background:#243553}
+html[data-theme="dark"] .btn-primary{background:var(--green);color:#04231a}
+html[data-theme="dark"] .btn-primary:hover{background:#17dd9c}
+html[data-theme="dark"] .btn-navy{background:#1b2940;color:#fff}
+html[data-theme="dark"] .btn-ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+html[data-theme="dark"] .btn-danger{background:rgba(255,107,107,.12);color:var(--danger)}
+html[data-theme="dark"] .badge{background:#1b2940;color:#bcd0e8}
+html[data-theme="dark"] .badge-green{background:rgba(18,206,144,.16);color:var(--green)}
+html[data-theme="dark"] .badge-amber{background:rgba(245,185,66,.16);color:var(--warn)}
+html[data-theme="dark"] .badge-red{background:rgba(255,107,107,.16);color:var(--danger)}
+html[data-theme="dark"] .badge-blue{background:rgba(106,165,255,.16);color:var(--info)}
+html[data-theme="dark"] .progress{background:#1b2940}
+html[data-theme="dark"] .stat-value.green,
+html[data-theme="dark"] .green,
+html[data-theme="dark"] .node-num{color:var(--green)}
+html[data-theme="dark"] .muted,
+html[data-theme="dark"] small,
+html[data-theme="dark"] .field-hint{color:var(--muted)}
+html[data-theme="dark"] .section-body{color:#c8d6e8}
+html[data-theme="dark"] .note{background:rgba(245,185,66,.1);border-color:rgba(245,185,66,.3);color:#f3d29a}
+html[data-theme="dark"] .result-good{background:rgba(18,206,144,.14);color:var(--green)}
+html[data-theme="dark"] .result-bad{background:rgba(255,107,107,.14);color:var(--danger)}
+html[data-theme="dark"] .danger-zone{border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.06)}
+html[data-theme="dark"] .modal-backdrop{background:rgba(0,0,0,.7)}
+html[data-theme="dark"] .tabs{border-bottom-color:var(--line)}
+html[data-theme="dark"] .tab{color:var(--muted)}
+html[data-theme="dark"] .tab.active{background:rgba(18,206,144,.16);color:var(--green)}
+html[data-theme="dark"] .quiz-opt:hover{border-color:var(--green)}
+html[data-theme="dark"] .quiz-opt.selected{border-color:var(--green);background:rgba(18,206,144,.08)}
+html[data-theme="dark"] .section-card.done{border-color:rgba(18,206,144,.45);background:rgba(18,206,144,.06)}
+html[data-theme="dark"] .node.locked{opacity:.55}
+html[data-theme="dark"] .node:before{background:var(--green);box-shadow:0 0 0 2px var(--green)}
+html[data-theme="dark"] .node.locked:before{background:#40506a;box-shadow:0 0 0 2px #40506a}
+html[data-theme="dark"] .search-hero{background:linear-gradient(135deg,#101a2c,#122a25);border-color:#215445}
+html[data-theme="dark"] .word-day{background:linear-gradient(135deg,#0b1220,#16243c);color:#fff;border:0}
+html[data-theme="dark"] .auth-panel{background:var(--bg)}
+html[data-theme="dark"] .demo-box{border-color:var(--line);background:#0d1728}
+html[data-theme="dark"] .global-hit{border-color:rgba(18,206,144,.4);background:rgba(18,206,144,.07)}
+html[data-theme="dark"] .flashcard{background:#0d1728;border-color:var(--line)}
+html[data-theme="dark"] .flashcard h2{color:var(--green)}
+html[data-theme="dark"] .topbar{background:rgba(7,13,24,.94);border-bottom-color:var(--line)}
+html[data-theme="dark"] .mobile-nav{background:#0b1424;border-top-color:var(--line)}
 
 
 /* Notification bell */
@@ -648,3 +681,84 @@ h1 svg{vertical-align:-3px;color:var(--green);margin-inline-end:.3rem}
 .notif-item .notif-main strong{font-size:.92rem}
 .notif-item small{font-size:.72rem}
 .notif-dot{width:.55rem;height:.55rem;border-radius:50%;background:#22c55e;flex:none}
+
+/* ================= Light theme (default) =================
+   Base rules above are the light palette. These override the pieces that were
+   written with dark-only colors so they read correctly on white. */
+html:not([data-theme="dark"]) .green,
+html:not([data-theme="dark"]) .stat-value.green,
+html:not([data-theme="dark"]) .node-num,
+html:not([data-theme="dark"]) .vocab-phonetic,
+html:not([data-theme="dark"]) .tab.active,
+html:not([data-theme="dark"]) .auth-tab.active,
+html:not([data-theme="dark"]) .flashcard h2,
+html:not([data-theme="dark"]) .sticky-points,
+html:not([data-theme="dark"]) .badge-green,
+html:not([data-theme="dark"]) .yg-btn,
+html:not([data-theme="dark"]) .auth-landing{color:var(--green-dark)}
+html:not([data-theme="dark"]) .vocab-card,
+html:not([data-theme="dark"]) .brief-card,
+html:not([data-theme="dark"]) .dict-suggest-item,
+html:not([data-theme="dark"]) .champ-chip,
+html:not([data-theme="dark"]) .task-item,
+html:not([data-theme="dark"]) .avatar-pick,
+html:not([data-theme="dark"]) .consent{background:#fff}
+html:not([data-theme="dark"]) .vocab-card,
+html:not([data-theme="dark"]) .brief-card{box-shadow:var(--shadow)}
+html:not([data-theme="dark"]) .vocab-word,
+html:not([data-theme="dark"]) .brief-card h2,
+html:not([data-theme="dark"]) .brief-card h3,
+html:not([data-theme="dark"]) .slide-stage h2,
+html:not([data-theme="dark"]) .sub-banner-text strong{color:var(--ink)}
+html:not([data-theme="dark"]) .vocab-meaning,
+html:not([data-theme="dark"]) .vocab-example,
+html:not([data-theme="dark"]) .slide-rule,
+html:not([data-theme="dark"]) .slide-example,
+html:not([data-theme="dark"]) .slide-detail,
+html:not([data-theme="dark"]) .brief-card,
+html:not([data-theme="dark"]) .brief-list,
+html:not([data-theme="dark"]) .brief-summary,
+html:not([data-theme="dark"]) .saved-meaning,
+html:not([data-theme="dark"]) .section-body{color:#344054}
+html:not([data-theme="dark"]) .brief-card .muted,
+html:not([data-theme="dark"]) .brief-transcript,
+html:not([data-theme="dark"]) .consent p,
+html:not([data-theme="dark"]) .locked-item .lock-cover{color:var(--muted)}
+html:not([data-theme="dark"]) .vocab-example{background:rgba(18,206,144,.1)}
+html:not([data-theme="dark"]) .slide-stage{background:radial-gradient(circle at 85% 8%,rgba(18,206,144,.12),transparent 45%),linear-gradient(140deg,#f7fbfa,#eef5f3)}
+html:not([data-theme="dark"]) .req-item,
+html:not([data-theme="dark"]) .exercise-item,
+html:not([data-theme="dark"]) .week-session,
+html:not([data-theme="dark"]) .saved-card,
+html:not([data-theme="dark"]) .brief-source,
+html:not([data-theme="dark"]) .video-placeholder,
+html:not([data-theme="dark"]) .grammar-example,
+html:not([data-theme="dark"]) .grammar-mistake,
+html:not([data-theme="dark"]) .locked-item .lock-cover,
+html:not([data-theme="dark"]) .task-instructions{background:#fafbfc}
+html:not([data-theme="dark"]) .slide-example{background:rgba(11,18,32,.04)}
+html:not([data-theme="dark"]) .slide-dot,
+html:not([data-theme="dark"]) .rm-dot{background:#cbd5e1}
+html:not([data-theme="dark"]) .rm-level.is-locked .rm-marker{background:#e4e9f0;box-shadow:0 0 0 6px rgba(200,210,225,.5)}
+html:not([data-theme="dark"]) .word-chip,
+html:not([data-theme="dark"]) .champ-rank,
+html:not([data-theme="dark"]) .task-badge{background:#eef1f5;color:#475467}
+html:not([data-theme="dark"]) .brief-jump{border-color:rgba(11,18,32,.15);color:var(--ink)}
+html:not([data-theme="dark"]) .consent{border-color:var(--line);color:var(--ink)}
+html:not([data-theme="dark"]) .sub-banner{background:linear-gradient(90deg,rgba(18,206,144,.1),#fff);box-shadow:var(--shadow)}
+html:not([data-theme="dark"]) .sub-notice,
+html:not([data-theme="dark"]) .note,
+html:not([data-theme="dark"]) .why-box{color:#92400e}
+html:not([data-theme="dark"]) .to-top-btn{background:#fff;color:var(--ink)}
+html:not([data-theme="dark"]) input:-webkit-autofill,
+html:not([data-theme="dark"]) input:-webkit-autofill:focus,
+html:not([data-theme="dark"]) input:-webkit-autofill:hover,
+html:not([data-theme="dark"]) select:-webkit-autofill{-webkit-box-shadow:0 0 0 1000px #fff inset}
+
+/* Theme-aware logo + toggle */
+.logo-for-light{display:none}
+html:not([data-theme="dark"]) .topbar .logo-for-dark{display:none}
+html:not([data-theme="dark"]) .topbar .logo-for-light{display:block}
+.theme-toggle{display:inline-flex;align-items:center;justify-content:center;gap:.4rem}
+.auth-theme{position:absolute;top:1rem;inset-inline-end:1rem;z-index:5}
+.auth-panel{position:relative}
