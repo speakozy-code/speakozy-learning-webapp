@@ -1,3 +1,4 @@
+import { PageTour } from '../components/Tour';
 import { pdfLinkFor } from '../lib/pdfLinks';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../lib/store';
@@ -87,6 +88,7 @@ export function StudentDashboard() {
   const pct = level ? engagementProgress(data, level.id, user.id) : 0;
 
   return <div className="stack">
+    <PageTour id="dashboard" />
     <Card style={{ background: 'linear-gradient(135deg,#0b1220,#16243c)', color: '#fff', border: 0 }}>
       <div className="between">
         <div><div className="muted" style={{ color: '#9fb0c9' }}>أهلًا {user.name} 👋</div><h1 style={{ marginTop: '.35rem' }}>جاهز تكمل من حيث وقفت؟</h1>
@@ -158,6 +160,7 @@ export function Roadmap() {
   const currentLevel = data.levels.find((l) => l.id === user.levelId) || levels[0];
   const levelSessions = data.sessions.filter((s) => s.levelId === currentLevel?.id).sort((a, b) => a.order - b.order);
   return <div className="stack">
+    <PageTour id="roadmap" />
     <div><h1>خريطة المستويات</h1><p className="muted">عرضين في مكان واحد: سيشناتك الأول وبعدين مسار المستويات كامل. الاتنين للقراءة — ذاكر من الرئيسية أو الماتيريال.</p></div>
     <Card className="roadmap-card">
       <SectionTitle title={`سيشنات ${currentLevel?.title || '—'}`} action={<Badge tone="blue">{levelSessions.length} سيشن</Badge>} />
@@ -378,6 +381,7 @@ export function SessionPage({ sessionId }: any) {
 
   return <div className="stack">
     <div className="row"><button className="icon-btn" onClick={() => window.history.length > 1 ? window.history.back() : go('/roadmap')}>→ السابق</button></div>
+    <PageTour id={`session-${tab}`} />
     <Card className="session-head between">
       <div><div className="muted session-head-meta">Session {s.order} · {data.levels.find((l) => l.id === s.levelId)?.title}{[s.topic, fmtDate(s.dueAt)].filter(Boolean).length ? ' · ' + [s.topic, fmtDate(s.dueAt)].filter(Boolean).join(' · ') : ''}</div><h1 className="session-head-title">{s.title}</h1></div>
       <Badge tone={locked ? 'muted' : statusTone[st.key]}>{locked ? '🔒 مقفول' : st.label}</Badge>
@@ -712,6 +716,7 @@ export function DictionaryPage() {
   }
 
   return <div className="stack">
+    <PageTour id="dictionary" />
     <div><h1>الديكشنري</h1><p className="muted">تقدر تحفظ أي كلمة، أو تسمعها من المتحدثين الأصليين على YouGlish. الديكشنري فيه آلاف الكلمات الجاهزة، ولو مش موجودة بنجيب معناها من المصدر العالمي.</p></div>
 
     <Card className="search-hero">
@@ -821,6 +826,7 @@ export function WordsPage() {
     setAdding(null);
   }
   return <div className="stack">
+    <PageTour id="words" />
     <div><h1>الكلمات</h1><p className="muted">راجع كلماتك بنظام المراجعة المتباعدة (زي Anki): كل ما تعرف الكلمة أكتر بتتأجل لمدة أطول، والكلمة اللي بتنساها بترجعلك بسرعة. هيجيلك إشعار لما يبقى فيه كلمات مستحقة.</p></div>
     <div><Button size="sm" onClick={() => setAdding({ word: '', meaning: '', example: '' })}>+ ضيف كلمة بنفسك</Button></div>
     <Modal open={!!adding} title="ضيف كلمة" onClose={() => setAdding(null)}>
@@ -886,6 +892,7 @@ export function YallaNetkellemPage() {
   const question = pool[n % pool.length];
   const next = () => { if (!subscribed && n + 1 >= pool.length) { setUpsell(true); return; } setN((x) => subscribed ? x + 1 + Math.floor(Math.random() * Math.max(1, pool.length - 1)) : x + 1); };
   return <div className="stack">
+    <PageTour id="yalla-netkellem" />
     <div><h1>يلا نتكلم</h1><p className="muted">اضغط على «سؤال جديد»، سجّل ريكورد بتجاوب فيه بصوتك، وابعته للمدرّس على الواتساب.</p></div>
     <Tabs tabs={Object.keys(TALK_QUESTIONS).map((k) => ({ id: k, label: k }))} active={pick} onChange={(k) => { setPick(k); setN(0); }} />
     <Card className="flashcard">
@@ -932,6 +939,7 @@ export function TasksPage() {
     }
   }
   return <div className="stack">
+    <PageTour id="tasks" />
     <div><h1>تاسكاتي اليومية</h1><p className="muted">دي تاسكات يوميه علشان تتكلم كل يوم. هتسجّل ريكورد بتقرا أو بتجاوب على السؤال في تاسك اليوم وتبعته على جروب الواتساب.</p>
       <a className="btn btn-primary btn-sm" style={{ marginTop: '.6rem' }} href="https://wa.me/201091060951?text=%D8%A8%D8%B9%D8%AA%20%D8%AA%D8%A7%D8%B3%D9%83%20%D8%A7%D9%84%D9%8A%D9%88%D9%85" target="_blank" rel="noreferrer">واتساب</a></div>
     <Card>
@@ -1033,6 +1041,7 @@ export function LeaderboardPage() {
   const board = leaderboard(data);
   const mine = board.findIndex((b) => b.id === user.id) + 1;
   return <div className="stack">
+    <PageTour id="leaderboard" />
     <div><h1>أبطال Speakozy</h1><p className="muted">الترتيب بالنقاط. الأسماء مختصرة حسب إعداد الخصوصية، ومفيش بيانات خاصة بتظهر.</p></div>
     {!isSubscribed(user) && <Card className="shadow-inline" dir="rtl"><div className="stack" style={{ textAlign: 'center' }}>
       <strong>الأبطال دول مشتركين معانا — ابعتلنا وابدأ خطوتك وكون جزء منهم 🚀</strong>
@@ -1114,6 +1123,7 @@ export function ProfilePage() {
     finally { setSavingPw(false); }
   }
   return <div className="stack">
+    <PageTour id="profile" />
     <div><h1>بروفايلي</h1></div>
     <Card className="row" style={{ gap: '1rem' }}><span className="avatar" style={{ width: 56, height: 56, fontSize: '1.3rem' }}>{user.avatar || '🧑‍🎓'}</span>
       <div><h2>{user.name}</h2><div className="muted">{user.email}</div><div className="row" style={{ marginTop: '.4rem' }}><Badge tone="green">{level?.title || '—'}</Badge><Badge>آخر مستوى: {data.levels.find((l) => l.id === user.maxLevelId)?.title || '—'}</Badge></div></div>
@@ -1184,6 +1194,7 @@ export function MaterialsPage() {
   const L = en ? { title:'Materials', hint:'Pick a level from the list. All levels are available for browsing.', level:'Level', words:'words', ready:'Ready', locked:'Locked', open:'Open lesson', none:'No materials in this level', noneHint:'Materials will appear here once lessons are added.', lesson:'Lesson', pdf:'Open PDF', dl:'Download' } :
     { title:'الماتيريال', hint:'اختار مستوى من القائمة — كل المستويات متاحة للتصفح.', level:'المستوى', words:'كلمة', ready:'جاهز', locked:'مقفول', open:'افتح الدرس', none:'مفيش ماتيريال في المستوى ده', noneHint:'الماتيريال هتظهر هنا أول ما الدروس تتضاف.', lesson:'الدرس', pdf:'افتح PDF ↗', dl:'نزّل PDF ⬇' };
   return <div className="stack" dir={en ? 'ltr' : undefined}>
+    <PageTour id="materials" />
     <div><h1>{L.title}</h1><p className="muted">{L.hint}</p></div>
     <Card>
       <Field label={L.level}><select value={levelId} onChange={(e) => { const v = e.target.value; setSelected(v); if (!admin && v && v !== user.levelId && pickableLevels(user, data.levels).some((l) => l.id === v)) void saveProfile({ currentLevelId: v }); }}>

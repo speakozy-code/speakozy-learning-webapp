@@ -1,3 +1,4 @@
+import { PageTour } from '../components/Tour';
 import React from 'react';
 import { Card, SectionTitle, Badge } from '../components/UI';
 import { Library, Headphones, Mic2 } from 'lucide-react';
@@ -58,6 +59,7 @@ function LinkGrid({ items, label, href }: { items: string[]; label: string; href
 
 export default function ResourcesPage() {
   return <div className="stack">
+    <PageTour id="resources" />
     <div><h1><Library size={22} /> المصادر</h1>
       <p className="muted">مصادر إضافية تساعدك تتدرب بره السيشنات: فيديوهات شادوينج وبودكاست إنجليزي.</p></div>
 

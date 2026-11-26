@@ -1,3 +1,4 @@
+import { PageTour } from '../components/Tour';
 import React, { useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, SectionTitle, Empty, Tabs } from '../components/UI';
@@ -25,6 +26,7 @@ export default function ShadowingPage() {
   // every level inside the student's allowed range (first → last level) is fully open, not only one level
   const openClip = clips.find((c) => c.id === openId);
   return <div className="stack">
+    <PageTour id="shadowing" />
     <div><h1><Headphones size={22} /> الشادوينج</h1>
       <p className="muted">اتكلم إنجليزي زي المتحدثين الأصليين — اسمع، ردّد، سجّل، وابعت. فيديوهات مختارة لكل مستوى.</p></div>
 
