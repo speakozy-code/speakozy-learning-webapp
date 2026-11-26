@@ -11,7 +11,7 @@ import { engagementProgress, totalScore } from '../lib/domain';
 import { pushSupported, pushEnabled, enablePush } from '../lib/push';
 import { canInstall, isStandalone, isIos, onInstallChange, promptInstall, showBrowserNotification, notificationPermission, requestNotifications } from '../lib/pwa';
 import { SubscribeButtons } from './Upsell';
-import { isSubscribed, PRICING_URL } from '../lib/subscription';
+import { isSubscribed, PRICING_URL, siteUrl } from '../lib/subscription';
 import { usePullToRefresh } from '../lib/pullToRefresh';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -83,7 +83,7 @@ export function Layout({ current, children }: { current: string; children: React
   </button>;
 
   const side = <aside className={`side ${open ? 'open' : ''}`}>
-    <div className="brand"><a href="/" title="موقع Speakozy"><img className="brand-logo" src="./logo-on-dark.png" alt="Speakozy" /></a></div>
+    <div className="brand"><a href={siteUrl('/')} title="موقع Speakozy"><img className="brand-logo" src="./logo-on-dark.png" alt="Speakozy" /></a></div>
     <div className="nav-group">{admin ? 'لوحة الأدمن' : 'مساحة الطالب'}</div>
     <nav className="nav" onClick={() => setOpen(false)}>
       {nav.map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
