@@ -1,5 +1,5 @@
 :root{
-  --green:#12ce90; --green-dark:#0ea474; --navy:#0b1220; --navy-2:#131d31;
+  --green:#12ce90; --green-dark:#0a8a62; --navy:#0b1220; --navy-2:#131d31;
   --bg:#f5f7fa; --card:#fff; --ink:#0b1220; --muted:#667085; --line:#e7ebf0;
   --danger:#e5484d; --warn:#f59e0b; --info:#3b82f6; --radius:16px;
   --shadow:0 6px 24px rgba(11,18,32,.06);
@@ -801,3 +801,29 @@ html[data-theme="dark"] .content-bar .sticky-points,html:not([data-theme="dark"]
 .content-bar .sticky-track > span,html[data-theme="dark"] .content-bar .sticky-track > span{background:#0b1220}
 @media (max-width:640px){.content-bar .sticky-track{min-width:60px}}
 .content-bar .sticky-progress{background:transparent}
+
+/* ---- Surfaces that stay navy in BOTH themes: give them the dark palette so text is always readable ---- */
+.side,.toast,.word-day,.to-top,.profile-menu,.yg-dock,.btn-navy,.saved-actions .icon-btn{
+  --ink:#e8eef7; --muted:#9aabc4; --line:#24334c; --card:#101a2c;
+}
+.side .btn,.side .btn-ghost,.side .theme-toggle,.profile-menu .btn{background:#1b2940;color:#e8eef7;border:1px solid #2c3d5a}
+.side .btn svg,.side .theme-toggle svg{color:#e8eef7}
+.side .btn:hover{background:#243652}
+.side-foot .who small{color:#9aabc4}
+.side .nav a{color:#d7e0ee}
+.side .nav a.active{color:#fff}
+
+/* ---- Readability pass (audited on every page, both themes) ---- */
+.content-bar .muted,.content-bar small{color:#0b1220;opacity:.75}
+.content-bar .badge-red.bell-count{background:#0b1220;color:#fff;border-color:#0b1220}
+.content-bar .sub-notice,html[data-theme="dark"] .content-bar .sub-notice,html:not([data-theme="dark"]) .content-bar .sub-notice{background:rgba(255,255,255,.4);border-color:rgba(11,18,32,.25);color:#0b1220}
+.content-bar .sub-notice *{color:#0b1220}
+html:not([data-theme="dark"]) .champ-points,
+html:not([data-theme="dark"]) .brief-kicker,
+html:not([data-theme="dark"]) .tab-ic,
+html:not([data-theme="dark"]) .badge-green,
+html:not([data-theme="dark"]) .tab.active,
+html:not([data-theme="dark"]) .node-num{color:var(--green-dark)}
+html:not([data-theme="dark"]) .icon-btn{color:#b7791f}
+html[data-theme="dark"] .node-num{background:#1b2940;color:var(--green)}
+html[data-theme="dark"] .content-bar .muted,html[data-theme="dark"] .content-bar small{color:#0b1220;opacity:.75}
