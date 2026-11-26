@@ -45,9 +45,24 @@ export function allowedLevelCount(user: User) {
 
 // نطاق المستويات المفتوحة بالكامل: من أول مستوى (levelId) لآخر مستوى (maxLevelId) شاملًا.
 export function levelRange(user: User, levels: { id: string; order: number }[]) {
-  const first = levels.find((l) => l.id === user.levelId)?.order ?? 1;
+  const first = levels.find((l) => l.id === (user.rangeStartId || user.levelId))?.order ?? 1;
   const last = levels.find((l) => l.id === user.maxLevelId)?.order ?? first;
   return { first: Math.min(first, last), last: Math.max(first, last) };
+}
+
+/** The in-app view of a student: levelId becomes the level he picked as current (when it is inside his opened range). */
+export function withCurrentLevel(u: User, levels: { id: string; order: number }[]): User {
+  if (u.role !== 'student' || !u.currentLevelId || u.currentLevelId === u.levelId) return u;
+  const { first, last } = levelRange(u, levels);
+  const cur = levels.find((l) => l.id === u.currentLevelId);
+  if (!cur || cur.order < first || cur.order > last) return u;
+  return { ...u, levelId: cur.id, rangeStartId: u.levelId };
+}
+
+/** Levels the student may pick as his current one. */
+export function pickableLevels<T extends { id: string; order: number }>(u: User, levels: T[]): T[] {
+  const { first, last } = levelRange(u, levels);
+  return [...levels].sort((a, b) => a.order - b.order).filter((l) => l.order >= first && l.order <= last);
 }
 
 export function levelFullyOpen(user: User, level: { id: string; order: number }, levels: { id: string; order: number }[]) {
@@ -89,7 +104,9 @@ export function engagementProgress(data: AppData, levelId: string, studentId: st
   const words = [...new Set(data.dictionary
     .filter((d) => (d.sessionIds || []).some((id) => sessions.some((s) => s.id === id)))
     .map((d) => d.word.toLowerCase()))];
-  const total = words.length + sessions.length * 5 + 1;
+  const tasks = levelTasks(data, levelId, studentId);
+  const clips = (data.listenClips || []).filter((c) => c.active && c.levelId === levelId);
+  const total = words.length + sessions.length * 5 + 1 + tasks.length + clips.length;
   if (!total) return 0;
   const mine = (p: any) => p.studentId === studentId;
   let done = 0;
@@ -102,7 +119,45 @@ export function engagementProgress(data: AppData, levelId: string, studentId: st
     }
   }
   if (data.attempts.some((a) => mine(a) && a.questionId.startsWith(`exam:${levelId}:`))) done++;
+  const submitted = (taskId: string) => data.taskCompletions.some((c) => mine(c) && c.taskId === taskId && c.status !== 'rejected');
+  done += tasks.filter((t) => submitted(t.id)).length;
+  done += clips.filter((c) => submitted(`shadow-${c.id}`)).length;
   return Math.min(100, Math.round((done / total) * 100));
+}
+
+/** The level a task belongs to: its target level, else the level of its first session. */
+export function taskLevelId(data: AppData, t: { targetType: string; targetId?: string; sessionIds?: string[] }): string | null {
+  if (t.targetType === 'level' && t.targetId) return t.targetId;
+  const sid = (t.sessionIds || [])[0];
+  return sid ? data.sessions.find((s) => s.id === sid)?.levelId || null : null;
+}
+
+/** Active tasks of one level that are meant for this student. */
+export function levelTasks(data: AppData, levelId: string, studentId: string) {
+  return data.tasks.filter((t) => t.active && taskLevelId(data, t) === levelId && (t.targetType !== 'student' || t.targetId === studentId));
+}
+
+/** Which level a score belongs to (from what it was earned for); null when it can't be told. */
+export function scoreLevelId(data: AppData, s: { studentId: string; refId: string }): string | null {
+  const ref = s.refId.endsWith(`-${s.studentId}`) ? s.refId.slice(0, -(s.studentId.length + 1)) : s.refId;
+  const sessionLevel = (id: string) => data.sessions.find((x) => x.id === id)?.levelId || null;
+  const clipLevel = (id: string) => (data.listenClips || []).find((c) => c.id === id)?.levelId || null;
+  let m: RegExpMatchArray | null;
+  if ((m = ref.match(/^(?:grammar|wordquiz|sessionquiz)-(.+)$/))) return sessionLevel(m[1]);
+  if ((m = ref.match(/^exam-(.+)$/))) return data.levels.some((l) => l.id === m![1]) ? m[1] : null;
+  if ((m = ref.match(/^shadow-line-(.+)-\d+$/))) return clipLevel(m[1]);
+  if ((m = ref.match(/^shadow-done-(.+)$/))) return clipLevel(m[1]);
+  if ((m = ref.match(/^task-(?:pending|approved)-(.+)$/))) {
+    const t = data.tasks.find((x) => x.id === m![1]);
+    return t ? taskLevelId(data, t) : null;
+  }
+  if ((m = s.refId.match(/^approved-([a-z]+):(.+):\d+-/))) return sessionLevel(m[2]);
+  return null;
+}
+
+/** Points the student earned inside one level (quizzes, approved exercises, tasks, shadowing). */
+export function levelScore(data: AppData, studentId: string, levelId: string) {
+  return data.scores.filter((s) => s.studentId === studentId && scoreLevelId(data, s) === levelId).reduce((sum, s) => sum + s.points, 0);
 }
 
 export function totalScore(data: AppData, studentId: string) {

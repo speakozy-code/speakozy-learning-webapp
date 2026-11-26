@@ -185,7 +185,7 @@ export function Roadmap() {
           const full = levelFullyOpen(user, l, data.levels);
           const pct = engagementProgress(data, l.id, user.id);
           const approved = sessions.filter((s) => sessionStatus(data, s, user.id).key === 'approved').length;
-          return <div key={l.id} className={`rm-level is-open ${i % 2 ? 'rm-right' : 'rm-left'}`}>
+          return <div key={l.id} className={`rm-level is-open ${l.id === user.levelId ? 'is-current' : ''} ${i % 2 ? 'rm-right' : 'rm-left'}`}>
             <div className="rm-marker">{i + 1}</div>
             <div className="rm-body">
               <div className="between"><strong>{levelLabel(l)}</strong><Badge tone={full ? 'green' : 'muted'}>{levelLabel(l)}</Badge></div>
@@ -902,7 +902,8 @@ export function TasksPage() {
   if (!user) return null;
   // levels opened for this student (from the first to the last allowed level); everyone else: their own level only
   const allLevels = [...data.levels].sort((a, b) => a.order - b.order);
-  const [sel, setSel] = useState('');
+  const [sel, setSel] = useState(user.levelId);
+  useEffect(() => { setSel(user.levelId); }, [user.levelId]);
   const selLevel = allLevels.find((l) => l.id === sel);
   const selOpen = !!selLevel && (user.role === 'admin' || levelFullyOpen(user, selLevel, data.levels));
   const mine = data.tasks.filter((t) => t.active && (t.targetType === 'all' || (t.targetType === 'student' && t.targetId === user.id) || (t.targetType === 'level' && (!sel || t.targetId === sel))));

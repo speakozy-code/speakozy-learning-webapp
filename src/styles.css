@@ -762,3 +762,24 @@ html:not([data-theme="dark"]) .topbar .logo-for-light{display:block}
 .theme-toggle{display:inline-flex;align-items:center;justify-content:center;gap:.4rem}
 .auth-theme{position:absolute;top:1rem;inset-inline-end:1rem;z-index:5}
 .auth-panel{position:relative}
+
+/* ---- Header: green score, navy progress, level picker ---- */
+.sticky-points{color:var(--green-dark)}
+.sticky-track > span{background:var(--navy)}
+html[data-theme="dark"] .sticky-points{color:var(--green)}
+html[data-theme="dark"] .sticky-track > span{background:#5b7fb8}
+.level-pick{width:auto;max-width:11rem;padding:.25rem .5rem;border-radius:8px;font-weight:700;font-size:.85rem;cursor:pointer}
+
+/* ---- Word of the day: keep the card's buttons readable on its navy background ---- */
+.word-day .btn-ghost{color:#fff;border-color:rgba(255,255,255,.35)}
+.word-day .btn-ghost:hover{background:rgba(255,255,255,.12)}
+.word-day .btn-ghost svg{color:#fff}
+
+/* ---- Levels map: light cards (the navy ones hid the level names on a white page) ---- */
+html:not([data-theme="dark"]) .rm-body{background:#fff;border-color:var(--line);box-shadow:var(--shadow);color:var(--ink)}
+html:not([data-theme="dark"]) .rm-body h3,
+html:not([data-theme="dark"]) .rm-body h4,
+html:not([data-theme="dark"]) .rm-body strong{color:var(--ink)}
+html:not([data-theme="dark"]) .rm-body .muted,
+html:not([data-theme="dark"]) .rm-body small{color:var(--muted)}
+html:not([data-theme="dark"]) .rm-level.is-current .rm-body{border-color:var(--green);box-shadow:0 0 0 3px rgba(18,206,144,.16)}

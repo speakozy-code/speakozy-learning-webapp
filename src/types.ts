@@ -4,6 +4,8 @@ export interface User {
   id: string; name: string; email: string; role: Role; active: boolean;
   levelId: string; maxLevelId: string; plan?: 'starter'|'growth'|'pro'; avatar?: string; createdAt: string;
   demoPassword?: string; subscribed?: boolean; phone?: string;
+  /** the level the student picked as the one he is working on now (inside his opened range) */ currentLevelId?: string;
+  /** set only on the in-app view: the first level of the opened range when levelId is swapped for currentLevelId */ rangeStartId?: string;
   /** YYYY-MM-DD: the last day of the subscription; after it the student is automatically treated as not subscribed */ subscriptionEnd?: string;
 }
 

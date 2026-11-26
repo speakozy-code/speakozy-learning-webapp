@@ -15,6 +15,7 @@ export default function ShadowingPage() {
   // every level is visible to everyone; only the student's own level can be practiced
   const levels = allLevels;
   const [tab, setTab] = useState(user?.levelId || allLevels[0]?.id);
+  React.useEffect(() => { if (user?.levelId) setTab(user.levelId); }, [user?.levelId]);
   const [upsell, setUpsell] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   if (!user) return null;
