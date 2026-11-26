@@ -317,12 +317,15 @@ export function ListenAdminPage() {
     <Card>
       <SectionTitle title={`الكليبات (${clips.length})`} />
       {!clips.length ? <Empty title="لسه مفيش كليبات" text="ضيف أول كليب من الفورم." /> :
-        <div className="stack">{clips.map((c, i) => <div key={c.id} className="row between" style={{ gap: '.5rem' }}>
-          <span style={{ flex: 1 }}>{i + 1}. {c.title} <span className="muted">({Math.round(c.end - c.start)}ث · {c.lines.length} جملة)</span></span>
-          <Badge tone={c.active ? 'green' : ''}>{c.active ? 'ظاهر' : 'مخفي'}</Badge>
-          <Button size="sm" variant="ghost" onClick={() => put('listenClips', { ...c, active: !c.active })}>{c.active ? 'إخفاء' : 'إظهار'}</Button>
-          <Button size="sm" variant="ghost" onClick={() => edit(c)}>تعديل</Button>
-          <Button size="sm" variant="ghost" onClick={() => { if (confirm('تمسح الكليب؟')) remove('listenClips', c.id); }}>مسح</Button>
+        <div className="stack">{[...data.levels].sort((a, b) => a.order - b.order).map((l) => ({ id: l.id, title: l.title, items: clips.filter((c) => c.levelId === l.id) })).concat([{ id: '', title: 'كل المستويات / بدون ليفل', items: clips.filter((c) => !data.levels.some((l) => l.id === c.levelId)) }]).filter((g) => g.items.length).map((g) => <div key={g.id || 'none'} className="stack" style={{ gap: '.4rem' }}>
+          <div className="row between"><strong>{g.title}</strong><Badge tone="blue">{g.items.length} كليب · {g.items.filter((c) => c.active).length} ظاهر</Badge></div>
+          {g.items.map((c, i) => <div key={c.id} className="row between" style={{ gap: '.5rem' }}>
+            <span style={{ flex: 1 }}>{i + 1}. {c.title} <span className="muted">({Math.round(c.end - c.start)}ث · {c.lines.length} جملة)</span></span>
+            <Badge tone={c.active ? 'green' : ''}>{c.active ? 'ظاهر' : 'مخفي'}</Badge>
+            <Button size="sm" variant="ghost" onClick={() => put('listenClips', { ...c, active: !c.active })}>{c.active ? 'إخفاء' : 'إظهار'}</Button>
+            <Button size="sm" variant="ghost" onClick={() => edit(c)}>تعديل</Button>
+            <Button size="sm" variant="ghost" onClick={() => { if (confirm('تمسح الكليب؟')) remove('listenClips', c.id); }}>مسح</Button>
+          </div>)}
         </div>)}</div>}
     </Card>
   </div>;

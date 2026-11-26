@@ -7,6 +7,7 @@ import { Layout } from './components/Layout';
 import { StudentDashboard, Roadmap, SessionPage, QuizPage, LevelExamPage, DictionaryPage, WordsPage, YallaNetkellemPage, TasksPage, NotificationsPage, LeaderboardPage, ProfilePage, MaterialsPage } from './pages/Student';
 import TrialPage from './pages/Trial';
 import ResetPassword from './pages/ResetPassword';
+import { installScreenGuard } from './lib/screenGuard';
 import { openedFromRecoveryLink, sbOnPasswordRecovery } from './lib/supabase';
 import { ListenAdminPage } from './pages/ListenClips';
 import { PdfAdminPage } from './pages/PdfAdmin';
@@ -43,6 +44,7 @@ export function useRoute() {
 
 export default function App() {
   const { user, ready } = useApp();
+  useEffect(() => { if (user && user.role !== 'admin') return installScreenGuard(); }, [user?.id, user?.role]);
   const route = useRoute();
   const toast = useToast();
   const [recovering, setRecovering] = useState(openedFromRecoveryLink);

@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, SectionTitle, Empty, Tabs } from '../components/UI';
 import { ShadowClipView } from './ListenClips';
-import { Headphones, Lock } from 'lucide-react';
+import { Headphones } from 'lucide-react';
 import { UpsellModal, SubscribeButtons } from '../components/Upsell';
-import { isSubscribed, FREE_SHADOWING_VIDEOS } from '../lib/subscription';
-import { scoreRule, levelFullyOpen } from '../lib/domain';
+import { isSubscribed } from '../lib/subscription';
 
 
 export default function ShadowingPage() {
@@ -25,28 +24,23 @@ export default function ShadowingPage() {
   const level = levels.find((l) => l.id === tab);
   // every level inside the student's allowed range (first → last level) is fully open, not only one level
   const openClip = clips.find((c) => c.id === openId);
-  const ownLevel = admin || (!!level && levelFullyOpen(user, level, allLevels));
   return <div className="stack">
     <div><h1><Headphones size={22} /> الشادوينج</h1>
       <p className="muted">اتكلم إنجليزي زي المتحدثين الأصليين — اسمع، ردّد، سجّل، وابعت. فيديوهات مختارة لكل مستوى.</p></div>
 
     <Tabs tabs={levels.map((l) => ({ id: l.id, label: l.title }))} active={tab} onChange={setTab} />
-    {!admin && <div className="note" dir="rtl">{ownLevel
-      ? `ليفل ${level?.title || ''} مفتوح ليك — تقدر تعمل شادوينج وتدوس «تم الإنجاز» على فيديوهاته.`
-      : 'اختار الليفل بتاعك علشان تقدر تعمل شادوينج. باقي الليفلات تقدر تشوف فيها أول فيديو بس، والباقي مقفول.'}</div>}
 
-    {openClip ? <ShadowClipView clip={openClip} canComplete={subscribed && ownLevel && !admin} onBack={() => setOpenId(null)} /> : <Card>
+    {openClip ? <ShadowClipView clip={openClip} canComplete={subscribed && !admin} onBack={() => setOpenId(null)} /> : <Card>
       <SectionTitle title={`كليبات ${level?.title || ''}`} action={<Badge tone="blue">{clips.length} كليب</Badge>} />
       {clips.length ? <div className="stack">
-        {clips.map((c, i) => {
-          const locked = !admin && !(subscribed && ownLevel) && i >= FREE_SHADOWING_VIDEOS;
+        {clips.map((c) => {
           const n = doneLines(c.id);
-          return <div key={c.id} className={`section-card ${locked ? 'locked-item' : ''}`} onClick={locked && !subscribed ? () => setUpsell(true) : undefined}>
+          return <div key={c.id} className="section-card">
             <div className="row between" style={{ gap: '.5rem' }}>
               <div><strong>{c.title}</strong><div className="muted" style={{ fontSize: '.85rem' }}>{Math.round((c.end - c.start) / 60 * 10) / 10} دقيقة · {c.lines.length} جملة {!c.active && '· مخفي عن الطلبة'}</div></div>
-              {locked ? <span className="muted"><Lock size={16} /> {subscribed ? 'مقفول' : 'للمشتركين'}</span> : <div className="row" style={{ gap: '.4rem' }}>
+              <div className="row" style={{ gap: '.4rem' }}>
                 {n > 0 && <Badge tone={n === c.lines.length ? 'green' : 'amber'}>{n} / {c.lines.length}</Badge>}
-                <Button size="sm" onClick={() => setOpenId(c.id)}>{n ? 'كمّل' : 'ابدأ'}</Button></div>}
+                <Button size="sm" onClick={() => setOpenId(c.id)}>{n ? 'كمّل' : 'ابدأ'}</Button></div>
             </div>
           </div>;
         })}
