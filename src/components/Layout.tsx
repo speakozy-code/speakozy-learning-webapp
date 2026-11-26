@@ -7,7 +7,7 @@ import {
 import { useApp } from '../lib/store';
 import { go } from '../App';
 import { Modal, Button, Badge, fmtDate } from './UI';
-import { engagementProgress, levelScore, pickableLevels } from '../lib/domain';
+import { engagementProgress, levelScore } from '../lib/domain';
 import { pushSupported, pushEnabled, enablePush } from '../lib/push';
 import { canInstall, isStandalone, isIos, onInstallChange, promptInstall, showBrowserNotification, notificationPermission, requestNotifications } from '../lib/pwa';
 import { SubscribeButtons } from './Upsell';
@@ -48,7 +48,7 @@ const adminNav = [
 ];
 
 export function Layout({ current, children }: { current: string; children: React.ReactNode }) {
-  const { user, logout, data, put, saveProfile } = useApp();
+  const { user, logout, data, put } = useApp();
   const [open, setOpen] = useState(false);
   const [bell, setBell] = useState(false);
   const [profileMenu, setProfileMenu] = useState(false);
@@ -76,7 +76,6 @@ export function Layout({ current, children }: { current: string; children: React
   const level = data.levels.find((l) => l.id === user.levelId) || data.levels[0];
   const pct = !admin && level ? engagementProgress(data, level.id, user.id) : 0;
   const points = admin || !level ? 0 : levelScore(data, user.id, level.id);
-  const pickable = admin ? [] : pickableLevels(user, data.levels);
   const active = (p: string) => p === '/' ? current === '/' : current.startsWith(p);
 
   const bellButton = <button className="icon-btn bell" onClick={() => setBell(true)} aria-label="الإشعارات" title="الإشعارات">
@@ -123,9 +122,7 @@ export function Layout({ current, children }: { current: string; children: React
           <button onClick={() => { setProfileMenu(false); logout(); go('/'); }}>تسجيل الخروج / دخول حساب تاني</button>
         </div>}
         <div className="sticky-progress">
-          {!admin && <>{pickable.length > 1
-            ? <select className="sticky-level level-pick" value={level?.id} aria-label="مستواك الحالي" onChange={(e) => { void saveProfile({ currentLevelId: e.target.value }); }}>{pickable.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}</select>
-            : <span className="sticky-level">{level?.title || 'المستوى'}</span>}<div className="progress-track sticky-track"><span style={{ width: `${pct}%` }} /></div><strong className="sticky-pct">{pct}%</strong></>}
+          {!admin && <><span className="sticky-level">{level?.title || 'المستوى'}</span><div className="progress-track sticky-track"><span style={{ width: `${pct}%` }} /></div><strong className="sticky-pct">{pct}%</strong></>}
           {admin && <span className="muted">لوحة الأدمن</span>}
         </div>
         {!admin && <strong className="sticky-points">{points} pts</strong>}

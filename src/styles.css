@@ -783,3 +783,12 @@ html:not([data-theme="dark"]) .rm-body strong{color:var(--ink)}
 html:not([data-theme="dark"]) .rm-body .muted,
 html:not([data-theme="dark"]) .rm-body small{color:var(--muted)}
 html:not([data-theme="dark"]) .rm-level.is-current .rm-body{border-color:var(--green);box-shadow:0 0 0 3px rgba(18,206,144,.16)}
+
+/* Current level picker (home + materials) */
+.level-picker{margin-top:.8rem;display:grid;gap:.3rem}
+.level-picker label{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.level-picker span{font-weight:700}
+.level-picker select{width:auto;min-width:11rem;border-radius:10px;font-weight:700;cursor:pointer}
+.level-picker small{color:var(--muted);line-height:1.6}
+.level-picker.on-dark span{color:#fff}
+.level-picker.on-dark small{color:#9fb0c9}
