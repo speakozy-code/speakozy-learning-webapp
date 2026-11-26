@@ -1,3 +1,4 @@
+import { siteUrl } from '../lib/subscription';
 import { ThemeToggle } from '../components/ThemeToggle';
 import React, { useState } from 'react';
 import { useApp } from '../lib/store';
@@ -5,7 +6,7 @@ import { Button, Field, Card } from '../components/UI';
 import { go } from '../App';
 import { sbSendPasswordReset } from '../lib/supabase';
 
-const LANDING = 'https://speakozy.com';
+const LANDING = siteUrl('/');
 
 export default function Login() {
   const { login, signup, demo } = useApp();

@@ -1,3 +1,4 @@
+import { siteUrl } from '../lib/subscription';
 import { SubscribeButtons } from '../components/Upsell';
 import React from 'react';
 import { useApp } from '../lib/store';
@@ -7,8 +8,8 @@ import { TRIAL_VIDEO, youtubeEmbed } from '../lib/videoSlots';
 import { Play, MessageCircle, Gift, BookOpen, Headphones, Mic } from 'lucide-react';
 
 const WA = 'https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83%20%D9%81%D9%8A%20%D8%A7%D9%84%D9%83%D9%88%D8%B1%D8%B3';
-const PRICING = 'https://speakozy.com/pricing';
-const REGISTER = 'https://speakozy.com/register';
+const PRICING = siteUrl('/pricing');
+const REGISTER = siteUrl('/register');
 
 const COURSE_FACTS = [
   { icon: '🎥', title: '8 جلسات لايف على زووم', body: 'ساعتين تفاعل مباشر مع المدرب وزملاءك في كل جلسة — السيشن 95% محادثة وتفاعل.' },
