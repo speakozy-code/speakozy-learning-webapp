@@ -2,7 +2,7 @@ import { SHADOWING_VIDEOS } from '../lib/videoSlots';
 import React, { useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, Stat, SectionTitle, Empty, Tabs, Field, Modal, Table, fmtDate, fmtDay, isLate } from '../components/UI';
-import { uid, today, totalScore, levelProgress, needsReview, buildStudentAccount, scoreRule, subscriptionExpired, extendEnd, cairoToday } from '../lib/domain';
+import { uid, today, totalScore, levelProgress, needsReview, buildStudentAccount, scoreRule, subscriptionExpired, extendEnd, cairoToday, arabicDate } from '../lib/domain';
 import { grammarSlides } from '../lib/lessonContent';
 import { go } from '../App';
 
@@ -59,12 +59,21 @@ export function StudentsPage() {
         createdAt: data.users.some((u) => u.id === editing.id) ? (data.users.find((u) => u.id === editing.id)?.createdAt || form.createdAt) : today(),
       });
       await put('users', account);
+      await notifyActivated(data.users.find((u) => u.id === editing.id), account);
       await log(data.users.some((u) => u.id === editing.id) ? 'edit-student' : 'create-student', account.email);
       setCreated({ email: account.email });
       setEditing(null);
     } catch (e: any) {
       setError(e?.message || 'مش قادرين نحفظ الحساب');
     }
+  }
+  // Tell the student when his subscription becomes active (or its end date changes).
+  async function notifyActivated(prev: any, next: any) {
+    if (!next || next.role === 'admin' || next.subscribed === false || subscriptionExpired(next)) return;
+    const wasActive = prev && prev.subscribed !== false && !subscriptionExpired(prev);
+    if (wasActive && (prev.subscriptionEnd || '') === (next.subscriptionEnd || '')) return;
+    const body = next.subscriptionEnd ? `تم تفعيل اشتراكك ✅ وتاريخ انتهاء الاشتراك: ${arabicDate(next.subscriptionEnd)}` : 'تم تفعيل اشتراكك ✅ — اشتراكك مفتوح من غير تاريخ انتهاء';
+    await put('notifications', { id: uid(), targetId: next.id, title: 'تم تفعيل اشتراكك', body, href: '#/profile', read: false, createdAt: today() });
   }
   async function toggle(u: any) {
     await put('users', { ...u, active: !u.active });
@@ -84,7 +93,7 @@ export function StudentsPage() {
         <td>{data.levels.find((l) => l.id === u.levelId)?.title || '—'}</td>
         <td>{data.levels.find((l) => l.id === u.maxLevelId)?.title || '—'}</td>
         <td>{totalScore(data, u.id)}</td>
-        <td>{u.role === 'admin' ? <Badge tone="blue">أدمن</Badge> : <><button className="icon-btn" title="غيّر حالة الاشتراك" onClick={async () => { const ended = subscriptionExpired(u); await put('users', { ...u, subscribed: ended ? true : u.subscribed === false, ...(ended ? { subscriptionEnd: extendEnd(u.subscriptionEnd, 30) } : {}) }); await log(ended ? 'renew-subscription' : 'toggle-subscription', u.email); }}>{u.subscribed === false ? <Badge tone="amber">{subscriptionExpired(u) ? 'انتهى اشتراكه' : 'غير مشترك'}</Badge> : <Badge tone="green">مشترك ✓</Badge>}</button>{u.subscriptionEnd && <div className="muted" style={{ fontSize: '.78rem' }} dir="ltr">{subscriptionExpired(u) ? 'ended' : 'until'} {u.subscriptionEnd}</div>}</>}</td>
+        <td>{u.role === 'admin' ? <Badge tone="blue">أدمن</Badge> : <><button className="icon-btn" title="غيّر حالة الاشتراك" onClick={async () => { const ended = subscriptionExpired(u); const nextU = { ...u, subscribed: ended ? true : u.subscribed === false, ...(ended ? { subscriptionEnd: extendEnd(u.subscriptionEnd, 30) } : {}) }; await put('users', nextU); await notifyActivated(u, nextU); await log(ended ? 'renew-subscription' : 'toggle-subscription', u.email); }}>{u.subscribed === false ? <Badge tone="amber">{subscriptionExpired(u) ? 'انتهى اشتراكه' : 'غير مشترك'}</Badge> : <Badge tone="green">مشترك ✓</Badge>}</button>{u.subscriptionEnd && <div className="muted" style={{ fontSize: '.78rem' }} dir="ltr">{subscriptionExpired(u) ? 'ended' : 'until'} {u.subscriptionEnd}</div>}</>}</td>
         <td><Badge tone={u.active ? 'green' : 'red'}>{u.active ? 'نشط' : 'موقوف'}</Badge></td>
         <td><div className="row"><Button size="sm" variant="ghost" onClick={() => copyEmail(u)}>انسخ الإيميل</Button><Button size="sm" variant="ghost" onClick={() => openEdit(u)}>تعديل</Button><Button size="sm" variant={u.active ? 'danger' : 'ghost'} onClick={() => toggle(u)}>{u.active ? 'إيقاف' : 'تفعيل'}</Button></div></td>
       </tr>)}
