@@ -840,3 +840,20 @@ html.screen-guard img{-webkit-user-drag:none}
 html.screen-guard-hide #root{visibility:hidden}
 html.screen-guard-hide body{background:#0b1220}
 @media print{html.screen-guard body{display:none!important}}
+
+/* Guided tours (components/Tour.tsx) */
+.tour-btn{display:inline-flex;align-items:center;gap:.3rem;border:1px dashed var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:.25rem .7rem;font-size:.8rem;cursor:pointer;font-family:inherit}
+.tour-btn:hover{color:var(--ink);border-color:var(--green)}
+.tour-card{position:fixed;z-index:95;bottom:1rem;inset-inline-start:1rem;width:min(380px,calc(100vw - 2rem));background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:1rem 1.1rem;box-shadow:0 18px 50px rgba(0,0,0,.35);animation:tour-in .25s ease}
+@keyframes tour-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.tour-top{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.tour-kicker{font-size:.78rem;color:var(--green-dark);font-weight:700}
+.tour-skip{background:none;border:0;color:var(--muted);font-size:.78rem;cursor:pointer;font-family:inherit}
+.tour-title{margin:.5rem 0 .25rem;font-size:1.15rem}
+.tour-body{margin:0;color:var(--muted);line-height:1.8}
+.tour-dots{display:flex;gap:.35rem;justify-content:center;margin:.8rem 0}
+.tour-dots span{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.tour-dots span.on{width:22px;border-radius:6px;background:var(--green)}
+.tour-actions{display:flex;gap:.5rem;flex-direction:row}
+.tour-actions .btn{flex:1}
+@media(max-width:980px){.tour-card{bottom:5.2rem}}

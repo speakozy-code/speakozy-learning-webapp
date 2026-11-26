@@ -142,11 +142,17 @@ const lineEnd = (c: Pick<ListenClip, 'lines' | 'end'>, i: number) => (i + 1 < c.
 const MIN_PLAYS = 4;
 
 /** Shadowing flow for one big clip: listen to all of it, master it sentence by sentence, then shadow it whole. */
+const SPEEDS = [0.5, 0.75, 1];
+function SpeedPick({ value, onChange }: { value: number; onChange: (r: number) => void }) {
+  return <span className="row" style={{ gap: '.25rem' }} dir="ltr" aria-label="سرعة الصوت"><Snail size={14} />{SPEEDS.map((r) => <Button key={r} size="sm" variant={value === r ? 'primary' : 'ghost'} onClick={() => onChange(r)}>{r}×</Button>)}</span>;
+}
+
 export function ShadowClipView({ clip, canComplete, onBack }: { clip: ListenClip; canComplete: boolean; onBack: () => void }) {
   const { user, data, put, remove, grantScore } = useApp();
   const main = useRef<PlayerApi>(null);
   const card = useRef<PlayerApi>(null);
-  const [slow, setSlow] = useState<Record<number, boolean>>({});
+  const [rates, setRates] = useState<Record<number, number>>({});
+  const [mainRate, setMainRate] = useState(1);
   const [loops, setLoops] = useState<Record<number, boolean>>({});
   const pk = `shadowplays:${user?.id}:${clip.id}`;
   const [plays, setPlays] = useState<Record<number, number>>(() => { try { return JSON.parse(localStorage.getItem(pk) || '{}'); } catch { return {}; } });
@@ -169,11 +175,11 @@ export function ShadowClipView({ clip, canComplete, onBack }: { clip: ListenClip
     main.current?.pause();
     setPlays((p) => ({ ...p, [i]: (p[i] || 0) + 1 }));
     if (active !== i) { setActive(i); return; } // the player mounts, then starts by itself (onReady)
-    const [a, b] = range(i); card.current?.playRange(a, b, slow[i] ? 0.6 : 1, !!loops[i]);
+    const [a, b] = range(i); card.current?.playRange(a, b, (rates[i] || 1), !!loops[i]);
   }
-  function startActive() { if (active === null) return; const [a, b] = range(active); card.current?.playRange(a, b, slow[active] ? 0.6 : 1, !!loops[active]); }
-  useEffect(() => { startActive(); }, [slow[active ?? -1], loops[active ?? -1]]);
-  function playAll() { card.current?.pause(); setActive(null); main.current?.playRange(clip.start, clip.end, 1, false); }
+  function startActive() { if (active === null) return; const [a, b] = range(active); card.current?.playRange(a, b, (rates[active] || 1), !!loops[active]); }
+  useEffect(() => { startActive(); }, [rates[active ?? -1], loops[active ?? -1]]);
+  function playAll() { card.current?.pause(); setActive(null); main.current?.playRange(clip.start, clip.end, mainRate, false); }
   async function reveal(i: number) {
     if (opened(i)) return;
     await put('attempts', { id: uid(), studentId: user!.id, sessionId: 'shadow', questionId: `shadowopen:${clip.id}:${i}`, answer: 'open', autoScore: 0, maxScore: 0, status: 'approved', createdAt: today() });
@@ -206,7 +212,8 @@ export function ShadowClipView({ clip, canComplete, onBack }: { clip: ListenClip
       <Card><div className="stack">
         <b>الفيديو الكامل</b>
         <ClipPlayer ref={main} videoId={clip.youtubeId} start={clip.start} onBroken={() => setBroken(true)} />
-        <div><Button onClick={playAll}><Play size={16} /> شغّل الكليب كله</Button></div>
+        <div className="row" style={{ gap: '.5rem', flexWrap: 'wrap' }}><Button onClick={playAll}><Play size={16} /> شغّل الكليب كله</Button>
+          <SpeedPick value={mainRate} onChange={setMainRate} /></div>
       </div></Card>
 
       <div dir="rtl"><b>المقاطع الصغيرة</b>
@@ -223,7 +230,7 @@ export function ShadowClipView({ clip, canComplete, onBack }: { clip: ListenClip
             : <div onClick={() => playCard(i)} style={{ aspectRatio: '16/9', background: '#111', borderRadius: 12, display: 'grid', placeItems: 'center', color: '#fff', cursor: 'pointer' }}><Play size={36} /></div>}
           <div className="row" style={{ gap: '.5rem', flexWrap: 'wrap' }}>
             <Button size="sm" onClick={() => playCard(i)}><Play size={14} /> اسمع</Button>
-            <Button size="sm" variant={slow[i] ? 'primary' : 'ghost'} onClick={() => setSlow({ ...slow, [i]: !slow[i] })}><Snail size={14} /> {slow[i] ? 'بطيء ✓' : 'بطيء'}</Button>
+            <SpeedPick value={rates[i] || 1} onChange={(r) => setRates({ ...rates, [i]: r })} />
             <Button size="sm" variant={loops[i] ? 'primary' : 'ghost'} onClick={() => setLoops({ ...loops, [i]: !loops[i] })}><Repeat size={14} /> {loops[i] ? 'تكرار ✓' : 'كرّر'}</Button>
             {!open && <><span className="muted">سمعتها {n} / {MIN_PLAYS}</span>
               <Button size="sm" variant="ghost" disabled={!can} onClick={() => reveal(i)}>{can ? 'أظهر الجملة' : `${MIN_PLAYS - n} كمان`}</Button></>}

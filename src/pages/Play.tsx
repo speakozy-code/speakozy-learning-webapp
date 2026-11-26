@@ -1,3 +1,4 @@
+import { PageTour } from '../components/Tour';
 import React, { useMemo, useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, Empty, Tabs, SectionTitle } from '../components/UI';
@@ -197,6 +198,7 @@ export default function PlayPage() {
   if (!user) return null;
   const lv = levels.find((l) => l.id === level);
   return <div className="stack">
+    <PageTour id="play" />
     <div><h1><Gamepad2 size={22} /> العب واتعلم</h1><p className="muted">العب واتعلم كلمات مستواك — اختار اللعبة والمستوى وابدأ.</p></div>
     <Tabs tabs={[{ id: 'guess', label: <span className="tab-ic"><Target size={15} /> خمّن الكلمة</span> }, { id: 'story', label: <span className="tab-ic"><BookOpen size={15} /> 3 Words 1 Story</span> }, { id: 'match', label: <span className="tab-ic"><Puzzle size={15} /> وصّل الكلمة</span> }, { id: 'scramble', label: <span className="tab-ic"><CaseSensitive size={15} /> رتّب الحروف</span> }]} active={game} onChange={(g) => setGame(g as any)} />
     <Card>
