@@ -4,17 +4,71 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "redirects": [
-    { "source": "/(.*)", "has": [{ "type": "host", "value": "speakozy-academy.vercel.app" }], "destination": "https://speakozy.com/app/", "permanent": false },
-    { "source": "/(.*)", "has": [{ "type": "host", "value": "speakozy-learning.vercel.app" }], "destination": "https://speakozy.com/app/", "permanent": false },
-    { "source": "/app", "destination": "/app/", "permanent": false },
-    { "source": "/(.*)", "has": [{ "type": "host", "value": "www.speakozy.com" }], "destination": "https://speakozy.com/$1", "permanent": true }
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "speakozy-academy.vercel.app"
+        }
+      ],
+      "destination": "/app/",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "speakozy-learning.vercel.app"
+        }
+      ],
+      "destination": "/app/",
+      "permanent": false
+    },
+    {
+      "source": "/app",
+      "destination": "/app/",
+      "permanent": false
+    }
   ],
   "rewrites": [
-    { "source": "/((?!app/|assets/|icons/|materials/|lesson-pdfs/).*)", "destination": "/index.html" }
+    {
+      "source": "/((?!app/|assets/|icons/|materials/|lesson-pdfs/).*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
-    { "source": "/app/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }, { "key": "Service-Worker-Allowed", "value": "/app/" }] },
-    { "source": "/app/manifest.webmanifest", "headers": [{ "key": "Content-Type", "value": "application/manifest+json" }] },
-    { "source": "/assets/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] }
+    {
+      "source": "/app/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/app/"
+        }
+      ]
+    },
+    {
+      "source": "/app/manifest.webmanifest",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
   ]
 }
