@@ -792,3 +792,12 @@ html:not([data-theme="dark"]) .rm-level.is-current .rm-body{border-color:var(--g
 .level-picker small{color:var(--muted);line-height:1.6}
 .level-picker.on-dark span{color:#fff}
 .level-picker.on-dark small{color:#9fb0c9}
+
+/* Top bar: brand green; only the progress fill is navy */
+.content-bar,html[data-theme="dark"] .content-bar,html:not([data-theme="dark"]) .content-bar{background:#12ce90;border-bottom:0;border-radius:0 0 14px 14px;color:#0b1220}
+.content-bar .sticky-level,.content-bar .sticky-pct,.content-bar .sticky-points,.content-bar .bell,.content-bar .user-chip,.content-bar .user-chip-name,.content-bar .theme-toggle{color:#0b1220}
+html[data-theme="dark"] .content-bar .sticky-points,html:not([data-theme="dark"]) .content-bar .sticky-points{color:#0b1220}
+.content-bar .sticky-track{background:rgba(11,18,32,.18);display:block!important}
+.content-bar .sticky-track > span,html[data-theme="dark"] .content-bar .sticky-track > span{background:#0b1220}
+@media (max-width:640px){.content-bar .sticky-track{min-width:60px}}
+.content-bar .sticky-progress{background:transparent}
