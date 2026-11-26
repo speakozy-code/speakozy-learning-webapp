@@ -1,8 +1,9 @@
 import { pdfLinkFor } from '../lib/pdfLinks';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../lib/store';
+import { CurrentLevelPicker } from '../components/CurrentLevelPicker';
 import { Card, Button, Badge, Progress, Stat, SectionTitle, Empty, Tabs, Field, Modal, fmtDate, fmtDay, isLate } from '../components/UI';
-import { sessionStatus, levelProgress, engagementProgress, sessionOpen, levelFullyOpen, pdfAllowed, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, proportionalScore, scoreRule, uid, today, levelLabel, cefrOf, subscriptionDaysLeft, arabicDate } from '../lib/domain';
+import { pickableLevels, sessionStatus, levelProgress, engagementProgress, sessionOpen, levelFullyOpen, pdfAllowed, wordProgressId, practiceId, totalScore, leaderboard, gradeQuestion, proportionalScore, scoreRule, uid, today, levelLabel, cefrOf, subscriptionDaysLeft, arabicDate } from '../lib/domain';
 import { go } from '../App';
 import { lookupWord, allCached, isArabicText, normAr, arabicToEnglish, type LookupEntry } from '../lib/dictionaryProvider';
 import { WORD_MEANINGS } from '../lib/wordMeanings';
@@ -90,6 +91,7 @@ export function StudentDashboard() {
       <div className="between">
         <div><div className="muted" style={{ color: '#9fb0c9' }}>أهلًا {user.name} 👋</div><h1 style={{ marginTop: '.35rem' }}>جاهز تكمل من حيث وقفت؟</h1>
           <p className="home-mission">رسالتنا: نساعد أكثر من مليون متعلم يتكلم إنجليزي بثقة — التعليم عندنا متاح وفعال وممتع للجميع. إحنا أكاديمية متخصصة في تعليم اللغة الإنجليزية: جلسات لايف، تاسكات يومية، ومتابعة شخصية خطوة بخطوة.</p>
+          <CurrentLevelPicker dark />
           <div className="row" style={{ marginTop: '.8rem' }}>
             <Badge tone="green">{level?.title || 'مفيش مستوى'}</Badge>
             <span style={{ color: '#b8c4d6', fontSize: '.85rem' }}>{user.subscribed === false ? 'اشترك عشان تفتح المستويات كاملة' : `مفتوح ليك كامل: ${data.levels.filter((l) => levelFullyOpen(user, l, data.levels)).length} من ${data.levels.length} مستويات`}</span>
@@ -1167,9 +1169,10 @@ export function ProfilePage() {
 }
 
 export function MaterialsPage() {
-  const { user, data } = useApp();
+  const { user, data, saveProfile } = useApp();
   const levels = [...data.levels].sort((a, b) => a.order - b.order);
-  const [selected, setSelected] = useState('');
+  const [selected, setSelected] = useState(user?.role === 'student' ? user.levelId : '');
+  useEffect(() => { if (user?.role === 'student') setSelected(user.levelId); }, [user?.levelId]);
   if (!user) return null;
   const admin = user.role === 'admin';
   const current = data.levels.find((l) => l.id === user.levelId) || levels[0];
@@ -1183,7 +1186,7 @@ export function MaterialsPage() {
   return <div className="stack" dir={en ? 'ltr' : undefined}>
     <div><h1>{L.title}</h1><p className="muted">{L.hint}</p></div>
     <Card>
-      <Field label={L.level}><select value={levelId} onChange={(e) => setSelected(e.target.value)}>
+      <Field label={L.level}><select value={levelId} onChange={(e) => { const v = e.target.value; setSelected(v); if (!admin && v && v !== user.levelId && pickableLevels(user, data.levels).some((l) => l.id === v)) void saveProfile({ currentLevelId: v }); }}>
         <option value="">{en ? '— Pick your level —' : '— اختار الليفل بتاعك —'}</option>
         {levels.map((l) => {
           const full = admin || levelFullyOpen(user, l, data.levels);
