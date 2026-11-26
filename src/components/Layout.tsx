@@ -13,6 +13,7 @@ import { canInstall, isStandalone, isIos, onInstallChange, promptInstall, showBr
 import { SubscribeButtons } from './Upsell';
 import { isSubscribed, PRICING_URL } from '../lib/subscription';
 import { usePullToRefresh } from '../lib/pullToRefresh';
+import { ThemeToggle } from './ThemeToggle';
 
 const WA_LINK = 'https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83%20%D9%81%D9%8A%20%D9%83%D9%88%D8%B1%D8%B3%20%D8%B3%D8%A8%D9%8A%D9%83%D9%88%D8%B2%D9%8A';
 
@@ -91,7 +92,8 @@ export function Layout({ current, children }: { current: string; children: React
     </nav>
     <div className="side-foot">
       <div className="who"><span className="avatar">{user.avatar || (user.role === 'admin' ? '🧑‍💼' : '🧑‍🎓')}</span><span>{user.name}<br /><small>{admin ? 'مدير الأكاديمية' : 'طالب'}</small></span></div>
-      <button className="btn btn-ghost btn-sm" style={{ width: '100%' }} onClick={() => { logout(); go('/'); }}><LogOut size={14} /> تسجيل الخروج</button>
+      <ThemeToggle label className="btn btn-ghost btn-sm" />
+      <button className="btn btn-ghost btn-sm" style={{ width: '100%', marginTop: '.4rem' }} onClick={() => { logout(); go('/'); }}><LogOut size={14} /> تسجيل الخروج</button>
     </div>
   </aside>;
 
@@ -107,7 +109,8 @@ export function Layout({ current, children }: { current: string; children: React
     {pull.active && <div className="ptr"><span>{pull.ready ? 'سيب للتحديث ↻' : 'اسحب للتحديث ↓'}</span></div>}
     <div className="topbar">
       <button className="icon-btn" onClick={() => setOpen(true)} aria-label="القائمة"><Menu size={18} /></button>
-      <div className="auth-brand"><img className="brand-logo" src="./logo-on-dark.png" alt="Speakozy" /></div>
+      <div className="auth-brand"><img className="brand-logo logo-for-dark" src="./logo-on-dark.png" alt="Speakozy" /><img className="brand-logo logo-for-light" src="./logo-on-light.png" alt="Speakozy" /></div>
+      <ThemeToggle />
     </div>
     <div className="shell">{side}<main className="main" id="app-main"><div className="content-bar">
       <div className="content-bar-row">
