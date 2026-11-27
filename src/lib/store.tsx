@@ -150,7 +150,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (found) setUser(found);
         }
       } else {
-        let loaded = await refresh();
+        let loaded: Record<string, any[]> = {};
+        try { loaded = await refresh(); }
+        catch (e) {
+          // a brand-new Google user has no student role yet, so the doc load is refused ("not authorized"):
+          // create the profile first, then load again
+          if (CLOUD === 'supabase' && await sbCurrentAuth()) { await sbEnsureProfile(); loaded = await refresh(); }
+          else throw e;
+        }
         if (CLOUD === 'supabase') {
           const auth = await sbCurrentAuth();
           if (auth) {
