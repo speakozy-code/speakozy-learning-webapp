@@ -51,7 +51,7 @@ export default function TestimonialsPage() {
     {list.length ? <div className="stack">
       {list.map((t) => <Card key={t.id} className="testimonial-card">
         <div className="row between">
-          <div className="row"><span className="avatar small">{t.name.charAt(0)}</span><strong>{t.name}</strong></div>
+          <div className="row"><strong>{t.name}</strong></div>
           <Badge tone="blue">{data.levels.find((l) => l.id === t.level)?.title || t.level}{data.levels.find((l) => l.id === t.level)?.cefr ? ` (${data.levels.find((l) => l.id === t.level)?.cefr})` : ''}</Badge>
         </div>
         <p style={{ lineHeight: 1.9, margin: '.8rem 0 .5rem' }}>“{t.text}”</p>

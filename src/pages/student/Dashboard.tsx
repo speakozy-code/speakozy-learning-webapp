@@ -98,7 +98,6 @@ export function StudentDashboard() {
       {board.length ? <div className="champs-strip">
         {board.slice(0, 10).map((b, i) => <div key={b.id} className={`champ-chip ${b.id === user.id ? 'is-me' : ''}`}>
           <span className="champ-rank">{i + 1}</span>
-          <span className="champ-avatar">{b.avatar || '🧑‍🎓'}</span>
           <span className="champ-name">{b.name}{b.id === user.id ? ' (You)' : ''}</span>
           <strong className="champ-points">{b.points} pts</strong>
         </div>)}

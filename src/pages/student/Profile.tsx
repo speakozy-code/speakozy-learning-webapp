@@ -8,7 +8,6 @@ import { pushSupported, pushEnabled, enablePush, disablePush } from '../../lib/p
 import { isStandalone, isIos } from '../../lib/pwa';
 import { tr, localeTag } from '../../lib/i18n';
 
-export const AVATARS = ['🦁','🐯','🦊','🐼','🐨','🦄','🐬','🦅','🐺','🦖','🐙','🦋','🐢','🦜','🐝','🦩','🐳','🦈','🐸','🦉','🌟','🚀','🎯','⚡','🌈','🎧','⚽','📚','🏀','🎮','🎸','🎨','🏆','🥇','🎓','✏️','🧠','💡','🔥','💎','🌙','☀️','🌊','🍀','🌵','🍕','🍩','🧋','🦸','🧑‍🚀','🧑‍🎤','🧑‍💻','🥷','🤖','👑','🎩','🕶️','🧢','👟','🛹','🚲','✈️','🗺️','🧭','⛰️','🏝️','🎪','🎢','🪁','🎲','🧩','🪄'];
 
 function PushCard() {
   const [on, setOn] = useState(false);
@@ -40,7 +39,6 @@ function PushCard() {
 
 export function ProfilePage() {
   const { user, data, resetDemo, demo, saveProfile, changePassword } = useApp();
-  const [savingAvatar, setSavingAvatar] = useState('');
   const [name, setName] = useState(user?.name || '');
   const [savingName, setSavingName] = useState(false);
   const [nameMsg, setNameMsg] = useState('');
@@ -52,10 +50,6 @@ export function ProfilePage() {
   const level = data.levels.find((l) => l.id === user.levelId);
   const certs = data.certificates.filter((c) => c.studentId === user.id && c.status === 'active');
   const recent = data.scores.filter((s) => s.studentId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 8);
-  async function pickAvatar(a: string) {
-    setSavingAvatar(a);
-    try { await saveProfile({ avatar: a }); } finally { setSavingAvatar(''); }
-  }
   async function saveName() {
     const clean = name.trim();
     if (clean.length < 2) { setNameMsg(tr('الاسم لازم يكون حرفين على الأقل')); return; }
@@ -75,7 +69,7 @@ export function ProfilePage() {
   return <div className="stack">
     <PageTour id="profile" />
     <div><h1>{tr('بروفايلي')}</h1></div>
-    <Card className="row" style={{ gap: '1rem' }}><span className="avatar" style={{ width: 56, height: 56, fontSize: '1.3rem' }}>{user.avatar || '🧑‍🎓'}</span>
+    <Card className="row" style={{ gap: '1rem' }}>
       <div><h2>{user.name}</h2><div className="muted">{user.email}</div><div className="row" style={{ marginTop: '.4rem' }}><Badge tone="green">{level?.title || '—'}</Badge><Badge>{tr('آخر مستوى:')} {data.levels.find((l) => l.id === user.maxLevelId)?.title || '—'}</Badge></div></div>
     </Card>
     {user.subscriptionEnd && (() => {
@@ -106,12 +100,6 @@ export function ProfilePage() {
       <div className="row" style={{ marginTop: '.7rem' }}>
         <Button onClick={savePassword} disabled={savingPw || !pw1 || !pw2}>{savingPw ? tr('بنحفظ…') : tr('غيّر الباسورد')}</Button>
         {pwMsg && <span className="field-hint">{pwMsg}</span>}
-      </div>
-    </Card>
-    <Card>
-      <SectionTitle title={tr('اختار الأفاتار بتاعك')} action={savingAvatar ? <span className="muted">{tr('بنحفظ…')}</span> : <Badge tone="blue">{AVATARS.length} {tr('اختيار')}</Badge>} />
-      <div className="avatar-grid">
-        {AVATARS.map((a) => <button key={a} className={`avatar-pick ${user.avatar === a ? 'is-on' : ''}`} onClick={() => pickAvatar(a)} aria-label={tr('أفاتار {0}', [a])}>{a}</button>)}
       </div>
     </Card>
     <div className="grid g3"><Stat label={tr('إجمالي النقاط')} value={totalScore(data, user.id)} tone="green" /><Stat label={tr('الشهادات')} value={certs.length} /><Stat label={tr('الكلمات المحفوظة')} value={data.savedWords.filter((w) => w.studentId === user.id).length} /></div>
