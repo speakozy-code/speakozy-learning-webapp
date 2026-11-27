@@ -723,4 +723,8 @@ export const EN: Record<string, string> = {
   "من الزرارين اللي فوق جنب جرس الإشعارات: EN/عربي للغة، والقمر/الشمس للوضع الغامق والفاتح.": "Use the two buttons at the top next to the bell: EN/عربي for language, moon/sun for dark and light mode.",
   "إزاي أثبّت الموقع كتطبيق؟": "How do I install the site as an app?",
   "من قايمة الحساب اختار «تثبيت التطبيق على الموبايل». على الآيفون: زرار المشاركة في Safari ثم «إضافة إلى الشاشة الرئيسية».": "From the account menu choose “Install the app on your phone”. On iPhone: the Share button in Safari, then “Add to Home Screen”.",
+  "الدخول بحساب جوجل": "Sign in with Google",
+  "إنشاء حساب بجوجل": "Sign up with Google",
+  "أو بالإيميل": "or with email",
+  "هنستخدم اسمك وإيميلك من حساب جوجل، ومش محتاج تعمل باسورد.": "We'll use the name and email from your Google account — no password needed.",
 };

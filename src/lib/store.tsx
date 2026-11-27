@@ -8,7 +8,7 @@ import { mergeWords } from './wordFixes';
 import { setGrammarOverrides } from './grammar/index';
 import { uid, today, addScoreOnce, buildStudentAccount, dailyNotifications, withExpiry, withCurrentLevel, subscriptionDaysLeft, cairoToday, arabicDate } from './domain';
 import { isFirebase, fbSignIn, fbSignOut, fbLoadAll, fbWrite, fbDelete } from './firebase';
-import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbSaveSettings, sbWrite, sbDelete, sbSignUp, sbCurrentUserId, sbCurrentAuth, sbEnsureProfile, sbSaveMyProfile, sbChangePassword, sbUpsertRecord, sbDeleteRecord } from './supabase';
+import { isSupabase, sbSignIn, sbSignOut, sbLoadAll, sbLoadDoc, sbSaveDoc, sbSaveSettings, sbWrite, sbDelete, sbSignUp, sbSignInWithGoogle, sbCurrentUserId, sbCurrentAuth, sbEnsureProfile, sbSaveMyProfile, sbChangePassword, sbUpsertRecord, sbDeleteRecord } from './supabase';
 import { englishify } from './translate';
 
 const KEY = 'speakozy-demo-v12';
@@ -104,6 +104,7 @@ type Ctx = {
   user: User | null; ready: boolean; demo: boolean; data: AppData;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string, phone?: string) => Promise<void>;
+  loginWithGoogle: (phone?: string) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (u: User | null) => void;
   saveProfile: (updates: { avatar?: string; name?: string; phone?: string; currentLevelId?: string }) => Promise<void>;
@@ -160,7 +161,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               loaded = await sbLoadAll(['users']);
               found = match(loaded.users);
             }
-            if (found) setUser(found as User);
+            if (found) {
+              // phone typed on the sign-up screen before the Google redirect
+              try {
+                const ph = localStorage.getItem('speakozy-pending-phone');
+                if (ph && !(found as any).phone) { await sbSaveMyProfile({ phone: ph }); (found as any).phone = ph; }
+                localStorage.removeItem('speakozy-pending-phone');
+              } catch {}
+              setUser(found as User);
+            }
           }
         }
       }
@@ -185,6 +194,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const me = (fresh.users || []).find((u: any) => u.email?.toLowerCase() === email.toLowerCase() || u.id === `auth-${authId}`);
     if (!me) throw new Error('User profile not found');
     setUser(me as User);
+  }
+
+  /** Redirects to Google; the session is picked up by the boot effect when the page reloads. */
+  async function loginWithGoogle(phone?: string) {
+    try { if (phone) localStorage.setItem('speakozy-pending-phone', phone); else localStorage.removeItem('speakozy-pending-phone'); } catch {}
+    await sbSignInWithGoogle();
   }
 
   async function signup(name: string, email: string, password: string, phone?: string) {
@@ -351,5 +366,5 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // hidden words (deleted in the admin lesson editor) never reach any page; grammar edits are registered for every reader
   const view = React.useMemo(() => { setGrammarOverrides(data.grammarNotes as any); return { ...data, users: (data.users || []).map(withExpiry), dictionary: (data.dictionary || []).filter((w) => !w.hidden) } as AppData; }, [data]);
-  return <AppCtx.Provider value={{ user: user ? withCurrentLevel(withExpiry(user), view.levels) : null, ready, demo, data: view, login, signup, logout, setUser, saveProfile, changePassword, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
+  return <AppCtx.Provider value={{ user: user ? withCurrentLevel(withExpiry(user), view.levels) : null, ready, demo, data: view, login, signup, loginWithGoogle, logout, setUser, saveProfile, changePassword, put, remove, putSettings, grantScore, log, resetDemo }}>{children}</AppCtx.Provider>;
 }

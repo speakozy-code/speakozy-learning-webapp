@@ -247,3 +247,9 @@ html[data-theme="dark"] .speak-item.is-ticked{background:rgba(18,206,144,.1)}
 .user-chip-name{font-weight:700;font-size:.9rem}
 .side-foot .who{gap:0}
 .assist{display:contents}
+
+.google-btn{display:flex;align-items:center;justify-content:center;gap:.6rem;width:100%;padding:.75rem 1rem;border:1px solid var(--line,#d9d2c3);border-radius:12px;background:#fff;color:#1f1f1f;font:inherit;font-weight:600;cursor:pointer}
+.google-btn:hover{background:#f7f4ec}
+.google-btn:disabled{opacity:.6;cursor:default}
+.auth-or{display:flex;align-items:center;gap:.7rem;margin:1rem 0;color:var(--muted,#8a8478);font-size:.82rem}
+.auth-or::before,.auth-or::after{content:"";flex:1;height:1px;background:var(--line,#d9d2c3)}
