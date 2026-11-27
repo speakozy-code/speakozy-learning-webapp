@@ -26,6 +26,7 @@ import { tr, uiDir } from '../../lib/i18n';
 export function SessionPage({ sessionId }: any) {
   const { user, data, put, remove, grantScore, log } = useApp();
   const [tab, setTab] = useState('overview');
+  const [gSlide, setGSlide] = useState(0);
   const [seen, setSeen] = useState<string[]>(['overview']);
   const [defs, setDefs] = useState<Record<string, string>>({});
   const [grammarAnswers, setGrammarAnswers] = useState<Record<string, string>>({});
@@ -33,7 +34,7 @@ export function SessionPage({ sessionId }: any) {
   const [yg, setYg] = useState<{ word: string; accent: string } | null>(null);
   const [wordAnswers, setWordAnswers] = useState<Record<string, string>>({});
   const [wordResult, setWordResult] = useState<{ marks: Record<string, boolean>; score: number; max: number } | null>(null);
-  useEffect(() => { setGrammarResult(null); setGrammarAnswers({}); setWordAnswers({}); setWordResult(null); setYg(null); setSeen(['overview']); setTab('overview'); }, [sessionId]);
+  useEffect(() => { setGrammarResult(null); setGrammarAnswers({}); setWordAnswers({}); setWordResult(null); setYg(null); setSeen(['overview']); setTab('overview'); setGSlide(0); }, [sessionId]);
   useEffect(() => {
     const main = document.getElementById('app-main') || document.querySelector('.main');
     if (main) main.scrollTo({ top: 0, behavior: 'auto' });
@@ -242,7 +243,7 @@ export function SessionPage({ sessionId }: any) {
         </Card>}
       </div> : <Empty title={tr('مفيش كلمات في السيشن دي')} hint={tr('الكلمات هتظهر هنا أول ما تتضاف للديكشنري.')} />)}
       {tab === 'grammar' && <>
-        {slides.length ? <div className="stack">{slides.map((t: any, i: number) => <Card key={`${s.id}-${i}`} className="grammar-topic">
+        {slides.length ? <div className="stack">{slides.map((t: any, i: number) => i === Math.min(gSlide, slides.length - 1) && <Card key={`${s.id}-${i}`} className="grammar-topic">
           <div className="grammar-kicker">GRAMMAR · {i + 1} / {slides.length}</div>
           <h2 className="en" dir="ltr">{t.title}</h2>
           {t.rule && <div className="grammar-formula en" dir="ltr">{t.rule}</div>}
@@ -257,6 +258,11 @@ export function SessionPage({ sessionId }: any) {
               <div className="gm-wrong"><X size={15} aria-hidden="true" /><s>{wrong}</s></div>
               <div className="gm-right"><Check size={15} aria-hidden="true" /><span>{right}</span></div>
             </div>)}
+          </div>}
+          {slides.length > 1 && <div className="grammar-nav" dir="ltr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '.6rem', marginTop: '1rem' }}>
+            <Button variant="ghost" onClick={() => setGSlide(Math.max(0, i - 1))} disabled={i === 0}>← Previous</Button>
+            <span className="muted">{i + 1} / {slides.length}</span>
+            <Button onClick={() => setGSlide(Math.min(slides.length - 1, i + 1))} disabled={i >= slides.length - 1}>Next →</Button>
           </div>}
         </Card>)}</div> : <Empty title={tr('مفيش جرامر لسه')} hint={tr('ملاحظات الجرامر للسيشن دي هتظهر هنا.')} />}
         {grammarAll.length > 0 && <Card className="grammar-training ltr-scope">
