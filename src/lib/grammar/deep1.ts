@@ -1,33 +1,38 @@
 import { D } from './dtypes.ts';
 export const DEEP1: Record<string, string[]> = {
 'l1-s1': [
-D('I + am، you/we/they + are. الاختصار: I\'m / you\'re / we\'re / they\'re.', 'نعرّف نفسنا ونقول اسمنا وسننا وبلدنا ووظيفتنا: I\'m Ahmed. I\'m from Egypt.', 'في الإنجليزي لازم فعل في الجملة. بنقول I am a student مش I student زي ما في العربي.', 'I are / You is. الصح: I am وyou are.'),
-D('النفي: am/are + not. السؤال: بنقدّم am/are على الفاعل. الرد القصير بيكرر الفعل.', 'نسأل عن حد ونرد: Are you ready? — Yes, I am. / No, I\'m not.', 'مفيش amn\'t. في النفي مع I بنقول I\'m not بس. وفي Yes ما بنختصرش: Yes, I am مش Yes, I\'m.', 'You not are late. الصح: You are not late.'),
+D('الفاعل + am / are + باقي الجملة. مع I بنقول am، ومع you بنقول are.', 'لما تعرّف بنفسك: اسمك وبلدك وسنك. I\'m Nadia. I\'m from Egypt. I\'m seven.', 'الاختصار طبيعي جداً في الكلام: I\'m وyou\'re.', 'I is Ahmed. الصح: I am Ahmed.'),
+D('نفي be: نزود not بعد am أو are. I\'m not وyou aren\'t.', 'لما تقول إنك مش حاجة أو مش من مكان: I\'m not nine. You aren\'t from Egypt.', 'مفيش اختصار اسمه amn\'t، بنقول I\'m not.', 'I amn\'t Ahmed. الصح: I\'m not Ahmed.'),
+D('السؤال: Am / Are + الفاعل + باقي الجملة؟ والإجابة القصيرة: Yes, I am. / No, I\'m not.', 'لما تسأل سؤال إجابته آه أو لأ: Are you OK? Am I in class A1?', 'في Yes ما بنختصرش: Yes, I am. مش Yes, I\'m.', 'Yes, I\'m. الصح: Yes, I am.'),
 ],
 'l1-s2': [
-D('he/she/it + is. he للراجل، she للست، it للحاجة أو الحيوان. قبل الوظيفة a أو an.', 'نقول وظيفة حد ونوصفه: She is a nurse. He is an engineer.', 'a قبل صوت ساكن، an قبل صوت علة (an actor). وبنقدر نختصر: he\'s / she\'s / it\'s.', 'He are a doctor. الصح: He is a doctor.'),
-D('النفي: isn\'t. السؤال: is + he/she/it؟ الرد: Yes, he is. / No, he isn\'t.', 'نسأل عن وظيفة حد أو حاجة: Is she a pilot? — No, she isn\'t.', 'الرد الإيجابي القصير ما بيتختصرش: Yes, she is مش Yes, she\'s.', 'Is he a doctor? Yes, he\'s. الصح: Yes, he is.'),
+D('he / she / it + is / \'s + باقي الجملة. he للراجل، she للست، it للحاجة.', 'لما تتكلم عن شخص تالت أو حاجة: وظيفته، جنسيته، سعر الحاجة. He\'s a teacher. It\'s four dollars.', 'اختار الضمير حسب الموضوع: Ahmed = he، Mona = she، pen = it.', 'He are a doctor. الصح: He is a doctor.'),
+D('he / she / it + isn\'t (is not) + باقي الجملة. وممكن He\'s not.', 'لما تنفي: He isn\'t in London. Sylvia isn\'t American. It\'s not from China.', 'isn\'t وis not نفس المعنى، والاختصار أسهل في الكلام.', 'He no is a doctor. الصح: He isn\'t a doctor.'),
+D('السؤال: Is + he / she / it + باقي الجملة؟ والإجابة: Yes, he is. / No, she isn\'t.', 'لما تسأل عن شخص تالت: Is he an actor? Is she from Germany?', 'في الإجابة القصيرة ما بنختصرش في Yes: Yes, he is.', 'Yes, he\'s. الصح: Yes, he is.'),
 ],
 'l1-s3': [
-D('we/you/they + are. بعد are في الجمع ما بنحطش a: They are students.', 'نتكلم عن ناس كتير أو عن نفسنا مع غيرنا: We are from Egypt.', 'we = أنا وغيري، they = ناس تانيين. السؤال: Are they …? والنفي: aren\'t.', 'They are a students. الصح: They are students.'),
-D('الدولة اسم (Egypt)، والجنسية صفة (Egyptian). I\'m from Egypt = I\'m Egyptian.', 'نقول إحنا منين وجنسيتنا إيه، وننسب الناس لبلدهم.', 'الجنسيات بتبدأ بحرف كبير دايماً. وغالباً بتنتهي بـ -an / -ish / -ese: Italian, Spanish, Chinese.', 'I am from Egyptian. الصح: I am from Egypt أو I am Egyptian.'),
+D('we / you / they + are / \'re + باقي الجملة.', 'لما تتكلم عن مجموعة: We\'re students. They\'re Colombian. You\'re Egyptian.', 'we = أنا وغيري، they = ناس تانيين، you ممكن واحد أو أكتر.', 'They is Colombian. الصح: They are Colombian.'),
+D('we / you / they + aren\'t (are not) + باقي الجملة.', 'لما تنفي عن مجموعة: We aren\'t from the UK. You aren\'t students.', 'الفعل هنا are مع الثلاثة ضمائر دول.', 'We isn\'t old. الصح: We aren\'t old.'),
+D('السؤال: Are + we / you / they + باقي الجملة؟ والإجابة: Yes, we are. / No, they aren\'t. والجنسية بتنتهي غالباً بـ an أو ish أو ese.', 'لما تسأل عن ناس أو تقول جنسية: Are they office workers? I am from Italy. I am Italian.', 'الدولة اسم (Italy) والجنسية صفة (Italian). وحط the قبل the UK وthe USA.', 'I am Egypt. الصح: I am Egyptian.'),
 ],
 'l1-s4': [
-D('a قبل صوت ساكن، an قبل صوت علة. الحكم للنطق مش للحرف.', 'نذكر اسم واحد لأول مرة: a bag, an umbrella.', 'an hour (الـh صامتة) لكن a university (بتتنطق يو). والصفة بتيجي بين a والاسم: a big bag.', 'a umbrella. الصح: an umbrella.'),
-D('الجمع: + s (keys). بعد ch/sh/s/x/o: + es (watches). ساكن + y → ies (cities). وفي جموع شاذة: man → men, child → children.', 'نتكلم عن أكتر من حاجة: two boxes, three cities.', 'ما بنحطش a قبل الجمع. وحفظ الجموع الشاذة أهم من القاعدة: woman → women, person → people.', 'two watchs / childs. الصح: two watches / children.'),
-D('I/you/we/they + have. he/she/it + has.', 'نقول إيه اللي معانا أو ملكنا: I have a laptop. She has a sister.', 'has هي الصيغة الوحيدة مع الغايب المفرد، ومفيش haves. والنفي والسؤال بيحتاج do/does.', 'He have a phone. الصح: He has a phone.'),
+D('a قبل الصوت الساكن، وan قبل صوت العلة (a, e, i, o, u).', 'لما تتكلم عن حاجة واحدة: a bag, a phone, an umbrella, an apple.', 'الحكم بالصوت مش بالحرف. والصفة ما بتاخدش s: a big bag.', 'a umbrella. الصح: an umbrella.'),
+D('الجمع: نزود s لمعظم الكلمات، es بعد ch / s / sh / x، وies بدل y بعد حرف ساكن.', 'لما تتكلم عن أكتر من حاجة: keys, watches, countries.', 'key بتنتهي بحرف علة + y فبناخد s بس.', 'two watchs. الصح: two watches.'),
+D('the + الاسم لما نقصد حاجة واحدة معروفة.', 'في الأوامر والكلام اليومي: Look at the board! Close the door!', 'the بتتنطق بنفس الشكل مع الاسم المفرد والجمع.', 'Close a door! (الباب المعروف). الصح: Close the door!'),
+D('I / you / we / they + have، وhe / she / it + has.', 'لما تقول إيه اللي معاك أو عندك: I have a passport. She has an umbrella.', 'has بس مع he وshe وit.', 'She have a key. الصح: She has a key.'),
 ],
 'l1-s5': [
-D('my, your, his, her, its, our, their + اسم. الصفة بتتغير حسب المالك مش حسب الحاجة المملوكة.', 'نقول الحاجة بتاعة مين: my book, her bag, their house.', 'his بتاعه (مالك راجل) وher بتاعها (مالكة ست). its للحاجة والحيوان من غير apostrophe، وit\'s معناها it is.', 'She name is Mona. الصح: Her name is Mona.'),
-D('اسم + \'s + الحاجة: Ali\'s car. جمع بينتهي بـ s: بنزود \' بس (my parents\' house).', 'نقول الملكية والعلاقات: my brother\'s wife, Sara\'s phone.', 'ما بنقولش the car of Ali. وبنقول children\'s لأن الجمع مش بينتهي بـ s.', 'the book of my friend (غير طبيعي). الأفضل: my friend\'s book.'),
+D('my / your / his / her / its / our / their + الاسم.', 'لما تقول الحاجة بتاعة مين: This is my book. Their house is very big.', 'الصفة الملكية بتيجي قبل الاسم دايماً، وما بنحطش معاها the.', 'She name is Fatima. الصح: Her name is Fatima.'),
+D('الاسم + \'s + الشيء المملوك.', 'لما تقول إن حاجة أو شخص بتاع حد: Ali\'s car. My brother\'s name is Omar.', 'ما بنقولش the car of Ali.', 'This is the car of Ali. الصح: This is Ali\'s car.'),
 ],
 'l1-s6': [
-D('الفاعل قبل الفعل (I, he, she, we, they). المفعول بعد الفعل أو حرف الجر (me, him, her, us, them).', 'عشان ما نكررش الاسم: I love my mother → I love her.', 'it وyou بيفضلوا زي ما هما في الحالتين. بعد حروف الجر دايماً object: with me, for them.', 'I like she / Give it to he. الصح: I like her / Give it to him.'),
+D('I → me، he → him، she → her، we → us، they → them. بتيجي بعد الفعل.', 'عشان منكررش الاسم: I love my mother. I call her every day.', 'you وit بيفضلوا زي ما هم.', 'Everybody likes she. الصح: Everybody likes her.'),
+D('بعد حروف الجر (to / for / with / about) بنستخدم برضه me / him / her / us / them.', 'لما تقول: listen to me، play with us، coffee for them.', 'الفاعل (I) غير المفعول (me).', 'Please listen to I! الصح: Please listen to me!'),
 ],
 'l1-s7': [
-D('Present Simple: I/you/we/they + الفعل زي ما هو. للنفي don\'t + الفعل. للسؤال Do + فاعل + فعل؟', 'العادات والروتين والحقائق: I study English every day.', 'بعد don\'t وdo بنرجع الفعل لأصله. وفي الشهور بنقول in: in May, in 2024.', 'I am study / Do you goes? الصح: I study / Do you go?'),
-D('الإجابة القصيرة: Yes, I do. / No, I don\'t. وظروف الوقت: in + شهر، on + يوم، at + ساعة.', 'نسأل ونرد عن عاداتنا: Do you work in the morning? — Yes, I do.', 'in مع الشهور والسنين والفصول، on مع الأيام والتواريخ، at مع الساعة (at 7:00).', 'My birthday is on May. الصح: My birthday is in May.'),
-D('in + الشهر أو السنة أو الفصل. on + اليوم أو التاريخ. at + الساعة.', 'نحدد وقت الحدث: in July, on Friday, at 6 pm.', 'حاجات ثابتة بتتحفظ: at night, at the weekend (UK), in the morning.', 'in Monday / on the morning. الصح: on Monday / in the morning.'),
+D('I / you / we / they + الفعل (من غير أي إضافة).', 'للعادات والروتين: I wake up at 7:00 AM. We go to the beach in August.', 'قبل الشهر بنقول in: in July.', 'I wakes up early. الصح: I wake up early.'),
+D('I / you / we / they + don\'t + الفعل.', 'لما تنفي عادة: I don\'t wake up early on Friday. They don\'t watch TV.', 'بعد don\'t الفعل بيفضل زي ما هو.', 'We don\'t goes to school. الصح: We don\'t go to school.'),
+D('Do + I / you / we / they + الفعل؟ والإجابة: Yes, I do. / No, I don\'t.', 'لما تسأل عن عادة: Do you have breakfast in the morning?', 'الإجابة القصيرة بـ do أو don\'t.', 'Yes, I have. الصح: Yes, I do.'),
 ],
 'l2-s1': [
 D('الحاضر البسيط للروتين اليومي + ظروف زي every day وat 7:00 وin the morning.', 'نحكي يومنا بالترتيب: I get up at 7, I have breakfast, I go to work.', 'ترتيب الجملة: فاعل + فعل + مكان/وقت. ما بنحطش الوقت بين الفاعل والفعل.', 'I at 7 get up. الصح: I get up at 7.'),

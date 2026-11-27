@@ -1,13 +1,13 @@
 // Default Google Drive links for lesson PDFs, by session id.
 // The admin "ملفات PDF" page overrides these per session (saved on the session as pdfUrl).
 export const PDF_LINKS: Record<string, string> = {
-  'l1-s1': 'https://drive.google.com/file/d/17LSTtszvsrZoK3aKqDqdfQ_o6nqrnbDO/view',
-  'l1-s2': 'https://drive.google.com/file/d/13e3N8Rq8EwA7DRUvSW0fIJIJaSVanhxL/view',
-  'l1-s3': 'https://drive.google.com/file/d/1VDD7hLEX3cUbrdrMGVS65YtoxAYoz5Tp/view',
-  'l1-s4': 'https://drive.google.com/file/d/1FRAa30LkZM2BIhoQzPWTKNDeF3w4e5_7/view',
-  'l1-s5': 'https://drive.google.com/file/d/1mBxXS0eN4-RYYEdS8Boa8myNefkLtf5l/view',
-  'l1-s6': 'https://drive.google.com/file/d/1XliX8RUpAUmymiaeFQ6cgTO8mqypdInR/view',
-  'l1-s7': 'https://drive.google.com/file/d/12iCYNHQuGGkdRjqJmp9sRNAuOxZcoK0M/view',
+  'l1-s1': 'https://drive.google.com/file/d/1I3YscpRzEgjTBwRow9SDByw4Iat00GMA/view',
+  'l1-s2': 'https://drive.google.com/file/d/1WUMvwLjkAjpn2DpMRHxodg04hvse5j-p/view',
+  'l1-s3': 'https://drive.google.com/file/d/1mpRX4_CgrdR_S-86XohU_FEMd_TMIi0w/view',
+  'l1-s4': 'https://drive.google.com/file/d/1sF7vS9r3rRd4s78R2nC5Z7IQSEKwR5Zm/view',
+  'l1-s5': 'https://drive.google.com/file/d/11D5Mh7h8U-v7YHfVLpn09HNDUN_V-DJQ/view',
+  'l1-s6': 'https://drive.google.com/file/d/1luMMyRHEBm9jYeGshE8Enk_orA-x-NOa/view',
+  'l1-s7': 'https://drive.google.com/file/d/1M0Cr8iqwUbcRMDsm5xhYKUfvjjHiE1EM/view',
   'l2-s1': 'https://drive.google.com/file/d/1MMmsPX9hSGP8Yvimpt4LYT6WLdXs3Moy/view',
   'l2-s2': 'https://drive.google.com/file/d/1EcYnpd3mCP-Uk-zjNAzCasBOMZuVSQyk/view',
   'l2-s3': 'https://drive.google.com/file/d/1gwE2tpH-CExerNtYR-J9ecX0zJLMissa/view',
