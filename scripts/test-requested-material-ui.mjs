@@ -7,12 +7,13 @@ const floating = readFileSync('src/components/layout/FloatingActions.tsx', 'utf8
 const studentHeader = readFileSync('src/components/layout/StudentHeader.tsx', 'utf8');
 const css = readStyles();
 const student = readStudentSource();
-assert.match(floating, /className="float-wa"/);
+assert.match(floating, /<HelpAssistant \/>/); // the floating WhatsApp button became the help assistant (WhatsApp lives inside its panel)
+assert.doesNotMatch(floating, /float-wa/);
 assert.doesNotMatch(layout + studentHeader, /wa-top/);
 // the WhatsApp shortcut lives only in the floating button, never in the header
 assert.doesNotMatch(studentHeader, /wa\.me|WA_LINK|واتساب/);
 assert.match(css, /\.float-stack\{position:fixed;bottom:5rem;left:/);
-assert.match(css, /\.float-stack \.float-wa\{position:static/);
+assert.match(css, /\.assist-fab\{/);
 assert.match(css, /\.float-stack\.split\{left:\.7rem;right:\.7rem;flex-direction:row/);
 for (const label of ['Words', 'Grammar', 'Practice', 'Quiz', 'Words Quiz', 'Grammar Practice', 'Speaking Practice', 'Session Quiz']) assert.ok(student.includes(label), `missing ${label}`);
 assert.match(student, /\{\(w\.arabic \|\| w\.meaning\) && <div className="vocab-meaning"/);

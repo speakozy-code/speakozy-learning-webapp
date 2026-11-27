@@ -189,3 +189,54 @@ html[dir="ltr"] .plan-chev{transform:scaleX(-1)}
   html[dir="ltr"] .side.open{transform:none}
 }
 @media(max-width:980px){.shell.is-student .side{z-index:90}.drawer-scrim{z-index:88}}
+
+/* ---------- Header: name + verified badge + account menu ---------- */
+.tnav-avatar{align-items:center;gap:.5rem;padding:.2rem .35rem .2rem .2rem;border-radius:999px;color:var(--ink);font:inherit}
+.tnav-avatar:hover{background:var(--cream-2)}
+.tnav-name{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800;font-size:.92rem}
+.tnav-avatar .verified-badge{position:static;margin:0;flex:none}
+.tnav-caret{color:var(--muted);flex:none}
+@media(max-width:980px){.tnav-name,.tnav-caret{display:none}.tnav-avatar{padding:0}.tnav-avatar .verified-badge{position:absolute;bottom:-2px;inset-inline-end:-2px}}
+html:not([data-theme="dark"]) .tnav-user .profile-menu{--ink:#0b1220;--muted:#7a6d58;--line:#eadfcc;--card:#fffdf9}
+.tnav-user .profile-menu{background:var(--card);color:var(--ink);border-radius:18px;min-width:260px;padding:.5rem;box-shadow:0 16px 40px rgba(0,0,0,.18)}
+.profile-menu button,.profile-menu a{display:flex;align-items:center;gap:.7rem;font-weight:600;font-size:.92rem;color:var(--ink);text-decoration:none}
+.profile-menu button svg,.profile-menu a svg{color:var(--muted);flex:none}
+.pm-head{display:flex;align-items:center;gap:.75rem;padding:.6rem .7rem .8rem;margin-bottom:.3rem;border-bottom:1px solid var(--line)}
+.pm-head .avatar{width:42px;height:42px;flex:none}
+.pm-who{display:grid;min-width:0;line-height:1.35}
+.pm-who b{display:flex;align-items:center;gap:.3rem;font-weight:800}
+.pm-who small{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile-menu .pm-danger,.profile-menu .pm-danger svg{color:#e5484d}
+
+/* ---------- Floating assistant ---------- */
+.assist-fab{position:relative;width:3.1rem;height:3.1rem;padding:0;border:0;border-radius:50%;background:var(--green);color:var(--ink-on-green,#04231a);display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow);transition:transform .15s}
+.assist-fab:hover{transform:scale(1.06)}
+.assist-fab.is-open{background:var(--navy);color:#fff}
+.assist-panel{position:fixed;z-index:95;left:1rem;bottom:7.6rem;width:min(380px,calc(100vw - 2rem));max-height:min(560px,calc(100vh - 11rem));display:flex;flex-direction:column;border:1px solid var(--line);border-radius:22px;background:var(--card);color:var(--ink);box-shadow:0 24px 60px rgba(0,0,0,.28);overflow:hidden;direction:inherit}
+.assist-head{display:flex;align-items:center;gap:.75rem;padding:1rem 1.1rem;border-bottom:1px solid var(--line)}
+.assist-title{flex:1;display:grid;line-height:1.35;min-width:0}
+.assist-title strong{font-size:1.1rem;font-weight:800}
+.assist-title small{color:var(--muted)}
+.assist-face{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#04231a}
+.assist-x{flex:none;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+.assist-x:hover{background:var(--cream-2)}
+.assist-body{flex:1;overflow:auto;padding:.9rem 1rem;display:grid;gap:.55rem;align-content:start}
+.assist-kicker{color:var(--muted);font-size:.8rem;font-weight:700;text-align:center}
+.assist-q{border:1px solid var(--line);border-radius:14px;background:var(--bg)}
+.assist-q>button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.8rem .95rem;border:0;background:transparent;color:var(--ink);font:inherit;font-weight:700;text-align:start;cursor:pointer}
+.assist-q>button svg{flex:none;color:var(--muted);transition:transform .15s}
+.assist-q.on>button svg{transform:rotate(180deg)}
+.assist-q p{margin:0;padding:0 .95rem .85rem;color:var(--muted);line-height:1.75;font-size:.9rem}
+.assist-steps{margin:0;padding:0 .95rem .85rem 1.9rem;display:grid;gap:.6rem;color:var(--muted);font-size:.88rem;line-height:1.7}
+html[dir="rtl"] .assist-steps{padding:0 1.9rem .85rem .95rem}
+.assist-steps li b{display:block;color:var(--ink)}
+.assist-all{justify-self:start;display:inline-flex;align-items:center;gap:.3rem;border:0;background:transparent;color:var(--green-dark);font:inherit;font-weight:800;cursor:pointer;padding:.2rem .1rem}
+.assist-foot{display:flex;gap:.6rem;padding:.8rem 1rem;border-top:1px solid var(--line)}
+.assist-btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:.45rem;padding:.7rem .8rem;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);font:inherit;font-weight:700;font-size:.9rem;text-decoration:none;cursor:pointer}
+.assist-btn:hover{border-color:var(--green)}
+@media(max-width:980px){.assist-panel{left:.7rem;right:.7rem;width:auto;bottom:5.4rem;max-height:calc(100vh - 8.5rem)}}
+/* speaking-practice tick list */
+.speak-item{cursor:pointer;align-items:center}
+.speak-check{flex:none;width:1.25rem;height:1.25rem;margin:0;accent-color:var(--green-dark);cursor:pointer}
+.speak-item.is-ticked{border-color:var(--green);background:#e9fbf4}
+html[data-theme="dark"] .speak-item.is-ticked{background:rgba(18,206,144,.1)}

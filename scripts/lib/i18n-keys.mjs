@@ -5,7 +5,7 @@ import path from 'node:path';
 const ROOT = new URL('../../', import.meta.url).pathname;
 const AR = /[؀-ۿ]/;
 /** Files whose module-level Arabic strings are UI copy rendered through tr() at use sites. */
-const DATA_FILES = ['src/lib/tours.ts', 'src/components/layout/nav.ts', 'src/pages/Trial.tsx', 'src/pages/Resources.tsx', 'src/lib/domain.ts'];
+const DATA_FILES = ['src/lib/tours.ts', 'src/lib/help.ts', 'src/components/layout/nav.ts', 'src/pages/Trial.tsx', 'src/pages/Resources.tsx', 'src/lib/domain.ts'];
 
 function walk(dir, out = []) {
   for (const f of readdirSync(dir)) {

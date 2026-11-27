@@ -2,7 +2,7 @@ import { PageTour } from '../../components/Tour';
 import { useEffect, useState } from 'react';
 import { useApp } from '../../lib/store';
 import { Card, Button, Badge, SectionTitle, Empty, fmtDate } from '../../components/UI';
-import { sessionStatus, sessionOpen, pdfAllowed, wordProgressId, practiceId, gradeQuestion, proportionalScore, scoreRule, uid, today } from '../../lib/domain';
+import { sessionStatus, sessionOpen, pdfAllowed, wordProgressId, speakProgressId, practiceId, gradeQuestion, proportionalScore, scoreRule, uid, today } from '../../lib/domain';
 import { go } from '../../App';
 import { lookupWord } from '../../lib/dictionaryProvider';
 import { WORD_MEANINGS } from '../../lib/wordMeanings';
@@ -24,7 +24,7 @@ import { materialPdf, PdfActions } from './materialPdf';
 import { tr, uiDir } from '../../lib/i18n';
 
 export function SessionPage({ sessionId }: any) {
-  const { user, data, put, grantScore, log } = useApp();
+  const { user, data, put, remove, grantScore, log } = useApp();
   const [tab, setTab] = useState('overview');
   const [seen, setSeen] = useState<string[]>(['overview']);
   const [defs, setDefs] = useState<Record<string, string>>({});
@@ -164,6 +164,13 @@ export function SessionPage({ sessionId }: any) {
     await Promise.allSettled(jobs);
   }
   const doneParts = done.filter((d) => d.startsWith(`${s.id}-`) || d.startsWith('word:')).length;
+  const speakRow = (i: number) => data.progress.find((p) => p.studentId === user.id && p.sessionId === s.id && p.sectionId === speakProgressId(s.id, i));
+  async function toggleSpeak(i: number) {
+    if (locked) return;
+    const row: any = speakRow(i);
+    if (row) await remove('progress', row.id);
+    else await put('progress', { studentId: user!.id, sessionId: s!.id, sectionId: speakProgressId(s!.id, i), completedAt: today() });
+  }
   return <div className="stack sess">
     <div className="row"><button className="icon-btn" onClick={() => window.history.length > 1 ? window.history.back() : go('/roadmap')}>{tr('→ السابق')}</button></div>
     <PageTour id={`session-${tab}`} />
@@ -267,8 +274,8 @@ export function SessionPage({ sessionId }: any) {
       {tab === 'practice' && <div className="stack ltr-scope" dir="ltr">
         <Card className="activity-card">
           <SectionTitle title="Speaking Practice" action={<Badge tone="blue">{talk.length} questions</Badge>} />
-          <p className="muted" dir={uiDir()}>{tr('أسئلة مفتوحة للتدريب — اتكلم بصوت عالي، ولو عايز رأي المدرّس ابعت إجابتك على أي سؤال للجروب.')}</p>
-          {talk.map((q, i) => <div key={i} className="req-item" style={{ marginTop: '.5rem', gap: '.5rem', flexWrap: 'wrap' }}><span className="req-check">{i + 1}</span><span dir="ltr" className="en" style={{ flex: 1 }}>{q}</span><a className="btn btn-ghost btn-sm" dir={uiDir()} href={waGroupShare(tr('فويس نوت Speakozy — {0}\n{1}. {2}', [s.title, i + 1, q]))} target="_blank" rel="noreferrer">{tr('ابعت إجابتك على واتساب')}</a></div>)}
+          <p className="muted" dir={uiDir()}>{tr('أسئلة مفتوحة للتدريب — اتكلم بصوت عالي وعلّم على كل سؤال جاوبت عليه. التعليم ده لمتابعتك إنت بس ومش بيتحسب عليه نقط.')}</p>
+          {talk.map((q, i) => { const ticked = !!speakRow(i); return <label key={i} className={`req-item speak-item${ticked ? ' is-ticked' : ''}`}><input type="checkbox" className="speak-check" checked={ticked} onChange={() => void toggleSpeak(i)} disabled={locked} /><span className="req-check">{i + 1}</span><span dir="ltr" className="en" style={{ flex: 1 }}>{q}</span></label>; })}
         </Card>
         <Card className="activity-card">
           <SectionTitle title="Voice Notes" action={<Badge>{tr('اختياري')}</Badge>} />

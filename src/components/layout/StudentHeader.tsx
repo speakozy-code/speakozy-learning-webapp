@@ -44,8 +44,13 @@ export function StudentHeader({ user, data, current, unread, onBell, onMenu, onL
       <ThemeToggle />
       <button className="tnav-icon tnav-bell" onClick={onBell} aria-label={tr('الإشعارات')} title={tr('الإشعارات')}><Bell size={18} />{unread > 0 && <span className="tnav-badge">{unread}</span>}</button>
       <div className="tnav-user">
-        <button className="tnav-avatar" onClick={() => setProfile((p) => !p)} aria-label={tr('الملف الشخصي')}><span className="avatar">{user.avatar || '🧑‍🎓'}</span>{isSubscribed(user) && <span className="verified-badge" title={tr('طالب مشترك')}>✓</span>}</button>
-        {profile && <ProfileMenu onClose={() => setProfile(false)} onLogout={onLogout} />}
+        <button className="tnav-avatar" onClick={() => setProfile((p) => !p)} aria-label={tr('الملف الشخصي')} aria-expanded={profile}>
+          <span className="tnav-name">{user.name}</span>
+          {isSubscribed(user) && <span className="verified-badge" title={tr('طالب مشترك')}>✓</span>}
+          <ChevronDown size={15} className="tnav-caret" />
+          <span className="avatar">{user.avatar || '🧑‍🎓'}</span>
+        </button>
+        {profile && <ProfileMenu user={user} onClose={() => setProfile(false)} onLogout={onLogout} />}
       </div>
     </div>
   </header>;

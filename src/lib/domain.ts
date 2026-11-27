@@ -16,7 +16,7 @@ export function gradeQuestion(q: Question, answer: string): { score: number; aut
 }
 
 export function sessionStatus(data: AppData, session: Session, studentId: string) {
-  const prog = data.progress.filter((p) => p.studentId === studentId && p.sessionId === session.id);
+  const prog = data.progress.filter((p) => p.studentId === studentId && p.sessionId === session.id && !p.sectionId.startsWith(SPEAK_PREFIX)); // speaking self-check ticks never count
   const attempts = data.attempts.filter((a) => a.studentId === studentId && a.sessionId === session.id);
   if (!prog.length && !attempts.length) return { key: 'locked', label: 'لسه ما بدأتش' };
   if (prog.length < session.sections.length && !attempts.length) return { key: 'progress', label: 'جاري المذاكرة' };
@@ -95,6 +95,9 @@ export function pdfAllowed(user: User, session: { levelId: string; order: number
   return levelFullyOpen(user, level, levels);
 }
 
+/** Speaking-practice self-check ticks: a personal checklist only — no points, never part of session progress. */
+export const SPEAK_PREFIX = 'speak:';
+export const speakProgressId = (sessionId: string, n: number) => `${SPEAK_PREFIX}${sessionId}:${n}`;
 export const wordProgressId = (word: string) => `word:${word.toLowerCase()}`;
 export const practiceId = (kind: string, sessionId: string, n: number) => `${kind}:${sessionId}:${n}`;
 

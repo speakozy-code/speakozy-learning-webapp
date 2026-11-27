@@ -7,7 +7,7 @@ export function AdminBar({ user, unread, onBell, onLogout, children }: { user: a
   const [menu, setMenu] = useState(false);
   return <div className="content-bar">
     <div className="content-bar-row">
-      {menu && <ProfileMenu onClose={() => setMenu(false)} onLogout={onLogout} />}
+      {menu && <ProfileMenu user={user} onClose={() => setMenu(false)} onLogout={onLogout} />}
       <div className="sticky-progress"><span className="muted">لوحة الأدمن</span></div>
       <button className="icon-btn bell" onClick={onBell} aria-label="الإشعارات" title="الإشعارات">
         <Bell size={18} />{unread > 0 && <span className="badge badge-red bell-count">{unread}</span>}
