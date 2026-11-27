@@ -1,10 +1,10 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, SectionTitle, Empty, Field } from '../components/UI';
 import { uid, today, scoreRule } from '../lib/domain';
 import { lookupWord, type LookupEntry } from '../lib/dictionaryProvider';
 import type { ListenClip, ListenLine } from '../types';
-import { Headphones, Play, Snail, Repeat, Bookmark, Volume2, ExternalLink } from 'lucide-react';
+import { Headphones, Play, Snail, Repeat, Bookmark, Volume2 } from 'lucide-react';
 
 
 export function parseYoutubeId(input: string): string {
@@ -202,14 +202,14 @@ export function ShadowClipView({ clip, canComplete, onBack }: { clip: ListenClip
     <div className="row"><Button variant="ghost" size="sm" onClick={onBack}>→ كل الكليبات</Button></div>
     <h2 style={{ margin: 0 }}>{clip.title}</h2>
     {broken ? <Card><Empty title="الفيديو مش متاح دلوقتي" hint="هنصلّحه قريب." /></Card> : <>
-      <Card><div className="stack" dir="rtl">
+      <Card className="sh-howto"><div className="stack" dir="rtl">
         <b>طريقة الشادوينج</b>
         <div><b>1- اسمع الفيديو كامل الأول</b>، من غير ما تتكلم. ركّز على النغمة والسرعة.</div>
         <div><b>2- اتقن كل مقطع صغير لوحده:</b>
           <div className="muted" style={{ lineHeight: 1.9 }}>• اسمع: شغّل المقطع واسمعه {MIN_PLAYS} مرات.<br />• ردّد: اسمع تاني وردّد ورا المتحدث في نفس اللحظة، وقلّد النطق والإيقاع بالظبط.<br />• سجّل: سجّل صوتك وأنت بتعمل شادوينج للمقطع، واسمع تسجيلك وقارنه بالأصل.<br />• ابعت: ابعت التسجيل على الجروب لما تحس إنك جاهز، والمدرب بيتابع ويصحح.</div></div>
         <div><b>3- بعد ما تتقنهم كلهم</b>، ارجع للمقطع الكبير واعمل معاه شادوينج كله.</div>
       </div></Card>
-      <Card><div className="stack">
+      <Card className="sh-player"><div className="stack">
         <b>الفيديو الكامل</b>
         <ClipPlayer ref={main} videoId={clip.youtubeId} start={clip.start} onBroken={() => setBroken(true)} />
         <div className="row" style={{ gap: '.5rem', flexWrap: 'wrap' }}><Button onClick={playAll}><Play size={16} /> شغّل الكليب كله</Button>
@@ -219,11 +219,11 @@ export function ShadowClipView({ clip, canComplete, onBack }: { clip: ListenClip
       <div dir="rtl"><b>المقاطع الصغيرة</b>
         <p className="muted" style={{ margin: 0 }}>اسمع كل مقطع {MIN_PLAYS} مرات، بعدها ظهّر الجملة وشرح نطقها. ردّدها لحد ما تتقنها، وبعدين دوس «اتقنتها».</p></div>
       <div className="row between"><b>الجمل ({doneCount} / {clip.lines.length})</b><Badge tone={all ? 'green' : ''}>{all ? 'اتقنت الكل' : 'كمّل'}</Badge></div>
-      <div style={{ height: 8, background: '#0001', borderRadius: 8, overflow: 'hidden' }}><div style={{ width: `${clip.lines.length ? (100 * doneCount) / clip.lines.length : 0}%`, height: '100%', background: '#16a34a' }} /></div>
+      <div className="progress-track"><span style={{ width: `${clip.lines.length ? (100 * doneCount) / clip.lines.length : 0}%` }} /></div>
 
       <div className="grid g2">{clip.lines.map((l, i) => {
         const ok = !!mastered(i); const n = plays[i] || 0; const op = !!opened(i); const can = ok || op || n >= MIN_PLAYS; const open = ok || op;
-        return <Card key={i}><div className="stack">
+        return <Card key={i} className={`sh-line${ok ? ' is-done' : ''}`}><div className="stack">
           <div className="row between"><b>جملة {i + 1}</b>{ok && <Badge tone="green">اتقنتها ✓</Badge>}</div>
           {active === i
             ? <ClipPlayer key={`c${i}`} ref={card} videoId={clip.youtubeId} start={range(i)[0]} onReady={startActive} onBroken={() => setBroken(true)} />

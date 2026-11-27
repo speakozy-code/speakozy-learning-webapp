@@ -9,7 +9,7 @@ import { isSubscribed } from '../lib/subscription';
 
 
 export default function ShadowingPage() {
-  const { user, data, put, remove, grantScore } = useApp();
+  const { user, data } = useApp();
   const admin = user?.role === 'admin';
   const allLevels = [...data.levels].sort((a, b) => a.order - b.order);
   // every level is visible to everyone; only the student's own level can be practiced

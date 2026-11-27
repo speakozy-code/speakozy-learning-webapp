@@ -4,7 +4,7 @@ import { useApp } from './lib/store';
 import { Loading, Toast, useToast } from './components/UI';
 import Login from './pages/Login';
 import { Layout } from './components/Layout';
-import { StudentDashboard, Roadmap, SessionPage, QuizPage, LevelExamPage, DictionaryPage, WordsPage, YallaNetkellemPage, TasksPage, NotificationsPage, LeaderboardPage, ProfilePage, MaterialsPage } from './pages/Student';
+import { StudentDashboard, Roadmap, SessionPage, QuizPage, LevelExamPage, DictionaryPage, WordsPage, YallaNetkellemPage, TasksPage, NotificationsPage, LeaderboardPage, ProfilePage, MaterialsPage } from './pages/student';
 import TrialPage from './pages/Trial';
 import ResetPassword from './pages/ResetPassword';
 import { installScreenGuard } from './lib/screenGuard';

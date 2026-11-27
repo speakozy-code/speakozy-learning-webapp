@@ -1,0 +1,17 @@
+/* Dictionary and word-of-the-day */
+/* Dictionary upgrades */
+.search-hero{background:linear-gradient(135deg,#ffffff,#f3fbf7);border-color:#cceada}
+.search-hero input{font-size:1.05rem;padding:.85rem 1rem}
+.word-day{background:linear-gradient(120deg,#0b1220,#16253d);color:#fff;border:0}
+.word-day h2{color:var(--green)}
+.word-day .muted{color:#9fb0c9}
+.word-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(90px,1fr) auto;gap:.7rem;align-items:center;border-bottom:1px solid var(--line);padding:.65rem .2rem}
+.word-row:last-child{border-bottom:0}
+.word-row .icon-btn{padding:0;text-align:right}
+.flashcard{text-align:center;padding:2rem 1rem;border:2px dashed var(--line);border-radius:16px;background:#fafbfc}
+.flashcard h2{font-size:2.2rem;color:var(--navy);margin:1rem 0}
+@media(max-width:600px){.word-row{grid-template-columns:1fr auto}.word-row>.muted{grid-column:1/-1}}
+
+
+/* Global dictionary result */
+.global-hit{margin-top:.9rem;padding:.85rem 1rem;border:1px solid #bfe9d8;border-radius:12px;background:#f3fdf9}

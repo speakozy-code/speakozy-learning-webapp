@@ -1,4 +1,6 @@
 // Lesson presentation: brief overview, in-page YouGlish, generated quizzes, student accounts.
+import { readStudentSource } from './lib/student-src.mjs';
+import { readStyles } from './lib/styles-src.mjs';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { DRIVE_CURRICULUM as C } from '../src/lib/driveCurriculum.ts';
@@ -159,14 +161,14 @@ t('speaking practice has at least 10 open questions for every session', () => {
   }
 });
 t('English quizzes, practice and vocab cards are LTR; dictionary shows only search + word of the day', () => {
-  const src = readFileSync(new URL('../src/pages/Student.tsx', import.meta.url), 'utf8');
-  const css = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+  const src = readStudentSource();
+  const css = readStyles();
   assert.ok(src.includes('grammar-training ltr-scope'), 'grammar and word quizzes are ltr');
   assert.ok(/qs\.map\(\(q, i\) => <Card key=\{q\.id\} className="ltr-scope">/.test(src), 'session quiz is ltr');
   assert.ok(src.includes('tab === \'practice\' && <div className="stack ltr-scope" dir="ltr">'), 'practice is ltr');
   assert.ok(src.includes('vocab-card ltr-scope'), 'vocab card is ltr');
   assert.ok(css.includes('.ltr-scope [dir="rtl"]'), 'arabic inside ltr stays rtl');
-  const dict = src.slice(src.indexOf('export function DictionaryPage'), src.indexOf('export function WordsPage'));
+  const dict = readFileSync(new URL('../src/pages/student/Dictionary.tsx', import.meta.url), 'utf8');
   for (const gone of ['All words', 'ملاحظات', 'phrasal verb', "types.map"]) assert.ok(!dict.includes(gone), `dictionary must not contain ${gone}`);
   assert.ok(dict.includes('word-day'), 'word of the day stays');
 });

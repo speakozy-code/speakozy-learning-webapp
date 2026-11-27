@@ -1,0 +1,174 @@
+/* Theme E — warm cream surfaces, navy + green accents, rounded 22px cards.
+   Loaded last so it refines the light palette; dark mode keeps its own tokens. */
+
+:root{--tnav-h:68px;--cream-2:#f1e8d8}
+html:not([data-theme="dark"]){
+  --bg:#fbf6ee; --card:#fffdf9; --line:#eadfcc; --muted:#7a6d58;
+  --radius:22px; --shadow:0 4px 18px rgba(90,64,20,.06);
+}
+html[data-theme="dark"]{--cream-2:#101a2c;--radius:22px}
+
+/* Surfaces that were hard-coded white now follow the palette */
+html:not([data-theme="dark"]) input,
+html:not([data-theme="dark"]) select,
+html:not([data-theme="dark"]) textarea,
+html:not([data-theme="dark"]) .modal,
+html:not([data-theme="dark"]) .table-wrap,
+html:not([data-theme="dark"]) .node,
+html:not([data-theme="dark"]) .quiz-opt,
+html:not([data-theme="dark"]) .section-card,
+html:not([data-theme="dark"]) .rm-body,
+html:not([data-theme="dark"]) .mobile-nav,
+html:not([data-theme="dark"]) .topbar{background:var(--card)}
+html:not([data-theme="dark"]) th,
+html:not([data-theme="dark"]) .demo-box{background:var(--cream-2)}
+html:not([data-theme="dark"]) .progress,
+html:not([data-theme="dark"]) .progress-track{background:var(--cream-2)}
+html:not([data-theme="dark"]) .badge,
+html:not([data-theme="dark"]) .btn,
+html:not([data-theme="dark"]) .node-num{background:var(--cream-2)}
+html:not([data-theme="dark"]) .btn-primary{background:var(--green)}
+html:not([data-theme="dark"]) .btn-navy{background:var(--navy)}
+html:not([data-theme="dark"]) .btn-ghost{background:transparent}
+.btn{border-radius:14px}
+.card,.section-card{border-radius:var(--radius)}
+
+/* ---------- Student shell ---------- */
+.shell.is-student{display:block;height:calc(100% - var(--tnav-h))}
+.shell.is-student .side{display:none}
+.shell.is-student .main{max-width:1280px;margin-inline:auto;padding:1.6rem clamp(1rem,3vw,2.5rem) 6rem}
+.notices{display:grid;gap:.6rem}
+.notices:empty{display:none}
+.notices>*{margin:0}
+.drawer-scrim{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:75}
+
+/* ---------- Student header ---------- */
+.tnav{height:var(--tnav-h);display:flex;align-items:center;gap:1rem;padding:0 clamp(1rem,3vw,2.5rem);background:var(--bg);border-bottom:1px solid var(--line);position:relative;z-index:60}
+.tnav-brand{display:flex;align-items:center;flex:none}
+.tnav-brand .brand-logo{height:30px}
+.tnav .tnav-menu{display:none}
+.tnav-pills{display:flex;gap:.15rem;background:var(--cream-2);border-radius:16px;padding:4px;margin-inline:auto}
+.tnav-pills a,.tnav-more>button{display:inline-flex;align-items:center;gap:.3rem;padding:.48rem 1.05rem;border:0;border-radius:12px;background:transparent;color:var(--muted);font-size:.92rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
+.tnav-pills a:hover,.tnav-more>button:hover{color:var(--ink)}
+.tnav-pills a.active,.tnav-more>button.active{background:var(--navy);color:var(--green)}
+html[data-theme="dark"] .tnav-pills a.active,html[data-theme="dark"] .tnav-more>button.active{background:#1b2940}
+.tnav-more{position:relative}
+.tnav-pop{position:absolute;top:calc(100% + 10px);inset-inline-start:0;min-width:220px;display:grid;gap:2px;padding:.4rem;background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 16px 40px rgba(0,0,0,.18);z-index:70}
+.tnav-pop a{display:flex;align-items:center;gap:.65rem;padding:.55rem .8rem;border-radius:11px;color:var(--ink);font-weight:600;font-size:.9rem}
+.tnav-pop a:hover{background:var(--cream-2)}
+.tnav-pop a.active{background:rgba(18,206,144,.14);color:var(--green-dark)}
+.tnav-stats{display:flex;align-items:center;gap:.55rem;flex:none}
+.tnav-chip{display:inline-flex;align-items:center;gap:.5rem;padding:.32rem .85rem;border-radius:999px;font-size:.85rem;font-weight:700;white-space:nowrap}
+.tnav-level{background:#e9fbf4;color:var(--green-dark)}
+html[data-theme="dark"] .tnav-level{background:rgba(18,206,144,.14);color:var(--green)}
+.tnav-bar{width:64px;height:6px;border-radius:6px;background:rgba(10,138,98,.18);overflow:hidden}
+.tnav-bar i{display:block;height:100%;background:var(--green-dark);border-radius:6px}
+.tnav-points{background:var(--navy);color:var(--green)}
+html[data-theme="dark"] .tnav-points{background:#1b2940}
+.tnav-icon,.tnav .theme-toggle{position:relative;width:40px;height:40px;padding:0;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;background:var(--card);color:var(--ink);cursor:pointer}
+.tnav-badge{position:absolute;top:-4px;inset-inline-end:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--danger);color:#fff;font-size:.65rem;font-weight:800;display:grid;place-items:center}
+.tnav-user{position:relative}
+.tnav-avatar{position:relative;display:flex;border:0;background:transparent;padding:0;cursor:pointer}
+.tnav-avatar .avatar{width:40px;height:40px}
+.tnav-avatar .verified-badge{position:absolute;bottom:-2px;inset-inline-end:-2px}
+.tnav-user .profile-menu{top:calc(100% + 10px);inset-inline-start:auto;inset-inline-end:0}
+
+@media(max-width:1180px){.tnav-level .tnav-bar{display:none}}
+@media(max-width:980px){
+  :root{--tnav-h:60px}
+  .tnav{gap:.6rem}
+  .tnav .tnav-menu{display:grid}
+  .tnav-pills,.tnav-level,.tnav .theme-toggle{display:none}
+  .tnav-brand{margin-inline-end:auto}
+  .shell.is-student .main{padding:1rem 1rem 9rem}
+}
+
+/* Logo follows the theme (the cream header needs the dark-ink logo) */
+html:not([data-theme="dark"]) .tnav-brand .logo-for-dark{display:none}
+html:not([data-theme="dark"]) .tnav-brand .logo-for-light{display:block}
+
+/* ---------- Dashboard: "today's plan" ---------- */
+.home-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr);gap:1.6rem;align-items:start}
+.home-hello{margin:0 0 .3rem;color:var(--green-dark);font-weight:800;font-size:.95rem}
+html[data-theme="dark"] .home-hello{color:var(--green)}
+.home-title{margin:0 0 1.2rem;font-size:clamp(1.7rem,3.2vw,2.4rem);line-height:1.25;letter-spacing:-.01em}
+.plan-list{display:grid;gap:.75rem}
+.plan-card{display:flex;align-items:center;gap:.9rem;width:100%;padding:1rem 1.15rem;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);color:var(--ink);text-align:start;font:inherit;cursor:pointer;box-shadow:var(--shadow);transition:transform .15s,border-color .15s}
+.plan-card:hover{transform:translateY(-2px);border-color:var(--green)}
+.plan-card.is-primary{background:var(--navy);border-color:var(--navy);color:#fff}
+html[data-theme="dark"] .plan-card.is-primary{background:#1b2940;border-color:#1b2940}
+.plan-mark{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--line);color:var(--navy)}
+.plan-card.is-primary .plan-mark{border-color:rgba(255,255,255,.35)}
+.plan-card.is-done .plan-mark{background:var(--green);border-color:var(--green);color:#04231a}
+.plan-dot{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.plan-card.is-primary .plan-dot{background:var(--green)}
+.plan-ic{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--cream-2);color:var(--green-dark)}
+.plan-card.is-primary .plan-ic{background:rgba(18,206,144,.16);color:var(--green)}
+.plan-text{flex:1;min-width:0;display:grid;gap:.1rem}
+.plan-text strong{font-size:1.02rem}
+.plan-text small{color:var(--muted)}
+.plan-card.is-primary .plan-text small{color:rgba(255,255,255,.7)}
+.plan-go{flex:none;padding:.5rem 1.2rem;border-radius:999px;background:var(--green);color:#04231a;font-weight:800}
+.plan-chev{flex:none;color:var(--muted)}
+.home-side{display:grid;gap:1rem}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.tile{display:grid;gap:.15rem;padding:1rem;border:1px solid var(--line);border-radius:18px;background:var(--card)}
+.tile b{font-size:1.7rem;line-height:1.1}
+.tile span{color:var(--muted);font-size:.82rem}
+.tile.accent{background:var(--navy);border-color:var(--navy)}
+.tile.accent b{color:var(--green)}
+.tile.accent span{color:rgba(255,255,255,.7)}
+.tile.warn b{color:var(--danger)}
+
+/* Leaderboard strip on cream */
+html:not([data-theme="dark"]) .champ-chip{background:var(--cream-2);color:var(--ink)}
+html:not([data-theme="dark"]) .champ-chip.is-me{background:#e9fbf4}
+
+@media(max-width:980px){
+  .home-grid{grid-template-columns:1fr;gap:1.2rem}
+  .home-title{font-size:1.6rem}
+  .plan-card{padding:.85rem .9rem;gap:.7rem}
+  .plan-mark{width:26px;height:26px}
+  .plan-ic{width:40px;height:40px}
+}
+
+/* ---------- Session: step bar + side panel ---------- */
+.steps{display:flex;gap:.5rem;overflow-x:auto;padding:.2rem 0 .3rem;scrollbar-width:none}
+.steps::-webkit-scrollbar{display:none}
+.step{flex:1 1 0;min-width:max-content;display:flex;align-items:center;justify-content:center;gap:.55rem;padding:.65rem 1rem;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--muted);font:inherit;font-weight:700;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.step:hover{border-color:var(--green)}
+.step-n{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--cream-2);color:var(--muted);font-size:.78rem;font-weight:800}
+.step.is-done .step-n{background:var(--green);color:#04231a}
+.step.active{background:var(--navy);border-color:var(--navy);color:#fff}
+.step.active .step-n{background:var(--green);color:#04231a}
+html[data-theme="dark"] .step.active{background:#1b2940;border-color:#1b2940}
+.sess-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:1.2rem;align-items:start}
+.sess-aside{display:grid;gap:.9rem;position:sticky;top:1rem}
+.sess-aside .study-progress{display:grid;gap:.5rem}
+.next-step{display:grid;gap:.25rem;padding:1.1rem;border-radius:var(--radius);background:var(--navy);color:#fff}
+.next-step small{color:rgba(255,255,255,.65)}
+.next-step strong{font-size:1.25rem;color:var(--green)}
+.next-step .btn{margin-top:.6rem;justify-content:center}
+html[data-theme="dark"] .next-step{background:#1b2940}
+@media(max-width:980px){
+  .sess-grid{grid-template-columns:1fr}
+  .sess-aside{position:static}
+  .step{padding:.55rem .8rem;font-size:.88rem}
+}
+
+/* ---------- Tabs as pills (level pickers, games) ---------- */
+.tabs{gap:.4rem;border-bottom:0;padding:.2rem 0 .5rem;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs .tab{border-radius:999px;padding:.45rem 1rem;background:var(--cream-2);font-weight:700}
+.tabs .tab.active{background:var(--navy);color:var(--green)}
+html[data-theme="dark"] .tabs .tab{background:#101a2c}
+html[data-theme="dark"] .tabs .tab.active{background:#1b2940}
+
+/* ---------- Shadowing ---------- */
+.sh-howto{background:var(--cream-2);border-color:transparent}
+.sh-player{background:var(--navy);border-color:var(--navy);color:#fff}
+.sh-player .btn-primary{background:var(--green);color:#04231a}
+.sh-player .btn-ghost,.sh-player .btn-sm:not(.btn-primary){color:#fff;border-color:rgba(255,255,255,.25)}
+html[data-theme="dark"] .sh-player{background:#1b2940;border-color:#1b2940}
+.sh-line{transition:border-color .15s,box-shadow .15s}
+.sh-line.is-done{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
