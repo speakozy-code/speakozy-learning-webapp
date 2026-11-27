@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X, Compass, MessageCircle, ChevronDown, ChevronLeft, Sparkles, ArrowRight } from 'lucide-react';
 import { WA_LINK } from './nav';
 import { FAQ, FAQ_PREVIEW, onHelp, type HelpView } from '../../lib/help';
@@ -12,17 +12,20 @@ export function HelpAssistant() {
   const [all, setAll] = useState(false);
   const [openQ, setOpenQ] = useState<number | null>(null);
   const [openTour, setOpenTour] = useState<string | null>(null);
+  const wrap = useRef<HTMLDivElement>(null);
   useEffect(() => onHelp((v) => { setView(v); setOpen(true); }), []);
   useEffect(() => {
     if (!open) return;
     const k = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    const away = (e: Event) => { if (!wrap.current?.contains(e.target as Node)) setOpen(false); };
     window.addEventListener('keydown', k);
-    return () => window.removeEventListener('keydown', k);
+    document.addEventListener('pointerdown', away);
+    return () => { window.removeEventListener('keydown', k); document.removeEventListener('pointerdown', away); };
   }, [open]);
   const faq = all ? FAQ : FAQ.slice(0, FAQ_PREVIEW);
   const tours = Object.entries(TOURS);
   const dir = uiDir();
-  return <>
+  return <div className="assist" ref={wrap}>
     <button type="button" className={`assist-fab${open ? ' is-open' : ''}`} onClick={() => { setView('faq'); setOpen((o) => !o); }} aria-label={tr('المساعدة')} title={tr('محتاج مساعدة؟')}>
       {open ? <X size={22} /> : <span className="assist-fab-face"><Sparkles size={22} /></span>}
     </button>
@@ -53,5 +56,5 @@ export function HelpAssistant() {
         <a className="assist-btn" href={WA_LINK} target="_blank" rel="noreferrer"><MessageCircle size={16} />{tr('راسلنا على واتساب')}</a>
       </footer>
     </section>}
-  </>;
+  </div>;
 }

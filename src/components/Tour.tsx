@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Compass } from 'lucide-react';
 import { useApp } from '../lib/store';
 import { TOURS } from '../lib/tours';
 import { tr, uiDir } from '../lib/i18n';
+import { onStartTour } from '../lib/help';
 
 const seenKey = (uid: string, id: string) => `speakozy:tour:${uid}:${id}`;
 const wasSeen = (uid: string, id: string) => { try { return localStorage.getItem(seenKey(uid, id)) === '1'; } catch { return true; } };
 const markSeen = (uid: string, id: string) => { try { localStorage.setItem(seenKey(uid, id), '1'); } catch {} };
 
-/** Shows a step-by-step intro the first time a student opens this page, plus a "جولة" button to replay it. */
+/** Shows a step-by-step intro the first time a student opens this page; replay it from the account menu ("جولة تعريفية"). */
 export function PageTour({ id }: { id: string }) {
   const { user } = useApp();
   const tour = TOURS[id];
@@ -20,12 +20,12 @@ export function PageTour({ id }: { id: string }) {
     const t = window.setTimeout(() => setOpen(true), 700);
     return () => window.clearTimeout(t);
   }, [id, user?.id]);
+  useEffect(() => (tour ? onStartTour(() => { setI(0); setOpen(true); }) : undefined), [id, !!tour]);
   if (!user || user.role === 'admin' || !tour) return null;
   const close = () => { markSeen(user.id, id); setOpen(false); };
   const step = tour.steps[i];
   const last = i === tour.steps.length - 1;
   return <>
-    <button type="button" className="tour-btn" onClick={() => { setI(0); setOpen(true); }} aria-label={tr('جولة تعريفية')}><Compass size={14} /> {tr('جولة تعريفية')}</button>
     {open && <div className="tour-card" role="dialog" aria-live="polite" dir={uiDir()}>
       <div className="tour-top"><span className="tour-kicker">{tr(tour.name)} · {i + 1} {tr('من')} {tour.steps.length}</span><button type="button" className="tour-skip" onClick={close}>{tr('تخطَّ الجولة')}</button></div>
       <h3 className="tour-title">{tr(step.title)}</h3>

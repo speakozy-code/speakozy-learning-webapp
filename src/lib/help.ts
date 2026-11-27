@@ -8,6 +8,19 @@ export const onHelp = (fn: (v: HelpView) => void) => {
   return () => window.removeEventListener(EVT, h);
 };
 
+// "جولة تعريفية": replays the intro tour of the page the student is on (falls back to the site guide when the page has none).
+const TOUR_EVT = 'speakozy:tour';
+export const startTour = () => {
+  const detail = { handled: false };
+  window.dispatchEvent(new CustomEvent(TOUR_EVT, { detail }));
+  if (!detail.handled) openHelp('guide');
+};
+export const onStartTour = (fn: () => void) => {
+  const h = (e: Event) => { ((e as CustomEvent).detail as { handled: boolean }).handled = true; fn(); };
+  window.addEventListener(TOUR_EVT, h);
+  return () => window.removeEventListener(TOUR_EVT, h);
+};
+
 export const FAQ: { q: string; a: string }[] = [
   { q: 'إزاي أبدأ مذاكرة سيشن؟', a: 'من «المسار» اختار سيشن مفتوح وادخله. السيشن فيه Overview ثم Words ثم Grammar ثم Practice ثم Quiz — امشي بالترتيب.' },
   { q: 'النقط بتتحسب إزاي؟', a: 'النقط بتيجي من الكويزات على قد درجتك الحقيقية، ومن التاسكات والشادوينج بعد ما المدرّس يوافق عليها. مفيش نقط على مجرد الضغط.' },
