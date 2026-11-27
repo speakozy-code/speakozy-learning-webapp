@@ -2,10 +2,12 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { AppProvider } from './lib/store';
 import App from './App';
-import './styles.css';
+import './styles/index.css';
 import { applyTheme, getTheme } from './lib/theme';
+import { applyLang } from './lib/i18n';
 
 applyTheme(getTheme());
+applyLang();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });

@@ -1,0 +1,16 @@
+/* Design tokens, reset and base typography */
+:root{
+  --green:#12ce90; --green-dark:#0a8a62; --navy:#0b1220; --navy-2:#131d31;
+  --bg:#f5f7fa; --card:#fff; --ink:#0b1220; --muted:#667085; --line:#e7ebf0;
+  --danger:#e5484d; --warn:#f59e0b; --info:#3b82f6; --radius:16px;
+  --shadow:0 6px 24px rgba(11,18,32,.06);
+}
+*{box-sizing:border-box}
+html,body,#root{margin:0;height:100%;overflow:hidden}
+body{font-family:"Jua",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:15px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4{margin:0 0 .5rem;line-height:1.35}
+h1{font-size:1.6rem}h2{font-size:1.2rem}h3{font-size:1rem}
+small,.muted{color:var(--muted)}
+.en{direction:ltr;unicode-bidi:isolate;display:inline-block}

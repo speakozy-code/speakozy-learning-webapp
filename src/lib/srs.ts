@@ -1,4 +1,5 @@
 import type { SavedWord } from '../types';
+import { isEnglish } from './i18n/index.ts';
 
 /**
  * Spaced repetition, Anki-style (SM-2 flavour).
@@ -31,9 +32,10 @@ export function schedule(card: Card, grade: Grade, now = Date.now()) {
 
 /** Short label of the next interval for a button (like Anki): 10د / 1ي / 4ي / 3ش … */
 export function previewLabel(card: Card, grade: Grade) {
-  if (grade === 'again') return `${AGAIN_MINUTES}د`;
+  const en = isEnglish();
+  if (grade === 'again') return `${AGAIN_MINUTES}${en ? 'm' : 'د'}`;
   const d = schedule(card, grade).interval;
-  return d >= 60 ? `${Math.round(d / 30)}ش` : `${d}ي`;
+  return d >= 60 ? `${Math.round(d / 30)}${en ? 'mo' : 'ش'}` : `${d}${en ? 'd' : 'ي'}`;
 }
 
 export const isDue = (w: Pick<SavedWord, 'nextReview'>, now = new Date().toISOString()) => !w.nextReview || w.nextReview <= now;

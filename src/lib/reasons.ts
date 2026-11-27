@@ -1,3 +1,4 @@
+import { tr } from './i18n/index.ts';
 import { grammarFor } from './grammar/index.ts';
 
 const STOP = new Set(['the', 'and', 'for', 'with', 'verb', 'form', 'forms', 'questions', 'question', 'negative', 'positive', 'vs', 'simple']);
@@ -12,7 +13,7 @@ export function whyWrong(q: { id: string; prompt: string; correct: any; scope?: 
   if (q.scope === 'word') {
     const entry = dictionary.find((d) => d.word && (q.id.endsWith('-' + d.word) || q.prompt.toLowerCase().includes(d.word.toLowerCase()) || d.word.toLowerCase() === correct.toLowerCase()));
     const mean = entry?.arabic || entry?.meaning || '';
-    return `✅ الإجابة الصح: ${correct}${mean ? `\nمعنى «${entry!.word}»: ${mean}` : ''}`;
+    return `${tr('✅ الإجابة الصح: {0}', [correct])}${mean ? `\n${tr('معنى «{0}»: {1}', [entry!.word, mean])}` : ''}`;
   }
   const topics = grammarFor(sessionId);
   const hay = (q.prompt + ' ' + correct).toLowerCase();
@@ -20,5 +21,5 @@ export function whyWrong(q: { id: string; prompt: string; correct: any; scope?: 
   const best = scored.filter((x) => x.score > 0).sort((a, b) => b.score - a.score)[0];
   const picked = best ? [best.t] : topics;
   const rules = picked.map((t) => `${picked.length > 1 ? `[${t.title}] ` : ''}${ruleLine(t.ar)}`).join('\n');
-  return `✅ الإجابة الصح: ${correct}${rules ? `\nالسبب — ${rules}` : ''}`;
+  return `${tr('✅ الإجابة الصح: {0}', [correct])}${rules ? `\n${tr('السبب — {0}', [rules])}` : ''}`;
 }

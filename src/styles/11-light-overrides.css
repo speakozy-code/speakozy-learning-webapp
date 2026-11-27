@@ -1,0 +1,151 @@
+/* Light theme overrides, readability pass */
+/* ================= Light theme (default) =================
+   Base rules above are the light palette. These override the pieces that were
+   written with dark-only colors so they read correctly on white. */
+html:not([data-theme="dark"]) .green,
+html:not([data-theme="dark"]) .stat-value.green,
+html:not([data-theme="dark"]) .node-num,
+html:not([data-theme="dark"]) .vocab-phonetic,
+html:not([data-theme="dark"]) .tab.active,
+html:not([data-theme="dark"]) .auth-tab.active,
+html:not([data-theme="dark"]) .flashcard h2,
+html:not([data-theme="dark"]) .sticky-points,
+html:not([data-theme="dark"]) .badge-green,
+html:not([data-theme="dark"]) .yg-btn,
+html:not([data-theme="dark"]) .auth-landing{color:var(--green-dark)}
+html:not([data-theme="dark"]) .vocab-card,
+html:not([data-theme="dark"]) .brief-card,
+html:not([data-theme="dark"]) .dict-suggest-item,
+html:not([data-theme="dark"]) .champ-chip,
+html:not([data-theme="dark"]) .task-item,
+html:not([data-theme="dark"]) .avatar-pick,
+html:not([data-theme="dark"]) .consent{background:#fff}
+html:not([data-theme="dark"]) .vocab-card,
+html:not([data-theme="dark"]) .brief-card{box-shadow:var(--shadow)}
+html:not([data-theme="dark"]) .vocab-word,
+html:not([data-theme="dark"]) .brief-card h2,
+html:not([data-theme="dark"]) .brief-card h3,
+html:not([data-theme="dark"]) .slide-stage h2,
+html:not([data-theme="dark"]) .sub-banner-text strong{color:var(--ink)}
+html:not([data-theme="dark"]) .vocab-meaning,
+html:not([data-theme="dark"]) .vocab-example,
+html:not([data-theme="dark"]) .slide-rule,
+html:not([data-theme="dark"]) .slide-example,
+html:not([data-theme="dark"]) .slide-detail,
+html:not([data-theme="dark"]) .brief-card,
+html:not([data-theme="dark"]) .brief-list,
+html:not([data-theme="dark"]) .brief-summary,
+html:not([data-theme="dark"]) .saved-meaning,
+html:not([data-theme="dark"]) .section-body{color:#344054}
+html:not([data-theme="dark"]) .brief-card .muted,
+html:not([data-theme="dark"]) .brief-transcript,
+html:not([data-theme="dark"]) .consent p,
+html:not([data-theme="dark"]) .locked-item .lock-cover{color:var(--muted)}
+html:not([data-theme="dark"]) .vocab-example{background:rgba(18,206,144,.1)}
+html:not([data-theme="dark"]) .slide-stage{background:radial-gradient(circle at 85% 8%,rgba(18,206,144,.12),transparent 45%),linear-gradient(140deg,#f7fbfa,#eef5f3)}
+html:not([data-theme="dark"]) .req-item,
+html:not([data-theme="dark"]) .exercise-item,
+html:not([data-theme="dark"]) .week-session,
+html:not([data-theme="dark"]) .saved-card,
+html:not([data-theme="dark"]) .brief-source,
+html:not([data-theme="dark"]) .video-placeholder,
+html:not([data-theme="dark"]) .grammar-example,
+html:not([data-theme="dark"]) .grammar-mistake,
+html:not([data-theme="dark"]) .locked-item .lock-cover,
+html:not([data-theme="dark"]) .task-instructions{background:#fafbfc}
+html:not([data-theme="dark"]) .slide-example{background:rgba(11,18,32,.04)}
+html:not([data-theme="dark"]) .slide-dot,
+html:not([data-theme="dark"]) .rm-dot{background:#cbd5e1}
+html:not([data-theme="dark"]) .rm-level.is-locked .rm-marker{background:#e4e9f0;box-shadow:0 0 0 6px rgba(200,210,225,.5)}
+html:not([data-theme="dark"]) .word-chip,
+html:not([data-theme="dark"]) .champ-rank,
+html:not([data-theme="dark"]) .task-badge{background:#eef1f5;color:#475467}
+html:not([data-theme="dark"]) .brief-jump{border-color:rgba(11,18,32,.15);color:var(--ink)}
+html:not([data-theme="dark"]) .consent{border-color:var(--line);color:var(--ink)}
+html:not([data-theme="dark"]) .sub-banner{background:linear-gradient(90deg,rgba(18,206,144,.1),#fff);box-shadow:var(--shadow)}
+html:not([data-theme="dark"]) .sub-notice,
+html:not([data-theme="dark"]) .note,
+html:not([data-theme="dark"]) .why-box{color:#92400e}
+html:not([data-theme="dark"]) .to-top-btn{background:#fff;color:var(--ink)}
+html:not([data-theme="dark"]) input:-webkit-autofill,
+html:not([data-theme="dark"]) input:-webkit-autofill:focus,
+html:not([data-theme="dark"]) input:-webkit-autofill:hover,
+html:not([data-theme="dark"]) select:-webkit-autofill{-webkit-box-shadow:0 0 0 1000px #fff inset}
+
+/* Theme-aware logo + toggle */
+.logo-for-light{display:none}
+html:not([data-theme="dark"]) .topbar .logo-for-dark{display:none}
+html:not([data-theme="dark"]) .topbar .logo-for-light{display:block}
+.theme-toggle{display:inline-flex;align-items:center;justify-content:center;gap:.4rem}
+.auth-theme{position:absolute;top:1rem;inset-inline-end:1rem;z-index:5}
+.auth-panel{position:relative}
+
+/* ---- Header: green score, navy progress, level picker ---- */
+.sticky-points{color:var(--green-dark)}
+.sticky-track > span{background:var(--navy)}
+html[data-theme="dark"] .sticky-points{color:var(--green)}
+html[data-theme="dark"] .sticky-track > span{background:#5b7fb8}
+.level-pick{width:auto;max-width:11rem;padding:.25rem .5rem;border-radius:8px;font-weight:700;font-size:.85rem;cursor:pointer}
+
+/* ---- Word of the day: keep the card's buttons readable on its navy background ---- */
+.word-day .btn-ghost{color:#fff;border-color:rgba(255,255,255,.35)}
+.word-day .btn-ghost:hover{background:rgba(255,255,255,.12)}
+.word-day .btn-ghost svg{color:#fff}
+
+/* ---- Levels map: light cards (the navy ones hid the level names on a white page) ---- */
+html:not([data-theme="dark"]) .rm-body{background:#fff;border-color:var(--line);box-shadow:var(--shadow);color:var(--ink)}
+html:not([data-theme="dark"]) .rm-body h3,
+html:not([data-theme="dark"]) .rm-body h4,
+html:not([data-theme="dark"]) .rm-body strong{color:var(--ink)}
+html:not([data-theme="dark"]) .rm-body .muted,
+html:not([data-theme="dark"]) .rm-body small{color:var(--muted)}
+html:not([data-theme="dark"]) .rm-level.is-current .rm-body{border-color:var(--green);box-shadow:0 0 0 3px rgba(18,206,144,.16)}
+
+/* Current level picker (home + materials) */
+.level-picker{margin-top:.8rem;display:grid;gap:.3rem}
+.level-picker label{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.level-picker span{font-weight:700}
+.level-picker select{width:auto;min-width:11rem;border-radius:10px;font-weight:700;cursor:pointer}
+.level-picker small{color:var(--muted);line-height:1.6}
+.level-picker.on-dark span{color:#fff}
+.level-picker.on-dark small{color:#9fb0c9}
+
+/* Top bar: brand green; only the progress fill is navy */
+.content-bar,html[data-theme="dark"] .content-bar,html:not([data-theme="dark"]) .content-bar{background:#12ce90;border-bottom:0;border-radius:0 0 14px 14px;color:#0b1220}
+.content-bar .sticky-level,.content-bar .sticky-pct,.content-bar .sticky-points,.content-bar .bell,.content-bar .user-chip,.content-bar .user-chip-name,.content-bar .theme-toggle{color:#0b1220}
+html[data-theme="dark"] .content-bar .sticky-points,html:not([data-theme="dark"]) .content-bar .sticky-points{color:#0b1220}
+.content-bar .sticky-track{background:rgba(11,18,32,.18);display:block!important}
+.content-bar .sticky-track > span,html[data-theme="dark"] .content-bar .sticky-track > span{background:#0b1220}
+@media (max-width:640px){.content-bar .sticky-track{min-width:60px}}
+.content-bar .sticky-progress{background:transparent}
+
+/* ---- Surfaces that stay navy in BOTH themes: give them the dark palette so text is always readable ---- */
+.side,.toast,.word-day,.to-top,.profile-menu,.yg-dock,.btn-navy,.saved-actions .icon-btn{
+  --ink:#e8eef7; --muted:#9aabc4; --line:#24334c; --card:#101a2c;
+}
+.side .btn,.side .btn-ghost,.side .theme-toggle,.profile-menu .btn{background:#1b2940;color:#e8eef7;border:1px solid #2c3d5a}
+.side .btn svg,.side .theme-toggle svg{color:#e8eef7}
+.side .btn:hover{background:#243652}
+.side-foot .who small{color:#9aabc4}
+.side .nav a{color:#d7e0ee}
+.side .nav a.active{color:#fff}
+
+/* ---- Readability pass (audited on every page, both themes) ---- */
+.content-bar .muted,.content-bar small{color:#0b1220;opacity:.75}
+.content-bar .badge-red.bell-count{background:#0b1220;color:#fff;border-color:#0b1220}
+.content-bar .sub-notice,html[data-theme="dark"] .content-bar .sub-notice,html:not([data-theme="dark"]) .content-bar .sub-notice{background:rgba(255,255,255,.4);border-color:rgba(11,18,32,.25);color:#0b1220}
+.content-bar .sub-notice *{color:#0b1220}
+html:not([data-theme="dark"]) .champ-points,
+html:not([data-theme="dark"]) .brief-kicker,
+html:not([data-theme="dark"]) .tab-ic,
+html:not([data-theme="dark"]) .badge-green,
+html:not([data-theme="dark"]) .tab.active,
+html:not([data-theme="dark"]) .node-num{color:var(--green-dark)}
+html:not([data-theme="dark"]) .icon-btn{color:#b7791f}
+html[data-theme="dark"] .node-num{background:#1b2940;color:var(--green)}
+html[data-theme="dark"] .content-bar .muted,html[data-theme="dark"] .content-bar small{color:#0b1220;opacity:.75}
+
+/* Mobile menu: the user card, theme and logout scroll with the list instead of staying pinned */
+@media(max-width:980px){
+  .side-foot{position:static;bottom:auto;margin-bottom:0;margin-top:1rem;background:transparent;padding-bottom:calc(env(safe-area-inset-bottom) + 1rem)}
+}

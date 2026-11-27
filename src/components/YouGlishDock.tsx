@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useState } from 'react';
 import { X, Play } from 'lucide-react';
 import { youglishWidgetQuery, YOUGLISH_ACCENTS } from '../lib/youglish';
+import { tr } from '../lib/i18n';
 
 function loadWidget(): Promise<void> {
   const w = window as any;
@@ -58,23 +59,23 @@ export function YouGlishDock({
     return () => { dead = true; document.body.classList.remove('yg-open'); };
   }, [word, accent, hostId]);
   return (
-    <div className="yg-dock" role="dialog" aria-label={`اسمع كلمة ${word} على YouGlish`}>
+    <div className="yg-dock" role="dialog" aria-label={tr('اسمع كلمة {0} على YouGlish', [word])}>
       <div className="yg-dock-head">
         <div className="yg-dock-title">
           <Play size={16} />
           <strong className="en" dir="ltr">{word}</strong>
-          <span className="muted">في كلام حقيقي</span>
+          <span className="muted">{tr('في كلام حقيقي')}</span>
         </div>
         <div className="yg-dock-accents">
           {YOUGLISH_ACCENTS.map((a) => (
             <button key={a.code} className={`yg-btn ${accent === a.code ? 'is-on' : ''}`} onClick={() => onAccent(a.code)}>{a.label}</button>
           ))}
         </div>
-        <button className="icon-btn" onClick={onClose} aria-label="إغلاق النطق"><X size={18} /></button>
+        <button className="icon-btn" onClick={onClose} aria-label={tr('إغلاق النطق')}><X size={18} /></button>
       </div>
       <div className="yg-frame"><div id={hostId} className="yg-host" /></div>
-      {status === 'loading' && <p className="muted" style={{ padding: '0 1rem .8rem' }}>بنحمّل YouGlish…</p>}
-      {status === 'error' && <p className="note" style={{ margin: '.6rem 1rem 1rem' }}>YouGlish ما اشتغلش في اللوحة دي. اتنطقت الكلمة في الصفحة بدلًا منه.</p>}
+      {status === 'loading' && <p className="muted" style={{ padding: '0 1rem .8rem' }}>{tr('بنحمّل YouGlish…')}</p>}
+      {status === 'error' && <p className="note" style={{ margin: '.6rem 1rem 1rem' }}>{tr('YouGlish ما اشتغلش في اللوحة دي. اتنطقت الكلمة في الصفحة بدلًا منه.')}</p>}
     </div>
   );
 }

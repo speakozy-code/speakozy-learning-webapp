@@ -1,10 +1,11 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { useApp } from '../lib/store';
 import { Card, Button, Badge, SectionTitle, Empty, Field } from '../components/UI';
 import { uid, today, scoreRule } from '../lib/domain';
 import { lookupWord, type LookupEntry } from '../lib/dictionaryProvider';
 import type { ListenClip, ListenLine } from '../types';
-import { Headphones, Play, Snail, Repeat, Bookmark, Volume2, ExternalLink } from 'lucide-react';
+import { Headphones, Play, Snail, Repeat, Bookmark, Volume2 } from 'lucide-react';
+import { tr, uiDir } from '../lib/i18n';
 
 
 export function parseYoutubeId(input: string): string {
@@ -110,14 +111,14 @@ function WordCard({ word, onClose }: { word: string; onClose: () => void }) {
   }
   return <Card>
     <div className="row between"><h3 dir="ltr" style={{ margin: 0 }}>{word}</h3><Button size="sm" variant="ghost" onClick={onClose}>✕</Button></div>
-    {entry === undefined ? <p className="muted">بنجيب المعنى...</p> : <div className="stack">
+    {entry === undefined ? <p className="muted">{tr('بنجيب المعنى...')}</p> : <div className="stack">
       {entry?.phonetic && <p dir="ltr" className="muted">{entry.phonetic}</p>}
       {meaning && <p dir="rtl"><b>{meaning}</b></p>}
       {entry?.definitions?.[0] && <p dir="ltr" className="muted">{entry.definitions[0]}</p>}
-      {entry === null && <p className="muted">مالقيناش معنى للكلمة دي، بس تقدر تسمع نطقها.</p>}
+      {entry === null && <p className="muted">{tr('مالقيناش معنى للكلمة دي، بس تقدر تسمع نطقها.')}</p>}
       <div className="row" style={{ gap: '.5rem' }}>
-        <Button size="sm" onClick={hear}><Volume2 size={16} /> اسمع النطق</Button>
-        <Button size="sm" variant="ghost" onClick={save} disabled={saved}><Bookmark size={16} /> {saved ? 'اتحفظت' : 'احفظ الكلمة'}</Button>
+        <Button size="sm" onClick={hear}><Volume2 size={16} /> {tr('اسمع النطق')}</Button>
+        <Button size="sm" variant="ghost" onClick={save} disabled={saved}><Bookmark size={16} /> {saved ? tr('اتحفظت') : tr('احفظ الكلمة')}</Button>
       </div>
     </div>}
   </Card>;
@@ -132,7 +133,7 @@ function Lines({ clip, now, onLine, onWord, sel }: { clip: Pick<ListenClip, 'lin
       return /^\s+$/.test(tok) || !w ? <span key={k}>{tok}</span> : <span key={k} onClick={(e) => { e.stopPropagation(); onWord(w); }} style={{ textDecoration: 'underline dotted', textUnderlineOffset: 3 }}>{tok}</span>;
     }) : l.text}
     {(i === sel || (sel == null && i === active)) && (l.say || l.note) && <div style={{ marginTop: '.5rem', paddingTop: '.5rem', borderTop: '1px dashed #0002' }}>
-      {l.say && <div style={{ fontSize: '.95rem', color: '#92400e' }}><b>إزاي تقولها:</b> {l.say}</div>}
+      {l.say && <div style={{ fontSize: '.95rem', color: '#92400e' }}><b>{tr('إزاي تقولها:')}</b> {l.say}</div>}
       {l.note && <div dir="rtl" className="muted" style={{ textAlign: 'right', marginTop: '.25rem' }}>{l.note}</div>}
     </div>}
   </div>)}</div>;
@@ -144,7 +145,7 @@ const MIN_PLAYS = 4;
 /** Shadowing flow for one big clip: listen to all of it, master it sentence by sentence, then shadow it whole. */
 const SPEEDS = [0.5, 0.75, 1];
 function SpeedPick({ value, onChange }: { value: number; onChange: (r: number) => void }) {
-  return <span className="row" style={{ gap: '.25rem' }} dir="ltr" aria-label="سرعة الصوت"><Snail size={14} />{SPEEDS.map((r) => <Button key={r} size="sm" variant={value === r ? 'primary' : 'ghost'} onClick={() => onChange(r)}>{r}×</Button>)}</span>;
+  return <span className="row" style={{ gap: '.25rem' }} dir="ltr" aria-label={tr('سرعة الصوت')}><Snail size={14} />{SPEEDS.map((r) => <Button key={r} size="sm" variant={value === r ? 'primary' : 'ghost'} onClick={() => onChange(r)}>{r}×</Button>)}</span>;
 }
 
 export function ShadowClipView({ clip, canComplete, onBack }: { clip: ListenClip; canComplete: boolean; onBack: () => void }) {
@@ -199,41 +200,41 @@ export function ShadowClipView({ clip, canComplete, onBack }: { clip: ListenClip
   }
 
   return <div className="stack">
-    <div className="row"><Button variant="ghost" size="sm" onClick={onBack}>→ كل الكليبات</Button></div>
+    <div className="row"><Button variant="ghost" size="sm" onClick={onBack}>{tr('→ كل الكليبات')}</Button></div>
     <h2 style={{ margin: 0 }}>{clip.title}</h2>
-    {broken ? <Card><Empty title="الفيديو مش متاح دلوقتي" hint="هنصلّحه قريب." /></Card> : <>
-      <Card><div className="stack" dir="rtl">
-        <b>طريقة الشادوينج</b>
-        <div><b>1- اسمع الفيديو كامل الأول</b>، من غير ما تتكلم. ركّز على النغمة والسرعة.</div>
-        <div><b>2- اتقن كل مقطع صغير لوحده:</b>
-          <div className="muted" style={{ lineHeight: 1.9 }}>• اسمع: شغّل المقطع واسمعه {MIN_PLAYS} مرات.<br />• ردّد: اسمع تاني وردّد ورا المتحدث في نفس اللحظة، وقلّد النطق والإيقاع بالظبط.<br />• سجّل: سجّل صوتك وأنت بتعمل شادوينج للمقطع، واسمع تسجيلك وقارنه بالأصل.<br />• ابعت: ابعت التسجيل على الجروب لما تحس إنك جاهز، والمدرب بيتابع ويصحح.</div></div>
-        <div><b>3- بعد ما تتقنهم كلهم</b>، ارجع للمقطع الكبير واعمل معاه شادوينج كله.</div>
+    {broken ? <Card><Empty title={tr('الفيديو مش متاح دلوقتي')} hint={tr('هنصلّحه قريب.')} /></Card> : <>
+      <Card className="sh-howto"><div className="stack" dir={uiDir()}>
+        <b>{tr('طريقة الشادوينج')}</b>
+        <div><b>{tr('1- اسمع الفيديو كامل الأول')}</b>{tr('، من غير ما تتكلم. ركّز على النغمة والسرعة.')}</div>
+        <div><b>{tr('2- اتقن كل مقطع صغير لوحده:')}</b>
+          <div className="muted" style={{ lineHeight: 1.9 }}>{tr('• اسمع: شغّل المقطع واسمعه')} {MIN_PLAYS} {tr('مرات.')}<br />{tr('• ردّد: اسمع تاني وردّد ورا المتحدث في نفس اللحظة، وقلّد النطق والإيقاع بالظبط.')}<br />{tr('• سجّل: سجّل صوتك وأنت بتعمل شادوينج للمقطع، واسمع تسجيلك وقارنه بالأصل.')}<br />{tr('• ابعت: ابعت التسجيل على الجروب لما تحس إنك جاهز، والمدرب بيتابع ويصحح.')}</div></div>
+        <div><b>{tr('3- بعد ما تتقنهم كلهم')}</b>{tr('، ارجع للمقطع الكبير واعمل معاه شادوينج كله.')}</div>
       </div></Card>
-      <Card><div className="stack">
-        <b>الفيديو الكامل</b>
+      <Card className="sh-player"><div className="stack">
+        <b>{tr('الفيديو الكامل')}</b>
         <ClipPlayer ref={main} videoId={clip.youtubeId} start={clip.start} onBroken={() => setBroken(true)} />
-        <div className="row" style={{ gap: '.5rem', flexWrap: 'wrap' }}><Button onClick={playAll}><Play size={16} /> شغّل الكليب كله</Button>
+        <div className="row" style={{ gap: '.5rem', flexWrap: 'wrap' }}><Button onClick={playAll}><Play size={16} /> {tr('شغّل الكليب كله')}</Button>
           <SpeedPick value={mainRate} onChange={setMainRate} /></div>
       </div></Card>
 
-      <div dir="rtl"><b>المقاطع الصغيرة</b>
-        <p className="muted" style={{ margin: 0 }}>اسمع كل مقطع {MIN_PLAYS} مرات، بعدها ظهّر الجملة وشرح نطقها. ردّدها لحد ما تتقنها، وبعدين دوس «اتقنتها».</p></div>
-      <div className="row between"><b>الجمل ({doneCount} / {clip.lines.length})</b><Badge tone={all ? 'green' : ''}>{all ? 'اتقنت الكل' : 'كمّل'}</Badge></div>
-      <div style={{ height: 8, background: '#0001', borderRadius: 8, overflow: 'hidden' }}><div style={{ width: `${clip.lines.length ? (100 * doneCount) / clip.lines.length : 0}%`, height: '100%', background: '#16a34a' }} /></div>
+      <div dir={uiDir()}><b>{tr('المقاطع الصغيرة')}</b>
+        <p className="muted" style={{ margin: 0 }}>{tr('اسمع كل مقطع')} {MIN_PLAYS} {tr('مرات، بعدها ظهّر الجملة وشرح نطقها. ردّدها لحد ما تتقنها، وبعدين دوس «اتقنتها».')}</p></div>
+      <div className="row between"><b>{tr('الجمل (')}{doneCount} / {clip.lines.length})</b><Badge tone={all ? 'green' : ''}>{all ? tr('اتقنت الكل') : tr('كمّل')}</Badge></div>
+      <div className="progress-track"><span style={{ width: `${clip.lines.length ? (100 * doneCount) / clip.lines.length : 0}%` }} /></div>
 
       <div className="grid g2">{clip.lines.map((l, i) => {
         const ok = !!mastered(i); const n = plays[i] || 0; const op = !!opened(i); const can = ok || op || n >= MIN_PLAYS; const open = ok || op;
-        return <Card key={i}><div className="stack">
-          <div className="row between"><b>جملة {i + 1}</b>{ok && <Badge tone="green">اتقنتها ✓</Badge>}</div>
+        return <Card key={i} className={`sh-line${ok ? ' is-done' : ''}`}><div className="stack">
+          <div className="row between"><b>{tr('جملة')} {i + 1}</b>{ok && <Badge tone="green">{tr('اتقنتها ✓')}</Badge>}</div>
           {active === i
             ? <ClipPlayer key={`c${i}`} ref={card} videoId={clip.youtubeId} start={range(i)[0]} onReady={startActive} onBroken={() => setBroken(true)} />
             : <div onClick={() => playCard(i)} style={{ aspectRatio: '16/9', background: '#111', borderRadius: 12, display: 'grid', placeItems: 'center', color: '#fff', cursor: 'pointer' }}><Play size={36} /></div>}
           <div className="row" style={{ gap: '.5rem', flexWrap: 'wrap' }}>
-            <Button size="sm" onClick={() => playCard(i)}><Play size={14} /> اسمع</Button>
+            <Button size="sm" onClick={() => playCard(i)}><Play size={14} /> {tr('اسمع')}</Button>
             <SpeedPick value={rates[i] || 1} onChange={(r) => setRates({ ...rates, [i]: r })} />
-            <Button size="sm" variant={loops[i] ? 'primary' : 'ghost'} onClick={() => setLoops({ ...loops, [i]: !loops[i] })}><Repeat size={14} /> {loops[i] ? 'تكرار ✓' : 'كرّر'}</Button>
-            {!open && <><span className="muted">سمعتها {n} / {MIN_PLAYS}</span>
-              <Button size="sm" variant="ghost" disabled={!can} onClick={() => reveal(i)}>{can ? 'أظهر الجملة' : `${MIN_PLAYS - n} كمان`}</Button></>}
+            <Button size="sm" variant={loops[i] ? 'primary' : 'ghost'} onClick={() => setLoops({ ...loops, [i]: !loops[i] })}><Repeat size={14} /> {loops[i] ? tr('تكرار ✓') : tr('كرّر')}</Button>
+            {!open && <><span className="muted">{tr('سمعتها')} {n} / {MIN_PLAYS}</span>
+              <Button size="sm" variant="ghost" disabled={!can} onClick={() => reveal(i)}>{can ? tr('أظهر الجملة') : tr('{0} كمان', [MIN_PLAYS - n])}</Button></>}
           </div>
           {open && <div className="stack">
             <div dir="ltr" style={{ textAlign: 'left', fontSize: '1.05rem' }}>{l.text.split(/(\s+)/).map((tok, k) => {
@@ -242,20 +243,20 @@ export function ShadowClipView({ clip, canComplete, onBack }: { clip: ListenClip
             })}</div>
             {l.say && <div dir="ltr" style={{ textAlign: 'left', color: '#92400e' }}><b>How it's said:</b> {l.say}</div>}
             {l.note && <div dir="rtl" className="muted" style={{ textAlign: 'right' }}>{l.note}</div>}
-            {!ok ? <Button size="sm" onClick={() => master(i)}>اتقنتها ✓</Button> : <Button size="sm" variant="ghost" onClick={() => unmaster(i)}>ارجع للتدريب</Button>}
+            {!ok ? <Button size="sm" onClick={() => master(i)}>{tr('اتقنتها ✓')}</Button> : <Button size="sm" variant="ghost" onClick={() => unmaster(i)}>{tr('ارجع للتدريب')}</Button>}
           </div>}
         </div></Card>;
       })}</div>
       {word && <WordCard word={word} onClose={() => setWord(null)} />}
       <Card>
-        <div className="stack" dir="rtl">
-          <b>3- شادو الفيديو الكامل مرة واحدة</b>
-          {!all ? <p className="muted" style={{ margin: 0 }}>اتقن كل الجمل الأول ({doneCount} / {clip.lines.length}).</p> : <div className="row" style={{ gap: '.5rem', flexWrap: 'wrap' }}>
-            <Button onClick={playAll}><Play size={16} /> شغّل وشادو</Button>
-            {canComplete && !comp && <Button onClick={complete}>عملتها ✓</Button>}
-            {st === 'pending' && <Badge tone="amber">بانتظار المدرّس</Badge>}
-            {st === 'approved' && <Badge tone="green">معتمد</Badge>}
-            {st === 'rejected' && <Badge tone="red">اتردّ — جرّب تاني</Badge>}
+        <div className="stack" dir={uiDir()}>
+          <b>{tr('3- شادو الفيديو الكامل مرة واحدة')}</b>
+          {!all ? <p className="muted" style={{ margin: 0 }}>{tr('اتقن كل الجمل الأول (')}{doneCount} / {clip.lines.length}).</p> : <div className="row" style={{ gap: '.5rem', flexWrap: 'wrap' }}>
+            <Button onClick={playAll}><Play size={16} /> {tr('شغّل وشادو')}</Button>
+            {canComplete && !comp && <Button onClick={complete}>{tr('عملتها ✓')}</Button>}
+            {st === 'pending' && <Badge tone="amber">{tr('بانتظار المدرّس')}</Badge>}
+            {st === 'approved' && <Badge tone="green">{tr('معتمد')}</Badge>}
+            {st === 'rejected' && <Badge tone="red">{tr('اتردّ — جرّب تاني')}</Badge>}
           </div>}
         </div>
       </Card>
@@ -280,9 +281,9 @@ export function ListenAdminPage() {
   useEffect(() => setBroken(false), [ytId]);
 
   async function save() {
-    if (!ytId) return setErr('لينك اليوتيوب مش صحيح');
-    if (!(end > start)) return setErr('النهاية لازم تبقى بعد البداية');
-    if (!d.title.trim() || !parsed.length) return setErr('اكتب اسم الكليب وجملة واحدة على الأقل');
+    if (!ytId) return setErr(tr('لينك اليوتيوب مش صحيح'));
+    if (!(end > start)) return setErr(tr('النهاية لازم تبقى بعد البداية'));
+    if (!d.title.trim() || !parsed.length) return setErr(tr('اكتب اسم الكليب وجملة واحدة على الأقل'));
     setErr('');
     const old = clips.find((c) => c.id === d.id);
     const rec: ListenClip = { id: d.id || `lc-${uid()}`, youtubeId: ytId, start, end, title: d.title.trim(), lines: parsed, levelId: d.levelId, active: d.active, createdAt: old?.createdAt || new Date().toISOString() };
@@ -293,45 +294,45 @@ export function ListenAdminPage() {
   const preview = { lines: parsed, end };
 
   return <div className="stack">
-    <div><h1><Headphones size={22} /> مقاطع الاستماع</h1>
-      <p className="muted">كل كليب فيه جمل، وكل جملة سطر: الوقت بالثواني أو دقيقة:ثانية ثم النص، وبعده اختياريًا ‘| إزاي تتقال | شرح بالعربي’. مثال: <span dir="ltr">1:23.5 Hello, my name is Bruce. | HEL-lo, my NAME-is BRUCE | name is بتتوصل</span></p></div>
+    <div><h1><Headphones size={22} /> {tr('مقاطع الاستماع')}</h1>
+      <p className="muted">{tr('كل كليب فيه جمل، وكل جملة سطر: الوقت بالثواني أو دقيقة:ثانية ثم النص، وبعده اختياريًا ‘| إزاي تتقال | شرح بالعربي’. مثال:')} <span dir="ltr">{tr('1:23.5 Hello, my name is Bruce. | HEL-lo, my NAME-is BRUCE | name is بتتوصل')}</span></p></div>
     <Card>
-      <SectionTitle title={d.id ? 'تعديل كليب' : 'كليب جديد'} />
+      <SectionTitle title={d.id ? tr('تعديل كليب') : tr('كليب جديد')} />
       <div className="stack">
-        <Field label="لينك اليوتيوب"><input dir="ltr" value={d.url} onChange={(e) => setD({ ...d, url: e.target.value })} placeholder="https://www.youtube.com/watch?v=..." /></Field>
+        <Field label={tr('لينك اليوتيوب')}><input dir="ltr" value={d.url} onChange={(e) => setD({ ...d, url: e.target.value })} placeholder="https://www.youtube.com/watch?v=..." /></Field>
         <div className="grid g3">
-          <Field label="اسم الكليب"><input value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} /></Field>
-          <Field label="بداية (ثانية)"><input dir="ltr" type="number" step="0.5" value={d.start} onChange={(e) => setD({ ...d, start: e.target.value })} /></Field>
-          <Field label="نهاية (ثانية)"><input dir="ltr" type="number" step="0.5" value={d.end} onChange={(e) => setD({ ...d, end: e.target.value })} /></Field>
+          <Field label={tr('اسم الكليب')}><input value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} /></Field>
+          <Field label={tr('بداية (ثانية)')}><input dir="ltr" type="number" step="0.5" value={d.start} onChange={(e) => setD({ ...d, start: e.target.value })} /></Field>
+          <Field label={tr('نهاية (ثانية)')}><input dir="ltr" type="number" step="0.5" value={d.end} onChange={(e) => setD({ ...d, end: e.target.value })} /></Field>
         </div>
-        <Field label="المستوى"><select value={d.levelId} onChange={(e) => setD({ ...d, levelId: e.target.value })}><option value="">كل المستويات</option>{data.levels.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}</select></Field>
+        <Field label={tr('المستوى')}><select value={d.levelId} onChange={(e) => setD({ ...d, levelId: e.target.value })}><option value="">{tr('كل المستويات')}</option>{data.levels.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}</select></Field>
         {ytId && <>
-          {broken && <p style={{ color: '#b91c1c' }}>⚠️ الفيديو ده مش بيشتغل جوه الموقع (التضمين مقفول أو الفيديو اتحذف).</p>}
+          {broken && <p style={{ color: '#b91c1c' }}>{tr('⚠️ الفيديو ده مش بيشتغل جوه الموقع (التضمين مقفول أو الفيديو اتحذف).')}</p>}
           <ClipPlayer lock={false} ref={api} videoId={ytId} start={start} onTime={setNow} onBroken={() => setBroken(true)} />
           <div className="row" style={{ gap: '.5rem', flexWrap: 'wrap' }}>
-            <Badge>الوقت: {fmt(now)}</Badge>
-            <Button size="sm" variant="ghost" onClick={() => api.current?.playRange(start, end)}>شغّل الكليب</Button>
-            <Button size="sm" variant="ghost" onClick={() => setD({ ...d, lines: (d.lines ? d.lines + '\n' : '') + fmt(now) + ' ' })}>+ سطر بالوقت الحالي</Button>
+            <Badge>{tr('الوقت:')} {fmt(now)}</Badge>
+            <Button size="sm" variant="ghost" onClick={() => api.current?.playRange(start, end)}>{tr('شغّل الكليب')}</Button>
+            <Button size="sm" variant="ghost" onClick={() => setD({ ...d, lines: (d.lines ? d.lines + '\n' : '') + fmt(now) + ' ' })}>{tr('+ سطر بالوقت الحالي')}</Button>
           </div>
         </>}
-        <Field label="الجمل (سطر لكل جملة)"><textarea dir="ltr" rows={14} value={d.lines} onChange={(e) => setD({ ...d, lines: e.target.value })} /></Field>
+        <Field label={tr('الجمل (سطر لكل جملة)')}><textarea dir="ltr" rows={14} value={d.lines} onChange={(e) => setD({ ...d, lines: e.target.value })} /></Field>
         {ytId && parsed.length > 0 && <Lines clip={preview} now={now} onLine={(i) => api.current?.playRange(parsed[i].t - 0.15, i + 1 < parsed.length ? parsed[i + 1].t : end)} />}
-        <label className="row" style={{ gap: '.4rem' }}><input type="checkbox" checked={d.active} onChange={(e) => setD({ ...d, active: e.target.checked })} /> ظاهر للطلبة</label>
+        <label className="row" style={{ gap: '.4rem' }}><input type="checkbox" checked={d.active} onChange={(e) => setD({ ...d, active: e.target.checked })} /> {tr('ظاهر للطلبة')}</label>
         {err && <p style={{ color: '#b91c1c' }}>{err}</p>}
-        <div className="row" style={{ gap: '.5rem' }}><Button onClick={save}>{d.id ? 'احفظ التعديل' : 'ضيف الكليب'}</Button>{d.id && <Button variant="ghost" onClick={() => setD(blank)}>إلغاء</Button>}</div>
+        <div className="row" style={{ gap: '.5rem' }}><Button onClick={save}>{d.id ? tr('احفظ التعديل') : tr('ضيف الكليب')}</Button>{d.id && <Button variant="ghost" onClick={() => setD(blank)}>{tr('إلغاء')}</Button>}</div>
       </div>
     </Card>
     <Card>
-      <SectionTitle title={`الكليبات (${clips.length})`} />
-      {!clips.length ? <Empty title="لسه مفيش كليبات" text="ضيف أول كليب من الفورم." /> :
-        <div className="stack">{[...data.levels].sort((a, b) => a.order - b.order).map((l) => ({ id: l.id, title: l.title, items: clips.filter((c) => c.levelId === l.id) })).concat([{ id: '', title: 'كل المستويات / بدون ليفل', items: clips.filter((c) => !data.levels.some((l) => l.id === c.levelId)) }]).filter((g) => g.items.length).map((g) => <div key={g.id || 'none'} className="stack" style={{ gap: '.4rem' }}>
-          <div className="row between"><strong>{g.title}</strong><Badge tone="blue">{g.items.length} كليب · {g.items.filter((c) => c.active).length} ظاهر</Badge></div>
+      <SectionTitle title={tr('الكليبات ({0})', [clips.length])} />
+      {!clips.length ? <Empty title={tr('لسه مفيش كليبات')} text={tr('ضيف أول كليب من الفورم.')} /> :
+        <div className="stack">{[...data.levels].sort((a, b) => a.order - b.order).map((l) => ({ id: l.id, title: l.title, items: clips.filter((c) => c.levelId === l.id) })).concat([{ id: '', title: tr('كل المستويات / بدون ليفل'), items: clips.filter((c) => !data.levels.some((l) => l.id === c.levelId)) }]).filter((g) => g.items.length).map((g) => <div key={g.id || 'none'} className="stack" style={{ gap: '.4rem' }}>
+          <div className="row between"><strong>{g.title}</strong><Badge tone="blue">{g.items.length} {tr('كليب ·')} {g.items.filter((c) => c.active).length} {tr('ظاهر')}</Badge></div>
           {g.items.map((c, i) => <div key={c.id} className="row between" style={{ gap: '.5rem' }}>
-            <span style={{ flex: 1 }}>{i + 1}. {c.title} <span className="muted">({Math.round(c.end - c.start)}ث · {c.lines.length} جملة)</span></span>
-            <Badge tone={c.active ? 'green' : ''}>{c.active ? 'ظاهر' : 'مخفي'}</Badge>
-            <Button size="sm" variant="ghost" onClick={() => put('listenClips', { ...c, active: !c.active })}>{c.active ? 'إخفاء' : 'إظهار'}</Button>
-            <Button size="sm" variant="ghost" onClick={() => edit(c)}>تعديل</Button>
-            <Button size="sm" variant="ghost" onClick={() => { if (confirm('تمسح الكليب؟')) remove('listenClips', c.id); }}>مسح</Button>
+            <span style={{ flex: 1 }}>{i + 1}. {c.title} <span className="muted">({Math.round(c.end - c.start)}{tr('ث ·')} {c.lines.length} {tr('جملة)')}</span></span>
+            <Badge tone={c.active ? 'green' : ''}>{c.active ? tr('ظاهر') : tr('مخفي')}</Badge>
+            <Button size="sm" variant="ghost" onClick={() => put('listenClips', { ...c, active: !c.active })}>{c.active ? tr('إخفاء') : tr('إظهار')}</Button>
+            <Button size="sm" variant="ghost" onClick={() => edit(c)}>{tr('تعديل')}</Button>
+            <Button size="sm" variant="ghost" onClick={() => { if (confirm(tr('تمسح الكليب؟'))) remove('listenClips', c.id); }}>{tr('مسح')}</Button>
           </div>)}
         </div>)}</div>}
     </Card>

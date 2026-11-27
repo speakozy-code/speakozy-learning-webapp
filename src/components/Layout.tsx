@@ -1,158 +1,63 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Home, Map, FolderOpen, BookOpen, ListChecks, User,
-  LayoutDashboard, Users, Layers, FileText, PenLine, ClipboardList,
-  Inbox, Bell, Award, Settings, LogOut, Menu, Headphones, ArrowUp, Gift, MessageSquareHeart, MessageCircle, Layers2, Mic2, Gamepad2, Library, Brain, ClipboardCheck, BellRing,
-} from 'lucide-react';
+import React, { useState } from 'react';
 import { useApp } from '../lib/store';
 import { go } from '../App';
-import { Modal, Button, Badge, fmtDate } from './UI';
-import { engagementProgress, levelScore } from '../lib/domain';
-import { pushSupported, pushEnabled, enablePush } from '../lib/push';
-import { canInstall, isStandalone, isIos, onInstallChange, promptInstall, showBrowserNotification, notificationPermission, requestNotifications } from '../lib/pwa';
-import { SubscribeButtons } from './Upsell';
-import { isSubscribed, PRICING_URL, siteUrl } from '../lib/subscription';
+import { isSubscribed } from '../lib/subscription';
 import { usePullToRefresh } from '../lib/pullToRefresh';
 import { ThemeToggle } from './ThemeToggle';
+import { Menu } from 'lucide-react';
+import { adminNav, studentNav } from './layout/nav';
+import { useNotifications } from './layout/useNotifications';
+import { usePushPrompt } from './layout/usePushPrompt';
+import { Sidebar } from './layout/Sidebar';
+import { StudentHeader } from './layout/StudentHeader';
+import { AdminBar } from './layout/AdminBar';
+import { MobileNav } from './layout/MobileNav';
+import { Notices } from './layout/Notices';
+import { FloatingActions } from './layout/FloatingActions';
+import { NotificationsModal } from './layout/NotificationsModal';
+import { tr, setStaffMode } from '../lib/i18n';
 
-const WA_LINK = 'https://wa.me/201091060951?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83%20%D9%81%D9%8A%20%D9%83%D9%88%D8%B1%D8%B3%20%D8%B3%D8%A8%D9%8A%D9%83%D9%88%D8%B2%D9%8A';
-
-const studentNav = [
-  { path: '/', label: 'الرئيسية', ic: Home },
-  { path: '/roadmap', label: 'خريطة المستويات', ic: Map },
-  { path: '/materials', label: 'الماتيريال', ic: FolderOpen },
-  { path: '/dictionary', label: 'الديكشنري', ic: BookOpen },
-  { path: '/words', label: 'الكلمات', ic: Brain },
-  { path: '/yalla-netkellem', label: 'يلا نتكلم', ic: Mic2 },
-  { path: '/tasks', label: 'التاسكات اليومية', ic: ListChecks },
-  { path: '/shadowing', label: 'الشادوينج', ic: Headphones },
-  { path: '/play', label: 'العب واتعلم', ic: Gamepad2 },
-  { path: '/resources', label: 'المصادر', ic: Library },
-  { path: '/trial', label: 'تجربة مجانية', ic: Gift },
-  { path: '/testimonials', label: 'آراء طلابنا', ic: MessageSquareHeart },
-  { path: '/profile', label: 'البروفايل', ic: User },
-];
-const adminNav = [
-  { path: '/admin', label: 'نظرة عامة', ic: LayoutDashboard },
-  { path: '/admin/students', label: 'الطلاب', ic: Users },
-  { path: '/admin/curriculum', label: 'المستويات والجلسات', ic: Layers },
-  { path: '/admin/content', label: 'المحتوى', ic: FileText },
-  { path: '/admin/lesson', label: 'تعديل السيشنات', ic: PenLine },
-  { path: '/admin/reviews', label: 'مراجعة النتائج', ic: Inbox },
-  { path: '/admin/task-reviews', label: 'مراجعة التاسكات', ic: ClipboardCheck },
-  { path: '/admin/operations', label: 'التاسكات والإشعارات', ic: BellRing },
-  { path: '/admin/listen', label: 'كليبات الشادوينج', ic: Headphones },
-  { path: '/admin/pdfs', label: 'ملفات PDF', ic: FileText },
-  { path: '/admin/certificates', label: 'الشهادات', ic: Award },
-  { path: '/admin/settings', label: 'الإعدادات', ic: Settings },
-];
-
+/** App chrome. Students get a top header; admins keep the sidebar. */
 export function Layout({ current, children }: { current: string; children: React.ReactNode }) {
-  const { user, logout, data, put } = useApp();
-  const [open, setOpen] = useState(false);
-  const [bell, setBell] = useState(false);
-  const [profileMenu, setProfileMenu] = useState(false);
-  const [perm, setPerm] = useState(notificationPermission());
-  const pull = usePullToRefresh();
-  const [, setTick] = useState(0);
-  useEffect(() => onInstallChange(() => setTick((t) => t + 1)), []);
+  const { user } = useApp();
+  setStaffMode(user?.role === 'admin');
   if (!user) return <>{children}</>;
+  return <AuthedLayout current={current}>{children}</AuthedLayout>;
+}
+
+function AuthedLayout({ current, children }: { current: string; children: React.ReactNode }) {
+  const { user: u, logout, data, put } = useApp();
+  const user = u!;
   const admin = user.role === 'admin';
   const nav = admin ? adminNav : studentNav;
-  const readSet = new Set((data.notificationReads || []).filter((r) => r.studentId === user.id && r.read).map((r) => r.notificationId));
-  const notes = data.notifications.filter((n) => n.targetId === 'all' || n.targetId === user.id || n.targetId === user.levelId).map((n) => ({ ...n, read: n.read || readSet.has(n.id) })).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const unread = notes.filter((n) => !n.read).length;
-  const unreadKey = notes.filter((n) => !n.read).map((n) => n.id).join('|');
-  // never burst several system notifications at once (Chrome flags that as spam): one notification, or one daily summary
-  useEffect(() => {
-    const fresh = notes.filter((n) => !n.read);
-    if (fresh.length === 1) void showBrowserNotification({ id: fresh[0].id, title: fresh[0].title, body: fresh[0].body, href: fresh[0].href });
-    else if (fresh.length > 1) void showBrowserNotification({ id: `summary-${user.id}-${new Date().toISOString().slice(0, 10)}`, title: 'Speakozy', body: `عندك ${fresh.length} إشعارات جديدة`, href: '#/notifications' });
-  }, [unreadKey]);
-  const [pushOn, setPushOn] = useState<boolean | null>(null);
-  const [pushMsg, setPushMsg] = useState('');
-  useEffect(() => { if (user && !admin) void pushEnabled().then(setPushOn); }, [user?.id, perm]);
-  const showPushCard = !admin && pushSupported() && pushOn === false && perm !== 'denied' && !(isIos() && !isStandalone());
-  const level = data.levels.find((l) => l.id === user.levelId) || data.levels[0];
-  const pct = !admin && level ? engagementProgress(data, level.id, user.id) : 0;
-  const points = admin || !level ? 0 : levelScore(data, user.id, level.id);
-  const active = (p: string) => p === '/' ? current === '/' : current.startsWith(p);
-
-  const bellButton = <button className="icon-btn bell" onClick={() => setBell(true)} aria-label="الإشعارات" title="الإشعارات">
-    <Bell size={18} />{unread > 0 && <span className="badge badge-red bell-count">{unread}</span>}
-  </button>;
-
-  const side = <aside className={`side ${open ? 'open' : ''}`}>
-    <div className="brand"><a href={siteUrl('/')} title="موقع Speakozy"><img className="brand-logo" src="./logo-on-dark.png" alt="Speakozy" /></a></div>
-    <div className="nav-group">{admin ? 'لوحة الأدمن' : 'مساحة الطالب'}</div>
-    <nav className="nav" onClick={() => setOpen(false)}>
-      {nav.map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
-        <span className="ic"><Icon size={18} strokeWidth={2} /></span>{n.label}
-      </a>; })}
-    </nav>
-    <div className="side-foot">
-      <div className="who"><span className="avatar">{user.avatar || (user.role === 'admin' ? '🧑‍💼' : '🧑‍🎓')}</span><span>{user.name}<br /><small>{admin ? 'مدير الأكاديمية' : 'طالب'}</small></span></div>
-      <ThemeToggle label className="btn btn-ghost btn-sm" />
-      <button className="btn btn-ghost btn-sm" style={{ width: '100%', marginTop: '.4rem' }} onClick={() => { logout(); go('/'); }}><LogOut size={14} /> تسجيل الخروج</button>
-    </div>
-  </aside>;
-
-  const shortLabel = (l: string) => ({ 'خريطة المستويات': 'المستويات', 'تجربة مجانية': 'تجربة', 'آراء طلابنا': 'آراء', 'المستويات والجلسات': 'المستويات', 'استوديو الجرامر': 'الجرامر', 'تعديل السيشنات': 'السيشنات', 'مراجعة النتائج': 'المراجعة', 'التاسكات والإشعارات': 'التاسكات', 'التاسكات اليومية': 'التاسكات', 'يلا نتكلم': 'نتكلم', 'العب واتعلم': 'العب' } as Record<string, string>)[l] || l.split(' ')[0];
-  const mobile = <nav className="mobile-nav">
-    {nav.slice(0, 5).map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={active(n.path) ? 'active' : ''}>
-      <Icon size={18} /><span>{shortLabel(n.label)}</span>
-    </a>; })}
-    <button onClick={() => setOpen(true)}><Menu size={18} /><span>المزيد</span></button>
-  </nav>;
+  const [drawer, setDrawer] = useState(false);
+  const [bell, setBell] = useState(false);
+  const pull = usePullToRefresh();
+  const { notes, unread } = useNotifications(user, data);
+  const push = usePushPrompt(!admin);
+  const unsubscribed = !admin && !isSubscribed(user);
+  const doLogout = () => { logout(); go('/'); };
+  const notices = !admin && <Notices showSubscribe={unsubscribed} push={push} />;
 
   return <>
-    {pull.active && <div className="ptr"><span>{pull.ready ? 'سيب للتحديث ↻' : 'اسحب للتحديث ↓'}</span></div>}
-    <div className="topbar">
-      <button className="icon-btn" onClick={() => setOpen(true)} aria-label="القائمة"><Menu size={18} /></button>
+    {pull.active && <div className="ptr"><span>{pull.ready ? tr('سيب للتحديث ↻') : tr('اسحب للتحديث ↓')}</span></div>}
+    {admin && <div className="topbar">
+      <button className="icon-btn" onClick={() => setDrawer(true)} aria-label={tr('القائمة')}><Menu size={18} /></button>
       <div className="auth-brand"><img className="brand-logo logo-for-dark" src="./logo-on-dark.png" alt="Speakozy" /><img className="brand-logo logo-for-light" src="./logo-on-light.png" alt="Speakozy" /></div>
       <ThemeToggle />
+    </div>}
+    {!admin && <StudentHeader user={user} data={data} current={current} unread={unread} onBell={() => setBell(true)} onMenu={() => setDrawer(true)} onLogout={doLogout} />}
+    <div className={`shell ${admin ? 'is-admin' : 'is-student'}`}>
+      <Sidebar nav={nav} current={current} admin={admin} user={user} open={drawer} onClose={() => setDrawer(false)} onLogout={doLogout} />
+      <main className="main" id="app-main">
+        {admin && <AdminBar user={user} unread={unread} onBell={() => setBell(true)} onLogout={doLogout} />}
+        {!admin && <div className="notices">{notices}</div>}
+        {children}
+      </main>
     </div>
-    <div className="shell">{side}<main className="main" id="app-main"><div className="content-bar">
-      <div className="content-bar-row">
-        {profileMenu && <div className="profile-menu">
-          <button onClick={() => { setProfileMenu(false); go('/profile'); }}>تعديل الملف الشخصي</button>
-          <button onClick={() => { setProfileMenu(false); go('/trial'); }}>تفاصيل الكورس</button>
-          {!isStandalone() && canInstall() && <button onClick={() => { setProfileMenu(false); void promptInstall(); }}>تثبيت التطبيق على الموبايل</button>}
-          {!isStandalone() && !canInstall() && isIos() && <button onClick={() => { setProfileMenu(false); alert('على الآيفون: اضغط زرار المشاركة في Safari ثم «إضافة إلى الشاشة الرئيسية».'); }}>تثبيت التطبيق على الموبايل</button>}
-          <button onClick={() => { setProfileMenu(false); logout(); go('/'); }}>تسجيل الخروج / دخول حساب تاني</button>
-        </div>}
-        <div className="sticky-progress">
-          {!admin && <><span className="sticky-level">{level?.title || 'المستوى'}</span><div className="progress-track sticky-track"><span style={{ width: `${pct}%` }} /></div><strong className="sticky-pct">{pct}%</strong></>}
-          {admin && <span className="muted">لوحة الأدمن</span>}
-        </div>
-        {!admin && <strong className="sticky-points">{points} pts</strong>}
-        {bellButton}
-        <button className="user-chip" onClick={() => setProfileMenu((m) => !m)} aria-label="الملف الشخصي"><span className="avatar">{user.avatar || (user.role === 'admin' ? '🧑‍💼' : '🧑‍🎓')}</span>{!admin && <span className="user-chip-name">{user.name.split(' ')[0]}{isSubscribed(user) && <span className="verified-badge" title="طالب مشترك">✓</span>}</span>}</button>
-      </div>
-      {!admin && !isSubscribed(user) && <div className="sub-banner" dir="rtl">
-        <div className="sub-banner-text"><span className="sub-banner-ic" aria-hidden="true">✨</span><div><strong>انت غير مشترك في الكورس</strong><small>لتفاصيل الاشتراك</small></div></div>
-        <SubscribeButtons size="sm" />
-      </div>}
-      {showPushCard && <div className="sub-notice" dir="rtl">
-        <span>🔔 فعّل الإشعارات علشان نفكرك باللي فاتك: كلمات المراجعة، المهام، وانتهاء الاشتراك — حتى لو التطبيق مقفول</span>
-        <button className="btn btn-primary btn-sm" onClick={async () => { const r = await enablePush(); setPerm(notificationPermission()); if (r === 'ok') setPushOn(true); else setPushMsg(r === 'denied' ? '' : 'حصلت مشكلة، جرّب تاني'); }}>فعّل الإشعارات</button>
-        {pushMsg && <small>{pushMsg}</small>}
-      </div>}
-      {!admin && perm === 'denied' && <div className="sub-notice" dir="rtl"><span>🔕 الإشعارات مقفولة — فعّلها من إعدادات المتصفح عشان نفكرك بمهامك</span></div>}
-    </div>{children}</main></div>
-    {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 75 }} />}
-    {mobile}
-    <div className={`float-stack${!admin && !isSubscribed(user) ? ' split' : ''}`}>
-      <button className="to-top-btn" aria-label="طلوع لأول الصفحة" title="طلوع لأول الصفحة" onClick={() => { document.getElementById('app-main')?.scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><ArrowUp size={18} /></button>
-      {!admin && !isSubscribed(user) && <a className="float-pricing" href={PRICING_URL} target="_blank" rel="noreferrer">شوف الباقات</a>}
-      <a className="float-wa" href={WA_LINK} target="_blank" rel="noreferrer" aria-label="واتساب" title="تواصل معانا على واتساب"><MessageCircle size={20} /></a>
-    </div>
-    <Modal open={bell} title="الإشعارات" onClose={() => setBell(false)}>
-      {notes.length ? <div className="notif-list">{notes.map((n) => <div key={n.id} role="button" tabIndex={0} className={`notif-item${n.read ? '' : ' unread'}`}
-        onClick={async () => { if (!n.read) { if (admin) await put('notifications', { ...n, read: true }); else await put('notificationReads', { id: `${user.id}-${n.id}`, studentId: user.id, notificationId: n.id, read: true }); } if (n.href) { setBell(false); go(n.href.replace('#', '')); } }}>
-        <div className="notif-main"><strong>{n.title}</strong><span className="muted"> — {n.body}</span></div>
-        <div className="row between"><small className="muted">{fmtDate(n.createdAt)}</small>{!n.read && <span className="notif-dot" />}</div>
-      </div>)}</div> : <div className="empty">مفيش إشعارات</div>}
-    </Modal>
+    {drawer && <div className="drawer-scrim" onClick={() => setDrawer(false)} />}
+    <MobileNav nav={nav} current={current} onMore={() => setDrawer(true)} />
+    <FloatingActions showPricing={unsubscribed} />
+    <NotificationsModal open={bell} onClose={() => setBell(false)} notes={notes} admin={admin} user={user} put={put} />
   </>;
 }
