@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { DEFAULT_CLIPS } from './defaultClips';
 import type { AppData, User } from '../types';
 import { seedData, PLANNED_LEVELS } from './seed';
 import { LEVEL_TASKS } from './levelTasks';
@@ -89,8 +90,14 @@ function withAllLevels(d: AppData): AppData {
   const top = Math.max(0, ...(d.levels || []).map((l) => l.order || 0));
   return { ...d, levels: [...(d.levels || []), ...missing.map((l, i) => ({ ...l, order: Math.max(l.order, top + 1 + i) }))] };
 }
+/** Shipped shadowing clips: added when missing (an admin edit or hide of the same id is kept). */
+function withDefaultClips(d: AppData): AppData {
+  const have = new Set((d.listenClips || []).map((c) => c.id));
+  const add = DEFAULT_CLIPS.filter((c) => !have.has(c.id));
+  return add.length ? { ...d, listenClips: [...(d.listenClips || []), ...add] } : d;
+}
 function withLevelTasks(d0: AppData): AppData {
-  const d = cleanSessions(withAllLevels(d0));
+  const d = withDefaultClips(cleanSessions(withAllLevels(d0)));
   const daily = buildDailyTasks(d.levels || [], d.sessions || []);
   // the old imported tasks (LEVEL_TASKS) are retired: drop them and rebuild daily tasks from the level's topics
   const taskIds = new Set([...LEVEL_TASKS.map((t) => t.id), ...daily.map((t) => t.id)]);

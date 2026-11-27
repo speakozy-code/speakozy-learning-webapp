@@ -33,9 +33,9 @@ assert.match(broke.definitions[0], /little or no money/i);
 console.log('contextual dictionary and LTR regression checks passed');
 
 const verifiedDriveTranslations = {
-  'dict-l1-s1-great': 'بخير', 'dict-l1-s1-nice': 'سعيد بلقائك',
-  'dict-l1-s4-mobile': 'موبايل / هاتف محمول', 'dict-l1-s7-clean': 'ينظف',
-  'dict-l1-s3-japanese': 'ياباني', 'dict-l1-s3-south-korean': 'كوري جنوبي',
+  'dict-l1-s1-listen-to': 'يسمع لـ', 'dict-l1-s2-nurse': 'ممرضة',
+  'dict-l1-s4-mobile-phone': 'موبايل', 'dict-l1-s7-clean': 'ينظّف',
+  'dict-l1-s3-japan-japanese': 'اليابان / ياباني',
   'dict-l2-s4-look-for': 'يبحث عن', 'dict-l2-s5-clean-up': 'ينظّف',
   'dict-l2-s5-home-sweet-home': 'ما أجمل العودة إلى البيت', 'dict-l2-s6-suit': 'يناسبك',
   'dict-l3-s1-book': 'يحجز', 'dict-l3-s1-change': 'يغيّر', 'dict-l3-s1-early': 'مبكر',

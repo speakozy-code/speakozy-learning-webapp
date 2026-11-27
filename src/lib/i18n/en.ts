@@ -378,7 +378,6 @@ export const EN: Record<string, string> = {
   "كليبات {0}": "{0} clips",
   "كليب": "clips",
   "دقيقة ·": "minutes ·",
-  "· مخفي عن الطلبة": "· hidden from students",
   "كليب الشادوينج لمستوى {0} هيضاف قريبًا": "A shadowing clip for level {0} is coming soon",
   "بنجهز كليب لكل مستوى — هيظهر هنا أول ما يتضاف.": "We're preparing a clip for every level — it will appear here as soon as it's added.",
   "عايز تبدأ معانا؟": "Want to start with us?",
@@ -727,4 +726,5 @@ export const EN: Record<string, string> = {
   "إنشاء حساب بجوجل": "Sign up with Google",
   "أو بالإيميل": "or with email",
   "هنستخدم اسمك وإيميلك من حساب جوجل، ومش محتاج تعمل باسورد.": "We'll use the name and email from your Google account — no password needed.",
+  "اكتمل": "Completed",
 };

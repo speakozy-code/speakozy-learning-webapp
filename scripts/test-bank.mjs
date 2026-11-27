@@ -124,7 +124,7 @@ t('questions get shorter and simpler at the lower levels', () => {
 t('word lists drop contractions, names and off-topic words', () => {
   const list = fixWords([...UNIT_WORDS]);
   for (const bad of ["he's", "can't", 'samy', 'vocabulary', 'egypt']) assert.ok(!list.some((w) => w.word.toLowerCase() === bad), bad);
-  assert.ok(list.some((w) => w.word === 'mother' && w.sessionIds.includes('l1-s5')));
+  assert.ok(list.some((w) => w.word === 'Role model' && w.sessionIds.includes('l10-s4')));
 });
 
 t('admin lesson editor: extra and hidden questions change the bank', () => {

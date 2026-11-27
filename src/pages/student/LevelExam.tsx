@@ -12,7 +12,10 @@ export function LevelExamPage({ levelId }: any) {
   const [result, setResult] = useState<any>(null);
   if (!user) return null;
   const level = data.levels.find((l) => l.id === levelId);
-  const qs = data.questions.filter((q) => q.levelId === levelId && !q.admin);
+  const sessOrder = new Map(data.sessions.filter((x) => x.levelId === levelId).sort((a, b) => a.order - b.order).map((x, i) => [x.id, i]));
+  const isW = (q: any) => (q.type === 'short' || q.type === 'fill' ? 1 : 0);
+  // whole level, session by session; written questions go last
+  const qs = data.questions.filter((q) => q.levelId === levelId && !q.admin).map((q, i) => ({ q, i })).sort((a, b) => isW(a.q) - isW(b.q) || (sessOrder.get(a.q.sessionId) ?? 99) - (sessOrder.get(b.q.sessionId) ?? 99) || a.i - b.i).map((x) => x.q);
   const locked = level ? !levelFullyOpen(user, level, data.levels) : false;
   const prior = priorFor(data, user.id, qs as any, (q) => [`exam:${levelId}:${q.id}`]);
 

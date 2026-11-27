@@ -190,6 +190,17 @@ function ScrambleGame({ words }: { words: W[] }) {
   </Card>;
 }
 
+/** Games show CEFR names (A1…C1) instead of the course level names. */
+export function cefrName(l: { title: string }): string {
+  const t = l.title.trim().toLowerCase();
+  if (t.startsWith('e')) return 'A1';
+  if (t.startsWith('pre')) return 'A2';
+  if (t.startsWith('inter')) return 'B1';
+  if (t === 'upper 1') return 'B2';
+  if (t.startsWith('upper')) return 'C1';
+  return l.title;
+}
+
 export default function PlayPage() {
   const { user, data } = useApp();
   const levels = [...data.levels].sort((a, b) => a.order - b.order);
@@ -204,7 +215,7 @@ export default function PlayPage() {
     <Tabs tabs={[{ id: 'guess', label: <span className="tab-ic"><Target size={15} /> {tr('خمّن الكلمة')}</span> }, { id: 'story', label: <span className="tab-ic"><BookOpen size={15} /> 3 Words 1 Story</span> }, { id: 'match', label: <span className="tab-ic"><Puzzle size={15} /> {tr('وصّل الكلمة')}</span> }, { id: 'scramble', label: <span className="tab-ic"><CaseSensitive size={15} /> {tr('رتّب الحروف')}</span> }]} active={game} onChange={(g) => setGame(g as any)} />
     <Card>
       <SectionTitle title={tr('اختار مستواك')} action={<Badge tone="blue">{words.length} {tr('كلمة')}</Badge>} />
-      <Tabs tabs={levels.map((l) => ({ id: l.id, label: l.title }))} active={level} onChange={setLevel} />
+      <Tabs tabs={levels.map((l) => ({ id: l.id, label: cefrName(l) }))} active={level} onChange={setLevel} />
     </Card>
     {game === 'guess' ? <GuessWord key={`g-${level}`} words={words} /> : game === 'story' ? <ThreeWords key={`s-${level}`} words={words} levelTitle={lv?.title || ''} /> : game === 'match' ? <MatchGame key={`m-${level}`} words={words} /> : <ScrambleGame key={`x-${level}`} words={words} />}
   </div>;
