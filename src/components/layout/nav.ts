@@ -41,7 +41,7 @@ export const adminNav: NavItem[] = [
 ];
 
 /** Student links shown as pills in the desktop header; everything else goes under "المزيد". */
-export const STUDENT_PRIMARY = ['/', '/roadmap', '/words', '/shadowing', '/tasks'];
+export const STUDENT_PRIMARY = ['/', '/roadmap', '/materials', '/shadowing', '/tasks'];
 
 const SHORT_LABELS: Record<string, string> = {
   'خريطة المستويات': 'المستويات', 'تجربة مجانية': 'تجربة', 'آراء طلابنا': 'آراء',
