@@ -35,17 +35,16 @@ export default function ShadowingPage() {
 
     {openClip ? <ShadowClipView clip={openClip} canComplete={subscribed && !admin} onBack={() => setOpenId(null)} /> : <Card>
       <SectionTitle title={tr('كليبات {0}', [level?.title || ''])} action={<Badge tone="blue">{clips.length} {tr('كليب')}</Badge>} />
-      {clips.length ? <div className="stack">
-        {clips.map((c) => {
+      {clips.length ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '.8rem' }}>
+        {clips.map((c, k) => {
           const n = doneLines(c.id);
-          return <div key={c.id} className="section-card">
-            <div className="row between" style={{ gap: '.5rem' }}>
-              <div><strong>{c.title}</strong><div className="muted" style={{ fontSize: '.85rem' }}>{Math.round((c.end - c.start) / 60 * 10) / 10} {tr('دقيقة ·')} {c.lines.length} {tr('جملة')} {!c.active && tr('· مخفي عن الطلبة')}</div></div>
-              <div className="row" style={{ gap: '.4rem' }}>
-                {n > 0 && <Badge tone={n === c.lines.length ? 'green' : 'amber'}>{n} / {c.lines.length}</Badge>}
-                <Button size="sm" onClick={() => setOpenId(c.id)}>{n ? tr('كمّل') : tr('ابدأ')}</Button></div>
-            </div>
-          </div>;
+          const full = n > 0 && n === c.lines.length;
+          return <button key={c.id} type="button" className="section-card" onClick={() => setOpenId(c.id)} style={{ aspectRatio: '1 / 1', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', textAlign: 'start', cursor: 'pointer', padding: '.9rem', borderColor: full ? 'var(--green, #16a34a)' : undefined }}>
+            <div className="row between" style={{ gap: '.3rem' }}><Badge tone={full ? 'green' : 'blue'}>{k + 1}</Badge>{!c.active && <Badge tone="amber">{tr('مخفي')}</Badge>}</div>
+            <div><strong dir="ltr" style={{ display: 'block' }}>{c.title}</strong>
+              <div className="muted" style={{ fontSize: '.8rem', marginTop: '.2rem' }}>{Math.round((c.end - c.start) / 60 * 10) / 10} {tr('دقيقة ·')} {c.lines.length} {tr('جملة')}</div></div>
+            <div>{full ? <Badge tone="green">✓ {tr('اكتمل')}</Badge> : n > 0 ? <Badge tone="amber">{n} / {c.lines.length}</Badge> : <span className="muted" style={{ fontSize: '.85rem' }}>{tr('ابدأ')}</span>}</div>
+          </button>;
         })}
       </div> : <Empty icon="🎬" title={tr('كليب الشادوينج لمستوى {0} هيضاف قريبًا', [level?.title || ''])} hint={tr('بنجهز كليب لكل مستوى — هيظهر هنا أول ما يتضاف.')} />}
     </Card>}
