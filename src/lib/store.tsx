@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { DEFAULT_CLIPS } from './defaultClips';
+import { DRIVE_CURRICULUM } from './driveCurriculum';
 import type { AppData, User } from '../types';
 import { seedData, PLANNED_LEVELS } from './seed';
 import { LEVEL_TASKS } from './levelTasks';
@@ -90,6 +91,28 @@ function withAllLevels(d: AppData): AppData {
   const top = Math.max(0, ...(d.levels || []).map((l) => l.order || 0));
   return { ...d, levels: [...(d.levels || []), ...missing.map((l, i) => ({ ...l, order: Math.max(l.order, top + 1 + i) }))] };
 }
+/** E1 comes from the bundled Drive curriculum: the stored document may still hold the old E1 lessons, words and quizzes. */
+const isE1 = (id?: string) => !!id && /^l1-/.test(id);
+function withE1Curriculum(d: AppData): AppData {
+  const B: any = DRIVE_CURRICULUM;
+  const newSessions: any[] = (B.sessions || []).filter((x: any) => x.levelId === 'l1');
+  if (!newSessions.length) return d;
+  const byId = new Map(newSessions.map((x) => [x.id, x]));
+  const sessions = (d.sessions || []).map((x: any) => (byId.has(x.id) ? { ...x, title: byId.get(x.id).title, topic: byId.get(x.id).topic, sections: byId.get(x.id).sections } : x));
+  const haveS = new Set(sessions.map((x: any) => x.id));
+  newSessions.forEach((x) => { if (!haveS.has(x.id)) sessions.push(x); });
+  const questions = [...(d.questions || []).filter((q: any) => !(q.levelId === 'l1' && !q.admin)), ...(B.questions || []).filter((q: any) => q.levelId === 'l1')];
+  const dictionary = [
+    ...(d.dictionary || []).flatMap((w: any) => {
+      const ids: string[] = w.sessionIds || [];
+      if (!ids.some(isE1)) return [w];
+      const rest = ids.filter((x) => !isE1(x));
+      return rest.length ? [{ ...w, sessionIds: rest }] : [];
+    }),
+    ...(B.dictionary || []).filter((w: any) => (w.sessionIds || []).some(isE1)),
+  ];
+  return { ...d, sessions, questions, dictionary } as AppData;
+}
 /** Shipped shadowing clips: added when missing (an admin edit or hide of the same id is kept). */
 function withDefaultClips(d: AppData): AppData {
   const have = new Set((d.listenClips || []).map((c) => c.id));
@@ -97,7 +120,7 @@ function withDefaultClips(d: AppData): AppData {
   return add.length ? { ...d, listenClips: [...(d.listenClips || []), ...add] } : d;
 }
 function withLevelTasks(d0: AppData): AppData {
-  const d = withDefaultClips(cleanSessions(withAllLevels(d0)));
+  const d = withE1Curriculum(withDefaultClips(cleanSessions(withAllLevels(d0))));
   const daily = buildDailyTasks(d.levels || [], d.sessions || []);
   // the old imported tasks (LEVEL_TASKS) are retired: drop them and rebuild daily tasks from the level's topics
   const taskIds = new Set([...LEVEL_TASKS.map((t) => t.id), ...daily.map((t) => t.id)]);
