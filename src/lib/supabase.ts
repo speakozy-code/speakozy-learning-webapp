@@ -31,6 +31,14 @@ export async function sbSignIn(email: string, password: string) {
   if (error) throw error;
 }
 
+/** Google sign-in / sign-up. Supabase redirects back to this same page; the session is picked up on load. */
+export async function sbSignInWithGoogle() {
+  if (!sb) throw new Error('supabase-not-configured');
+  const redirectTo = `${window.location.origin}${window.location.pathname}`;
+  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, queryParams: { prompt: 'select_account' } } });
+  if (error) throw error;
+}
+
 export async function sbSignUp(name: string, email: string, password: string) {
   if (!sb) throw new Error('supabase-not-configured');
   const { data, error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
