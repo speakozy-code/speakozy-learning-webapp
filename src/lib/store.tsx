@@ -131,15 +131,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setData((prev) => withDailyNotes(prev, user));
   }, [user?.id, user?.levelId]);
 
-  async function refresh() {
-    if (demo) { setData(withDailyNotes(readDemo(), user)); return; }
+  async function refresh(): Promise<Record<string, any[]>> {
+    if (demo) { setData(withDailyNotes(readDemo(), user)); return {}; }
     const loaded = CLOUD === 'supabase' ? await sbLoadAll(COLLECTIONS) : await fbLoadAll(COLLECTIONS);
     RAW_DICT = Array.isArray((loaded as any).dictionary) ? (loaded as any).dictionary : [];
     setData(withDailyNotes(withLevelTasks(englishify({ ...emptyData(), ...loaded } as AppData)), user));
+    return loaded as Record<string, any[]>;
   }
 
   useEffect(() => {
     (async () => {
+      try {
       if (demo) {
         setData(readDemo());
         const savedId = localStorage.getItem('speakozy-user');
@@ -148,17 +150,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (found) setUser(found);
         }
       } else {
-        await refresh();
+        let loaded = await refresh();
         if (CLOUD === 'supabase') {
           const auth = await sbCurrentAuth();
           if (auth) {
             const match = (list: any[]) => (list || []).find((u: any) => u.id === `auth-${auth.id}` || u.authId === auth.id || (u.email || '').toLowerCase() === auth.email);
-            let loaded = await sbLoadAll(['users']);
             let found = match(loaded.users);
             if (!found) {
+              // first sign-in (e.g. Google): create the profile, then reload once
               await sbEnsureProfile();
-              await refresh();
-              loaded = await sbLoadAll(['users']);
+              loaded = await refresh();
               found = match(loaded.users);
             }
             if (found) {
@@ -173,7 +174,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }
         }
       }
-      setReady(true);
+      } catch (e) { console.error('boot failed', e); }
+      finally { setReady(true); }
     })();
   }, []);
 
@@ -188,8 +190,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     if (CLOUD === 'supabase') await sbSignIn(email, password); else await fbSignIn(email, password);
-    await refresh();
-    const fresh = CLOUD === 'supabase' ? await sbLoadAll(['users']) : await fbLoadAll(['users']);
+    const fresh = await refresh();
     const authId = CLOUD === 'supabase' ? await sbCurrentUserId() : null;
     const me = (fresh.users || []).find((u: any) => u.email?.toLowerCase() === email.toLowerCase() || u.id === `auth-${authId}`);
     if (!me) throw new Error('User profile not found');
@@ -207,8 +208,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await sbSignUp(name.trim(), email.trim(), password);
       // the phone number is stored with the student's profile (needs the save_my_profile update in supabase/migrations)
       if (phone && CLOUD === 'supabase') { try { await sbSaveMyProfile({ phone }); } catch {} }
-      await refresh();
-      const loaded = await sbLoadAll(['users']);
+      const loaded = await refresh();
       const authId = await sbCurrentUserId();
       const account = (loaded.users || []).find((u: any) => (u.email || '').toLowerCase() === email.trim().toLowerCase() || u.id === `auth-${authId}` || u.authId === authId);
       if (account) setUser(account as User);
