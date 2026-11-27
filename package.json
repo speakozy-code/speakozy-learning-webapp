@@ -7,7 +7,7 @@
     "dev": "node ./node_modules/vite/bin/vite.js --host 0.0.0.0 --port 3000",
     "build": "node ./node_modules/typescript/bin/tsc --noEmit && node ./node_modules/vite/bin/vite.js build",
     "preview": "node ./node_modules/vite/bin/vite.js preview --host 0.0.0.0 --port 3000",
-    "test": "node scripts/test-domain.mjs && node scripts/test-curriculum.mjs && node scripts/test-lesson-ui.mjs && node scripts/test-requested-material-ui.mjs && node scripts/test-drive-session-repairs.mjs && node scripts/test-pwa.mjs && node scripts/test-bank.mjs"
+    "test": "node scripts/test-domain.mjs && node scripts/test-curriculum.mjs && node scripts/test-lesson-ui.mjs && node scripts/test-requested-material-ui.mjs && node scripts/test-i18n.mjs && node scripts/test-drive-session-repairs.mjs && node scripts/test-pwa.mjs && node scripts/test-bank.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

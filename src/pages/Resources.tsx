@@ -2,6 +2,7 @@ import { PageTour } from '../components/Tour';
 import React from 'react';
 import { Card, SectionTitle, Badge } from '../components/UI';
 import { Library, Headphones, Mic2 } from 'lucide-react';
+import { tr } from '../lib/i18n';
 
 // مصادر إضافية: بلاي ليستات شادوينج + قنوات بودكاست.
 const SHADOW_PLAYLISTS = [
@@ -52,7 +53,7 @@ const castboxUrl = (id: string) => `https://castbox.fm/vc/${id}`;
 function LinkGrid({ items, label, href }: { items: string[]; label: string; href: (id: string) => string }) {
   return <div className="grid g3">
     {items.map((id, i) => <a key={id} className="section-card" href={href(id)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
-      <div className="row between"><strong dir="ltr" className="en">{label} {i + 1}</strong><Badge tone="blue">افتح ↗</Badge></div>
+      <div className="row between"><strong dir="ltr" className="en">{label} {i + 1}</strong><Badge tone="blue">{tr('افتح ↗')}</Badge></div>
     </a>)}
   </div>;
 }
@@ -60,43 +61,43 @@ function LinkGrid({ items, label, href }: { items: string[]; label: string; href
 export default function ResourcesPage() {
   return <div className="stack">
     <PageTour id="resources" />
-    <div><h1><Library size={22} /> المصادر</h1>
-      <p className="muted">مصادر إضافية تساعدك تتدرب بره السيشنات: فيديوهات شادوينج وبودكاست إنجليزي.</p></div>
+    <div><h1><Library size={22} /> {tr('المصادر')}</h1>
+      <p className="muted">{tr('مصادر إضافية تساعدك تتدرب بره السيشنات: فيديوهات شادوينج وبودكاست إنجليزي.')}</p></div>
 
     <Card>
-      <SectionTitle title="مصادر الشادوينج" action={<Badge tone="green"><Headphones size={12} /> شادوينج</Badge>} />
-      <p className="muted" style={{ marginBottom: '.4rem' }}>بلاي ليستات شادوينج على يوتيوب:</p>
+      <SectionTitle title={tr('مصادر الشادوينج')} action={<Badge tone="green"><Headphones size={12} /> {tr('شادوينج')}</Badge>} />
+      <p className="muted" style={{ marginBottom: '.4rem' }}>{tr('بلاي ليستات شادوينج على يوتيوب:')}</p>
       <LinkGrid items={SHADOW_PLAYLISTS} label="Playlist" href={playlistUrl} />
     </Card>
 
     <Card>
-      <SectionTitle title="أهم 10 قنوات لتعلّم الإنجليزي" action={<Badge tone="red">يوتيوب</Badge>} />
+      <SectionTitle title={tr('أهم 10 قنوات لتعلّم الإنجليزي')} action={<Badge tone="red">{tr('يوتيوب')}</Badge>} />
       <div className="grid g2">{TOP_CHANNELS.map(([name, why], i) => <a key={name} className="section-card" href={searchUrl(name)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
-        <div className="row between"><strong dir="ltr" className="en">{i + 1}. {name}</strong><Badge tone="blue">افتح ↗</Badge></div>
-        <p className="muted" style={{ margin: '.3rem 0 0' }}>{why}</p>
+        <div className="row between"><strong dir="ltr" className="en">{i + 1}. {name}</strong><Badge tone="blue">{tr('افتح ↗')}</Badge></div>
+        <p className="muted" style={{ margin: '.3rem 0 0' }}>{tr(why)}</p>
       </a>)}</div>
     </Card>
 
     <Card>
-      <SectionTitle title="مواقع أسئلة وتدريب" action={<Badge tone="green">مجانية</Badge>} />
+      <SectionTitle title={tr('مواقع أسئلة وتدريب')} action={<Badge tone="green">{tr('مجانية')}</Badge>} />
       <div className="grid g2">{SITES.map(([name, url, why]) => <a key={name} className="section-card" href={url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
-        <div className="row between"><strong dir="ltr" className="en">{name}</strong><Badge tone="blue">افتح ↗</Badge></div>
-        <p className="muted" style={{ margin: '.3rem 0 0' }}>{why}</p>
+        <div className="row between"><strong dir="ltr" className="en">{name}</strong><Badge tone="blue">{tr('افتح ↗')}</Badge></div>
+        <p className="muted" style={{ margin: '.3rem 0 0' }}>{tr(why)}</p>
       </a>)}</div>
     </Card>
 
     <Card>
-      <SectionTitle title="ازاي تطوّر إنجليزيتك" action={<Badge tone="amber">نصايح</Badge>} />
-      <ol className="muted" style={{ lineHeight: 2, paddingInlineStart: '1.2rem', margin: 0 }}>{TIPS.map((x) => <li key={x}>{x}</li>)}</ol>
+      <SectionTitle title={tr('ازاي تطوّر إنجليزيتك')} action={<Badge tone="amber">{tr('نصايح')}</Badge>} />
+      <ol className="muted" style={{ lineHeight: 2, paddingInlineStart: '1.2rem', margin: 0 }}>{TIPS.map((x) => <li key={x}>{tr(x)}</li>)}</ol>
     </Card>
 
     <Card>
-      <SectionTitle title="مصادر بودكاست — Podcast channels" action={<Badge tone="amber"><Mic2 size={12} /> بودكاست</Badge>} />
+      <SectionTitle title={tr('مصادر بودكاست — Podcast channels')} action={<Badge tone="amber"><Mic2 size={12} /> {tr('بودكاست')}</Badge>} />
       <LinkGrid items={PODCAST_CHANNELS} label="Podcast" href={castboxUrl} />
     </Card>
 
     <Card>
-      <SectionTitle title="English Podcast" action={<Badge tone="amber"><Mic2 size={12} /> بودكاست</Badge>} />
+      <SectionTitle title="English Podcast" action={<Badge tone="amber"><Mic2 size={12} /> {tr('بودكاست')}</Badge>} />
       <LinkGrid items={ENGLISH_PODCASTS} label="English Podcast" href={castboxUrl} />
     </Card>
   </div>;

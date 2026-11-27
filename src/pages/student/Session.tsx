@@ -21,6 +21,7 @@ import { Play, Volume2, Star, Check, X } from 'lucide-react';
 import { statusTone } from './shared';
 
 import { materialPdf, PdfActions } from './materialPdf';
+import { tr, uiDir } from '../../lib/i18n';
 
 export function SessionPage({ sessionId }: any) {
   const { user, data, put, grantScore, log } = useApp();
@@ -58,7 +59,7 @@ export function SessionPage({ sessionId }: any) {
   }, [tab, sessionId]);
   const s = data.sessions.find((x: any) => x.id === sessionId);
   if (!user) return null;
-  if (!s) return <Empty title="السيشن مش موجودة" hint="يمكن اتشالت أو الرابط غلط." />;
+  if (!s) return <Empty title={tr('السيشن مش موجودة')} hint={tr('يمكن اتشالت أو الرابط غلط.')} />;
   const locked = !sessionOpen(user, s, data.levels);
   const done = data.progress.filter((p) => p.studentId === user.id && p.sessionId === s.id).map((p) => p.sectionId);
   const qs = data.questions.filter((q) => q.sessionId === s.id && !q.admin);
@@ -164,27 +165,27 @@ export function SessionPage({ sessionId }: any) {
   }
   const doneParts = done.filter((d) => d.startsWith(`${s.id}-`) || d.startsWith('word:')).length;
   return <div className="stack sess">
-    <div className="row"><button className="icon-btn" onClick={() => window.history.length > 1 ? window.history.back() : go('/roadmap')}>→ السابق</button></div>
+    <div className="row"><button className="icon-btn" onClick={() => window.history.length > 1 ? window.history.back() : go('/roadmap')}>{tr('→ السابق')}</button></div>
     <PageTour id={`session-${tab}`} />
     <Card className="session-head between">
       <div><div className="muted session-head-meta">Session {s.order} · {data.levels.find((l) => l.id === s.levelId)?.title}{[s.topic, fmtDate(s.dueAt)].filter(Boolean).length ? ' · ' + [s.topic, fmtDate(s.dueAt)].filter(Boolean).join(' · ') : ''}</div><h1 className="session-head-title">{s.title}</h1></div>
-      <Badge tone={locked ? 'muted' : statusTone[st.key]}>{locked ? '🔒 مقفول' : st.label}</Badge>
+      <Badge tone={locked ? 'muted' : statusTone[st.key]}>{locked ? tr('🔒 مقفول') : tr(st.label)}</Badge>
     </Card>
-    {locked && <div className="note">🔒 تقدر تقرأ كل حاجة في السيشن دي، بس هي مقفولة لحسابك.
+    {locked && <div className="note">{tr('🔒 تقدر تقرأ كل حاجة في السيشن دي، بس هي مقفولة لحسابك.')}
         {user.subscribed === false && <div className="row" style={{ marginTop: '.6rem' }}><SubscribeButtons size="sm" /></div>}
       </div>}
-    <nav className="steps" dir="ltr" aria-label="خطوات السيشن">{tabs.map((t, i) => <button key={t.id} className={`step ${tab === t.id ? 'active' : ''} ${t.done ? 'is-done' : ''}`} onClick={() => openTab(t.id)}>
+    <nav className="steps" dir="ltr" aria-label={tr('خطوات السيشن')}>{tabs.map((t, i) => <button key={t.id} className={`step ${tab === t.id ? 'active' : ''} ${t.done ? 'is-done' : ''}`} onClick={() => openTab(t.id)}>
       <span className="step-n">{t.done && tab !== t.id ? <Check size={14} strokeWidth={3} /> : i + 1}</span><span className="step-l">{t.label}</span>
     </button>)}</nav>
     <div className="sess-grid">
     <div className="sess-main stack">
     {user.subscribed === false && <Card className="shadow-inline">
-      <div className="row between"><span>🎧 {tab === 'vocabulary' ? 'عرف كلمات أكتر واستخدمها في كلامك.' : tab === 'grammar' ? 'كمّل وتخلي الجرامر أسهل وميبقاش عقدة.' : tab === 'practice' ? 'تاسكات يومية هتخليك تتكلم إنجليزي كل يوم وتوصل لهدفك أسرع.' : tab === 'quiz' ? 'راجع الكلمات والجرامر قبل الكويز.' : 'اسمع السيشن وردّد ورا المتحدث.'}</span>
+      <div className="row between"><span>🎧 {tab === 'vocabulary' ? tr('عرف كلمات أكتر واستخدمها في كلامك.') : tab === 'grammar' ? tr('كمّل وتخلي الجرامر أسهل وميبقاش عقدة.') : tab === 'practice' ? tr('تاسكات يومية هتخليك تتكلم إنجليزي كل يوم وتوصل لهدفك أسرع.') : tab === 'quiz' ? tr('راجع الكلمات والجرامر قبل الكويز.') : tr('اسمع السيشن وردّد ورا المتحدث.')}</span>
         <SubscribeButtons size="sm" /></div>
     </Card>}
     {tab === 'quiz' ? <Card>
-      <div className="between"><div><h3>كويز السيشن</h3><small className="muted">{sessionQuiz.length} سؤال على الكلمات والجرامر · النقاط على قد درجتك</small></div>
-        <Button onClick={() => go(`/quiz/${s.id}`)} disabled={!sessionQuiz.length || locked}>{sessionQuiz.length ? 'ابدأ الكويز' : 'مفيش أسئلة لسه'}</Button></div>
+      <div className="between"><div><h3>{tr('كويز السيشن')}</h3><small className="muted">{sessionQuiz.length} {tr('سؤال على الكلمات والجرامر · النقاط على قد درجتك')}</small></div>
+        <Button onClick={() => go(`/quiz/${s.id}`)} disabled={!sessionQuiz.length || locked}>{sessionQuiz.length ? tr('ابدأ الكويز') : tr('مفيش أسئلة لسه')}</Button></div>
     </Card> : <>
       {tab === 'vocabulary' && (words.length > 0 ? <div className="stack">
         <div className="vocab-grid">{words.map((w, n) => {
@@ -196,9 +197,9 @@ export function SessionPage({ sessionId }: any) {
             <span className="vocab-index">{String(n + 1).padStart(2, '0')}</span>
             <Badge tone="blue">{w.type || 'word'}</Badge>
             <span className="vocab-tools">
-              <button className="icon-btn play-btn" title="اسمع الكلمة دي في كلام حقيقي" onClick={() => openYouglish(w.word)}><Play size={16} /></button>
-              <button className="icon-btn" title="شغّل النطق الأصلي" onClick={() => pronounce(w)}><Volume2 size={16} /></button>
-              <button className="icon-btn" title={savedWord(w.word) ? 'شيلها من كلماتي' : 'احفظ الكلمة'} onClick={() => toggleSave(w)} disabled={locked}>{savedWord(w.word) ? <Star size={16} /> : <Star size={16} strokeWidth={1.5} />}</button>
+              <button className="icon-btn play-btn" title={tr('اسمع الكلمة دي في كلام حقيقي')} onClick={() => openYouglish(w.word)}><Play size={16} /></button>
+              <button className="icon-btn" title={tr('شغّل النطق الأصلي')} onClick={() => pronounce(w)}><Volume2 size={16} /></button>
+              <button className="icon-btn" title={savedWord(w.word) ? tr('شيلها من كلماتي') : tr('احفظ الكلمة')} onClick={() => toggleSave(w)} disabled={locked}>{savedWord(w.word) ? <Star size={16} /> : <Star size={16} strokeWidth={1.5} />}</button>
             </span>
           </div>
           <div className="vocab-word en" dir="ltr">{w.word}</div>
@@ -207,7 +208,7 @@ export function SessionPage({ sessionId }: any) {
           {def && <div className="vocab-def en" dir="ltr">{def}</div>}
           {example && <div className="vocab-example en" dir="ltr">“{example}”</div>}
           <div className="youglish-row">
-            <span className="youglish-label" dir="rtl">اسمعها في الاستخدام</span>
+            <span className="youglish-label" dir={uiDir()}>{tr('اسمعها في الاستخدام')}</span>
             <span className="youglish-btns">
               {YOUGLISH_ACCENTS.map((a) => <button key={a.code} type="button" className="yg-btn en"
                 onClick={() => openYouglish(w.word, a.code)}
@@ -215,24 +216,24 @@ export function SessionPage({ sessionId }: any) {
             </span>
           </div>
           <button className={`btn vocab-known ${known ? 'btn-ghost' : 'btn-primary'}`} onClick={() => markWord(w.word)} disabled={locked || known}>
-            {known ? '✓ اتذاكرت' : 'عارف الكلمة دي'}
+            {known ? tr('✓ اتذاكرت') : tr('عارف الكلمة دي')}
           </button>
         </article>;
       })}</div>
-        {!allWordsStudied && words.length > 0 && <div className="note">علّم كل الكلمات إنها اتذاكرت عشان يفتح كويز الكلمات.</div>}
+        {!allWordsStudied && words.length > 0 && <div className="note">{tr('علّم كل الكلمات إنها اتذاكرت عشان يفتح كويز الكلمات.')}</div>}
         {allWordsStudied && wordQs.length > 0 && <Card className="grammar-training ltr-scope">
-          <div className="between"><div><h3 dir="ltr">Words Quiz</h3><small className="muted" dir="rtl">راجع الكلمات الجديدة بتاعة السيشن دي.</small></div><Badge tone="green">{wordQs.length} questions</Badge></div>
-          {wordTaken && <div className="note" dir="rtl" style={{ marginTop: '.6rem' }}>الكويز ده اتحل قبل كده (محاولة واحدة) — دي إجاباتك والغلطات متعلّم عليها.</div>}
+          <div className="between"><div><h3 dir="ltr">Words Quiz</h3><small className="muted" dir={uiDir()}>{tr('راجع الكلمات الجديدة بتاعة السيشن دي.')}</small></div><Badge tone="green">{wordQs.length} questions</Badge></div>
+          {wordTaken && <div className="note" dir={uiDir()} style={{ marginTop: '.6rem' }}>{tr('الكويز ده اتحل قبل كده (محاولة واحدة) — دي إجاباتك والغلطات متعلّم عليها.')}</div>}
           <div className="stack" style={{ marginTop: '.8rem' }}>{wordQs.map((q, i) => <div key={q.id} className="exercise-item">
             <div className="between"><strong>{i + 1}. {q.prompt}</strong>{wRes && <Badge tone={wRes.marks[q.id] ? 'green' : 'red'}>{wRes.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
             {wRes && !wRes.marks[q.id] && <div className="why-box" dir="rtl">{whyWrong(q as any, s.id, data.dictionary)}</div>}
             {q.options.length ? <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${wAns[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={wAns[q.id] === o} onChange={() => setWordAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked || wordTaken} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
-              : <input value={wAns[q.id] || ''} onChange={(e) => setWordAnswers((a) => ({ ...a, [q.id]: e.target.value }))} placeholder="اكتب الكلمة الناقصة…" disabled={locked || wordTaken} dir="ltr" />}
+              : <input value={wAns[q.id] || ''} onChange={(e) => setWordAnswers((a) => ({ ...a, [q.id]: e.target.value }))} placeholder={tr('اكتب الكلمة الناقصة…')} disabled={locked || wordTaken} dir="ltr" />}
           </div>)}</div>
-          {!wordTaken && <Button style={{ marginTop: '.8rem' }} onClick={submitWordQuiz} disabled={locked || wordTaken || !wordQs.every((q) => (wAns[q.id] || '').trim())}>صحح إجابات الكلمات</Button>}
+          {!wordTaken && <Button style={{ marginTop: '.8rem' }} onClick={submitWordQuiz} disabled={locked || wordTaken || !wordQs.every((q) => (wAns[q.id] || '').trim())}>{tr('صحح إجابات الكلمات')}</Button>}
           {wRes && <div className="result-good" style={{ marginTop: '.6rem' }}>Word score: {wRes.score} / {wRes.max}</div>}
         </Card>}
-      </div> : <Empty title="مفيش كلمات في السيشن دي" hint="الكلمات هتظهر هنا أول ما تتضاف للديكشنري." />)}
+      </div> : <Empty title={tr('مفيش كلمات في السيشن دي')} hint={tr('الكلمات هتظهر هنا أول ما تتضاف للديكشنري.')} />)}
       {tab === 'grammar' && <>
         {slides.length ? <div className="stack">{slides.map((t: any, i: number) => <Card key={`${s.id}-${i}`} className="grammar-topic">
           <div className="grammar-kicker">GRAMMAR · {i + 1} / {slides.length}</div>
@@ -241,7 +242,7 @@ export function SessionPage({ sessionId }: any) {
           {t.detail && <p className="grammar-explain" dir="rtl">{t.detail}</p>}
           {t.examples?.length > 0 && <div className="grammar-examples">
             <div className="grammar-label" dir="ltr">Examples</div>
-            {t.examples.map((ex: string, k: number) => <button key={k} type="button" className="grammar-example en" dir="ltr" onClick={() => speak(ex)} title="استمع"><Volume2 size={16} aria-hidden="true" /><span>{ex}</span></button>)}
+            {t.examples.map((ex: string, k: number) => <button key={k} type="button" className="grammar-example en" dir="ltr" onClick={() => speak(ex)} title={tr('استمع')}><Volume2 size={16} aria-hidden="true" /><span>{ex}</span></button>)}
           </div>}
           {t.mistakes?.length > 0 && <div className="grammar-mistakes">
             <div className="grammar-label" dir="ltr">Common Mistakes</div>
@@ -250,29 +251,29 @@ export function SessionPage({ sessionId }: any) {
               <div className="gm-right"><Check size={15} aria-hidden="true" /><span>{right}</span></div>
             </div>)}
           </div>}
-        </Card>)}</div> : <Empty title="مفيش جرامر لسه" hint="ملاحظات الجرامر للسيشن دي هتظهر هنا." />}
+        </Card>)}</div> : <Empty title={tr('مفيش جرامر لسه')} hint={tr('ملاحظات الجرامر للسيشن دي هتظهر هنا.')} />}
         {grammarAll.length > 0 && <Card className="grammar-training ltr-scope">
-          <div className="between"><div><h3 dir="ltr">Grammar Practice</h3><small className="muted" dir="rtl">الممارسة بعد الشرح.</small></div><Badge tone="green">{grammarAll.length} questions</Badge></div>
-          {grammarTaken && <div className="note" dir="rtl" style={{ marginTop: '.6rem' }}>الكويز ده اتحل قبل كده (محاولة واحدة) — دي إجاباتك والغلطات متعلّم عليها.</div>}
+          <div className="between"><div><h3 dir="ltr">Grammar Practice</h3><small className="muted" dir={uiDir()}>{tr('الممارسة بعد الشرح.')}</small></div><Badge tone="green">{grammarAll.length} questions</Badge></div>
+          {grammarTaken && <div className="note" dir={uiDir()} style={{ marginTop: '.6rem' }}>{tr('الكويز ده اتحل قبل كده (محاولة واحدة) — دي إجاباتك والغلطات متعلّم عليها.')}</div>}
           <div className="stack" style={{ marginTop: '.8rem' }}>{grammarAll.map((q, i) => <div key={q.id} className="exercise-item">
             <div className="between"><strong>{i + 1}. {q.prompt}</strong>{gRes && <Badge tone={gRes.marks[q.id] ? 'green' : 'red'}>{gRes.marks[q.id] ? '✓ Correct' : `✗ ${String(q.correct)}`}</Badge>}</div>
             {gRes && !gRes.marks[q.id] && <div className="why-box" dir="rtl">{whyWrong(q as any, s.id, data.dictionary)}</div>}
             <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{q.options.map((o) => <label key={o} className={`quiz-opt ${gAns[q.id] === o ? 'selected' : ''}`}><input type="radio" name={q.id} checked={gAns[q.id] === o} onChange={() => setGrammarAnswers((a) => ({ ...a, [q.id]: o }))} disabled={locked || grammarTaken} style={{ width: 'auto' }} /> <span>{o}</span></label>)}</div>
           </div>)}</div>
-          {!grammarTaken && <Button style={{ marginTop: '.8rem' }} onClick={submitGrammar} disabled={locked || grammarTaken || !grammarAll.every((q) => gAns[q.id])}>صحح إجابات الجرامر</Button>}
+          {!grammarTaken && <Button style={{ marginTop: '.8rem' }} onClick={submitGrammar} disabled={locked || grammarTaken || !grammarAll.every((q) => gAns[q.id])}>{tr('صحح إجابات الجرامر')}</Button>}
           {gRes && <div className="result-good" style={{ marginTop: '.6rem' }}>Grammar score: {gRes.score} / {gRes.max}</div>}
         </Card>}
       </>}
       {tab === 'practice' && <div className="stack ltr-scope" dir="ltr">
         <Card className="activity-card">
           <SectionTitle title="Speaking Practice" action={<Badge tone="blue">{talk.length} questions</Badge>} />
-          <p className="muted" dir="rtl">أسئلة مفتوحة للتدريب — اتكلم بصوت عالي، ولو عايز رأي المدرّس ابعت إجابتك على أي سؤال للجروب.</p>
-          {talk.map((q, i) => <div key={i} className="req-item" style={{ marginTop: '.5rem', gap: '.5rem', flexWrap: 'wrap' }}><span className="req-check">{i + 1}</span><span dir="ltr" className="en" style={{ flex: 1 }}>{q}</span><a className="btn btn-ghost btn-sm" dir="rtl" href={waGroupShare(`فويس نوت Speakozy — ${s.title}\n${i + 1}. ${q}`)} target="_blank" rel="noreferrer">ابعت إجابتك على واتساب</a></div>)}
+          <p className="muted" dir={uiDir()}>{tr('أسئلة مفتوحة للتدريب — اتكلم بصوت عالي، ولو عايز رأي المدرّس ابعت إجابتك على أي سؤال للجروب.')}</p>
+          {talk.map((q, i) => <div key={i} className="req-item" style={{ marginTop: '.5rem', gap: '.5rem', flexWrap: 'wrap' }}><span className="req-check">{i + 1}</span><span dir="ltr" className="en" style={{ flex: 1 }}>{q}</span><a className="btn btn-ghost btn-sm" dir={uiDir()} href={waGroupShare(tr('فويس نوت Speakozy — {0}\n{1}. {2}', [s.title, i + 1, q]))} target="_blank" rel="noreferrer">{tr('ابعت إجابتك على واتساب')}</a></div>)}
         </Card>
         <Card className="activity-card">
-          <SectionTitle title="Voice Notes" action={<Badge>اختياري</Badge>} />
-          <p className="muted" dir="rtl">اختار أي سؤال من الأسئلة اللي فوق، سجّل إجابتك بصوتك، وابعتها على واتساب Speakozy علشان المدرّس يسمعها.</p>
-          <a className="btn btn-primary btn-sm" href={waGroupShare(`فويس نوت Speakozy — ${s.title}`)} target="_blank" rel="noreferrer">افتح الواتساب وابعت</a>
+          <SectionTitle title="Voice Notes" action={<Badge>{tr('اختياري')}</Badge>} />
+          <p className="muted" dir={uiDir()}>{tr('اختار أي سؤال من الأسئلة اللي فوق، سجّل إجابتك بصوتك، وابعتها على واتساب Speakozy علشان المدرّس يسمعها.')}</p>
+          <a className="btn btn-primary btn-sm" href={waGroupShare(tr('فويس نوت Speakozy — {0}', [s.title]))} target="_blank" rel="noreferrer">{tr('افتح الواتساب وابعت')}</a>
         </Card>
       </div>}
       {tab === 'overview' && <div className="stack" dir="ltr">
@@ -290,23 +291,23 @@ export function SessionPage({ sessionId }: any) {
     </div>
     <aside className="sess-aside">
       <Card className="study-progress">
-        <div className="between"><span className="muted">تقدم السيشن</span><strong>{pct}%</strong></div>
+        <div className="between"><span className="muted">{tr('تقدم السيشن')}</span><strong>{pct}%</strong></div>
         <div className="progress-track"><span style={{ width: `${pct}%` }} /></div>
-        <small className="muted">{doneParts} من {totalParts} جزء خلص</small>
+        <small className="muted">{doneParts} {tr('من')} {totalParts} {tr('جزء خلص')}</small>
       </Card>
       {nextTab && <div className="next-step">
-        <small>الخطوة الجاية</small>
+        <small>{tr('الخطوة الجاية')}</small>
         <strong dir="ltr">{nextTab.label}</strong>
-        <button className="btn btn-primary" onClick={() => openTab(nextTab.id)}>كمّل ←</button>
+        <button className="btn btn-primary" onClick={() => openTab(nextTab.id)}>{tr('كمّل ←')}</button>
       </div>}
       {materialPdf(s) && <Card className="pdf-line">
-        <strong>ملخص العرض للمراجعة</strong>
-        <div className="row" style={{ marginTop: '.5rem' }}><PdfActions s={s} extra={pdfAllowed(user, s, data.levels) && s.driveUrl ? <a className="btn btn-ghost btn-sm" href={s.driveUrl} target="_blank" rel="noreferrer">PDF من الدرايف ↗</a> : null} /></div>
+        <strong>{tr('ملخص العرض للمراجعة')}</strong>
+        <div className="row" style={{ marginTop: '.5rem' }}><PdfActions s={s} extra={pdfAllowed(user, s, data.levels) && s.driveUrl ? <a className="btn btn-ghost btn-sm" href={s.driveUrl} target="_blank" rel="noreferrer">{tr('PDF من الدرايف ↗')}</a> : null} /></div>
       </Card>}
       {s.driveUrl && <Card>
-        <strong>مصدر إضافي للمشاهدة</strong>
-        <p className="muted" style={{ margin: '.4rem 0 .6rem' }}>للمشاهدة بس. لو ما فتحش، يمكن صلاحيات الملف غلط — المحتوى المكتوب هنا كامل.</p>
-        <a className="btn btn-ghost btn-sm" href={s.driveUrl} target="_blank" rel="noreferrer">افتح الملف ↗</a>
+        <strong>{tr('مصدر إضافي للمشاهدة')}</strong>
+        <p className="muted" style={{ margin: '.4rem 0 .6rem' }}>{tr('للمشاهدة بس. لو ما فتحش، يمكن صلاحيات الملف غلط — المحتوى المكتوب هنا كامل.')}</p>
+        <a className="btn btn-ghost btn-sm" href={s.driveUrl} target="_blank" rel="noreferrer">{tr('افتح الملف ↗')}</a>
       </Card>}
     </aside>
     </div>

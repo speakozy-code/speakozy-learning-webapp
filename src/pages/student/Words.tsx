@@ -7,6 +7,7 @@ import { schedule, previewLabel, dueWords, type Grade } from '../../lib/srs';
 import { Volume2, Trash2 } from 'lucide-react';
 
 import { speakWord } from './wordHelpers';
+import { tr } from '../../lib/i18n';
 
 export function WordsPage() {
   const { user, data, put, remove } = useApp();
@@ -39,50 +40,50 @@ export function WordsPage() {
   }
   return <div className="stack">
     <PageTour id="words" />
-    <div><h1>الكلمات</h1><p className="muted">راجع كلماتك بنظام المراجعة المتباعدة (زي Anki): كل ما تعرف الكلمة أكتر بتتأجل لمدة أطول، والكلمة اللي بتنساها بترجعلك بسرعة. هيجيلك إشعار لما يبقى فيه كلمات مستحقة.</p></div>
-    <div><Button size="sm" onClick={() => setAdding({ word: '', meaning: '', example: '' })}>+ ضيف كلمة بنفسك</Button></div>
-    <Modal open={!!adding} title="ضيف كلمة" onClose={() => setAdding(null)}>
-      <Field label="الكلمة بالإنجليزي"><input dir="ltr" value={adding?.word || ''} onChange={(e) => setAdding({ ...adding!, word: e.target.value })} placeholder="e.g. reliable" /></Field>
-      <Field label="المعنى بالعربي"><input dir="rtl" value={adding?.meaning || ''} onChange={(e) => setAdding({ ...adding!, meaning: e.target.value })} /></Field>
-      <Field label="جملة مثال (اختياري)"><input dir="ltr" value={adding?.example || ''} onChange={(e) => setAdding({ ...adding!, example: e.target.value })} /></Field>
-      <Button onClick={addOwn} disabled={!adding?.word.trim() || !adding?.meaning.trim()}>ضيف للكروت</Button>
+    <div><h1>{tr('الكلمات')}</h1><p className="muted">{tr('راجع كلماتك بنظام المراجعة المتباعدة (زي Anki): كل ما تعرف الكلمة أكتر بتتأجل لمدة أطول، والكلمة اللي بتنساها بترجعلك بسرعة. هيجيلك إشعار لما يبقى فيه كلمات مستحقة.')}</p></div>
+    <div><Button size="sm" onClick={() => setAdding({ word: '', meaning: '', example: '' })}>{tr('+ ضيف كلمة بنفسك')}</Button></div>
+    <Modal open={!!adding} title={tr('ضيف كلمة')} onClose={() => setAdding(null)}>
+      <Field label={tr('الكلمة بالإنجليزي')}><input dir="ltr" value={adding?.word || ''} onChange={(e) => setAdding({ ...adding!, word: e.target.value })} placeholder="e.g. reliable" /></Field>
+      <Field label={tr('المعنى بالعربي')}><input dir="rtl" value={adding?.meaning || ''} onChange={(e) => setAdding({ ...adding!, meaning: e.target.value })} /></Field>
+      <Field label={tr('جملة مثال (اختياري)')}><input dir="ltr" value={adding?.example || ''} onChange={(e) => setAdding({ ...adding!, example: e.target.value })} /></Field>
+      <Button onClick={addOwn} disabled={!adding?.word.trim() || !adding?.meaning.trim()}>{tr('ضيف للكروت')}</Button>
     </Modal>
     <div className="grid g3">
-      <Stat label="كلمات محفوظة" value={saved.length} />
-      <Stat label="مستحقة للمراجعة" value={due.length} tone="green" />
-      <Stat label="لسه بتنساها" value={saved.filter((w) => w.review).length} />
+      <Stat label={tr('كلمات محفوظة')} value={saved.length} />
+      <Stat label={tr('مستحقة للمراجعة')} value={due.length} tone="green" />
+      <Stat label={tr('لسه بتنساها')} value={saved.filter((w) => w.review).length} />
     </div>
-    <Tabs tabs={[{ id: 'review', label: `مراجعة (${due.length})` }, { id: 'all', label: `كل كلماتي (${saved.length})` }]} active={tab} onChange={setTab} />
+    <Tabs tabs={[{ id: 'review', label: tr('مراجعة ({0})', [due.length]) }, { id: 'all', label: tr('كل كلماتي ({0})', [saved.length]) }]} active={tab} onChange={setTab} />
     {tab === 'review' && <Card>
       {card ? <div className="flashcard">
-        <div className="muted">باقي {due.length} كلمة للمراجعة</div>
+        <div className="muted">{tr('باقي')} {due.length} {tr('كلمة للمراجعة')}</div>
         <h2 dir="ltr" className="en" style={{ fontSize: '2rem' }}>{card.word}</h2>
-        <Button variant="ghost" onClick={() => speakWord(card.word)}><Volume2 size={16} /> اسمع</Button>
+        <Button variant="ghost" onClick={() => speakWord(card.word)}><Volume2 size={16} /> {tr('اسمع')}</Button>
         {flipped
           ? <>
             <div className="result-good" dir="rtl" style={{ margin: '1rem 0' }}>{card.meaning}</div>
             {card.transcript && <div className="muted en" dir="ltr" style={{ marginBottom: '.8rem' }}>{card.transcript}</div>}
             <div className="row" style={{ justifyContent: 'center' }}>
-              <Button variant="danger" onClick={() => rate('again')}>لسه بنساها<small style={{ display: 'block', opacity: .8 }}>{previewLabel(card, 'again')}</small></Button>
-              <Button variant="ghost" onClick={() => rate('hard')}>صعبة<small style={{ display: 'block', opacity: .8 }}>{previewLabel(card, 'hard')}</small></Button>
-              <Button onClick={() => rate('good')}>كويسة<small style={{ display: 'block', opacity: .8 }}>{previewLabel(card, 'good')}</small></Button>
-              <Button variant="ghost" onClick={() => rate('easy')}>سهلة<small style={{ display: 'block', opacity: .8 }}>{previewLabel(card, 'easy')}</small></Button>
+              <Button variant="danger" onClick={() => rate('again')}>{tr('لسه بنساها')}<small style={{ display: 'block', opacity: .8 }}>{previewLabel(card, 'again')}</small></Button>
+              <Button variant="ghost" onClick={() => rate('hard')}>{tr('صعبة')}<small style={{ display: 'block', opacity: .8 }}>{previewLabel(card, 'hard')}</small></Button>
+              <Button onClick={() => rate('good')}>{tr('كويسة')}<small style={{ display: 'block', opacity: .8 }}>{previewLabel(card, 'good')}</small></Button>
+              <Button variant="ghost" onClick={() => rate('easy')}>{tr('سهلة')}<small style={{ display: 'block', opacity: .8 }}>{previewLabel(card, 'easy')}</small></Button>
             </div>
           </>
-          : <Button style={{ marginTop: '1rem' }} onClick={() => setFlipped(true)}>اقلب الكارت</Button>}
-      </div> : <Empty icon="🎉" title={saved.length ? 'خلصت مراجعة النهاردة' : 'لسه ما حفظتش كلمات'} hint={saved.length ? (nextUp ? `الكلمة الجاية هتتراجع ${new Date(nextUp).toLocaleString('ar-EG', { weekday: 'long', hour: 'numeric', minute: '2-digit' })} — هيجيلك إشعار.` : 'ارجع بكرة لباقي الكلمات.') : 'احفظ كلمات من الديكشنري أو من السيشنات وهتظهر هنا.'} />}
+          : <Button style={{ marginTop: '1rem' }} onClick={() => setFlipped(true)}>{tr('اقلب الكارت')}</Button>}
+      </div> : <Empty icon="🎉" title={saved.length ? tr('خلصت مراجعة النهاردة') : tr('لسه ما حفظتش كلمات')} hint={saved.length ? (nextUp ? tr('الكلمة الجاية هتتراجع {0} — هيجيلك إشعار.', [new Date(nextUp).toLocaleString('ar-EG', { weekday: 'long', hour: 'numeric', minute: '2-digit' })]) : tr('ارجع بكرة لباقي الكلمات.')) : tr('احفظ كلمات من الديكشنري أو من السيشنات وهتظهر هنا.')} />}
     </Card>}
     {tab === 'all' && <Card>
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="دوّر في كلماتك" aria-label="دوّر في كلماتك" style={{ marginBottom: '.8rem' }} />
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr('دوّر في كلماتك')} aria-label={tr('دوّر في كلماتك')} style={{ marginBottom: '.8rem' }} />
       {list.length ? <div className="saved-grid">{list.map((w) => <div key={w.id} className={`saved-card ${w.review ? 'needs-review' : ''}`}>
         <div className="saved-word en" dir="ltr">{w.word}</div>
         {w.transcript && <div className="saved-transcript en" dir="ltr">{w.transcript}</div>}
         <div className="saved-meaning" dir="rtl">{w.meaning}</div>
         <div className="saved-actions">
-          <button className="icon-btn" title="اسمع النطق" onClick={() => speakWord(w.word)}><Volume2 size={16} /></button>
-          <button className="icon-btn danger" title="حذف" onClick={() => remove('savedWords', w.id)}><Trash2 size={16} /></button>
+          <button className="icon-btn" title={tr('اسمع النطق')} onClick={() => speakWord(w.word)}><Volume2 size={16} /></button>
+          <button className="icon-btn danger" title={tr('حذف')} onClick={() => remove('savedWords', w.id)}><Trash2 size={16} /></button>
         </div>
-      </div>)}</div> : <Empty title="مفيش كلمات" hint="احفظ كلمات من الديكشنري." />}
+      </div>)}</div> : <Empty title={tr('مفيش كلمات')} hint={tr('احفظ كلمات من الديكشنري.')} />}
     </Card>}
   </div>;
 }

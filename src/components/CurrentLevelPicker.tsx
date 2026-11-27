@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../lib/store';
 import { pickableLevels } from '../lib/domain';
+import { tr } from '../lib/i18n';
 
 /** Students with more than one opened level choose here which one they are working on now (saved on the profile). */
 export function CurrentLevelPicker({ dark = false }: { dark?: boolean }) {
@@ -10,11 +11,11 @@ export function CurrentLevelPicker({ dark = false }: { dark?: boolean }) {
   if (levels.length < 2) return null;
   return <div className={`level-picker${dark ? ' on-dark' : ''}`}>
     <label>
-      <span>مستواك الحالي</span>
+      <span>{tr('مستواك الحالي')}</span>
       <select value={user.levelId} onChange={(e) => { void saveProfile({ currentLevelId: e.target.value }); }}>
         {levels.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}
       </select>
     </label>
-    <small>النقاط والتقدّم والتاسكات والشادوينج والماتيريال هتتعرض على المستوى ده.</small>
+    <small>{tr('النقاط والتقدّم والتاسكات والشادوينج والماتيريال هتتعرض على المستوى ده.')}</small>
   </div>;
 }

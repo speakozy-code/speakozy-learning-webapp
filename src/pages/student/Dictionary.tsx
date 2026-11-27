@@ -10,6 +10,7 @@ import { YouGlishDock } from '../../components/YouGlishDock';
 import { Volume2 } from 'lucide-react';
 
 import { phon, easyExamples } from './wordHelpers';
+import { tr } from '../../lib/i18n';
 
 export function DictionaryPage() {
   const { user, data, put, remove } = useApp();
@@ -123,39 +124,39 @@ export function DictionaryPage() {
 
   return <div className="stack">
     <PageTour id="dictionary" />
-    <div><h1>الديكشنري</h1><p className="muted">تقدر تحفظ أي كلمة، أو تسمعها من المتحدثين الأصليين على YouGlish. الديكشنري فيه آلاف الكلمات الجاهزة، ولو مش موجودة بنجيب معناها من المصدر العالمي.</p></div>
+    <div><h1>{tr('الديكشنري')}</h1><p className="muted">{tr('تقدر تحفظ أي كلمة، أو تسمعها من المتحدثين الأصليين على YouGlish. الديكشنري فيه آلاف الكلمات الجاهزة، ولو مش موجودة بنجيب معناها من المصدر العالمي.')}</p></div>
 
     <Card className="search-hero">
-      <div className="row"><span style={{ fontSize: '1.4rem' }}>🔎</span><input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) { if (isArabicText(q) && arCands[0]) showWord(arCands[0]); else showWord(q); } }} placeholder="اكتب أي كلمة بالإنجليزي أو العربي... مثال: serendipity" aria-label="دوّر في الديكشنري" /></div>
+      <div className="row"><span style={{ fontSize: '1.4rem' }}>🔎</span><input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) { if (isArabicText(q) && arCands[0]) showWord(arCands[0]); else showWord(q); } }} placeholder={tr('اكتب أي كلمة بالإنجليزي أو العربي... مثال: serendipity')} aria-label={tr('دوّر في الديكشنري')} /></div>
       {suggestions.length > 0 && <div className="dict-suggest">{suggestions.map((d) => <button key={d.id} type="button" className="dict-suggest-item en" dir="ltr" onClick={() => { setQ(d.word); showWord(d.word); }}>{d.word}</button>)}</div>}
       <div className="row" style={{ marginTop: '.7rem', justifyContent: 'flex-end' }}>
-        <div className="row"><Button size="sm" variant="ghost" onClick={() => setManual(isArabicText(q) ? { word: '', meaning: q.trim(), type: 'noun', examples: '' } : { word: q.trim(), meaning: '', type: 'noun', examples: '' })}>+ ضيف كلمة</Button><Button size="sm" onClick={() => q.trim() && showWord(q)} disabled={!q.trim() || looking}>{looking ? 'بندوّر...' : 'دوّر عالميًا'}</Button></div>
+        <div className="row"><Button size="sm" variant="ghost" onClick={() => setManual(isArabicText(q) ? { word: '', meaning: q.trim(), type: 'noun', examples: '' } : { word: q.trim(), meaning: '', type: 'noun', examples: '' })}>{tr('+ ضيف كلمة')}</Button><Button size="sm" onClick={() => q.trim() && showWord(q)} disabled={!q.trim() || looking}>{looking ? tr('بندوّر...') : tr('دوّر عالميًا')}</Button></div>
       </div>
       {q.trim() && !looking && <div className="muted" style={{ marginTop: '.5rem', fontSize: '.82rem' }}>
-        نتايج محلية: {localResults.length} · <button className="icon-btn" onClick={() => showWord(q)}>دوّر عالميًا عن "{q}" ←</button>
+        {tr('نتايج محلية:')} {localResults.length} · <button className="icon-btn" onClick={() => showWord(q)}>{tr('دوّر عالميًا عن "')}{q}" ←</button>
       </div>}
       {arCands.length > 0 && <div className="global-hit">
-        <small className="muted">معناها بالإنجليزي</small>
+        <small className="muted">{tr('معناها بالإنجليزي')}</small>
         <div className="row" style={{ flexWrap: 'wrap', marginTop: '.4rem' }}>{arCands.map((w) => <button key={w} type="button" className="word-chip en" dir="ltr" onClick={() => showWord(w)}>{w}</button>)}</div>
       </div>}
       {globalHit && <div className="global-hit">
-        <div className="row between"><div><small className="muted">الديكشنري العالمي</small>
+        <div className="row between"><div><small className="muted">{tr('الديكشنري العالمي')}</small>
           <div className="row"><strong className="en" style={{ fontSize: '1.1rem' }}>{globalHit.word}</strong><Badge tone="blue">{globalHit.type}</Badge>{globalHit.phonetic && <span className="en muted" dir="ltr">{phon(globalHit.phonetic)}</span>}</div>
           <div className="en" dir="ltr">{globalHit.meaning}</div>
           {!!(globalHit.synonyms || []).length && <div className="row" style={{ marginTop: '.4rem' }}>{globalHit.synonyms!.slice(0, 6).map((x) => <span key={x} className="word-chip en">{x}</span>)}</div>}
         </div>
           <div className="row">
-            <Button size="sm" variant="ghost" onClick={() => pronounce(globalHit)}>استماع</Button>
+            <Button size="sm" variant="ghost" onClick={() => pronounce(globalHit)}>{tr('استماع')}</Button>
             <Button size="sm" variant="ghost" onClick={() => setYg({ word: globalHit.word, accent: 'us' })}>YouGlish</Button>
-            <Button size="sm" onClick={() => toggle(globalHit)}>{isSaved(globalHit.word) ? '✓ محفوظة' : 'ضيفها لكلماتي'}</Button>
+            <Button size="sm" onClick={() => toggle(globalHit)}>{isSaved(globalHit.word) ? tr('✓ محفوظة') : tr('ضيفها لكلماتي')}</Button>
           </div>
         </div>
       </div>}
     </Card>
 
     {wordOfDay && <Card className="word-day">
-      <div className="between"><div><div className="muted">كلمة اليوم</div><h2 dir="ltr" className="en" style={{ fontSize: '1.7rem' }}>{wordOfDay.word}</h2><div>{wordOfDay.meaning} · {wordOfDay.type}</div></div>
-        <div className="row"><Button variant="ghost" onClick={() => speak(wordOfDay.word)}><Volume2 size={16} /></Button><Button onClick={() => showWord(wordOfDay.word)}>افتح الكارت</Button></div>
+      <div className="between"><div><div className="muted">{tr('كلمة اليوم')}</div><h2 dir="ltr" className="en" style={{ fontSize: '1.7rem' }}>{wordOfDay.word}</h2><div>{wordOfDay.meaning} · {wordOfDay.type}</div></div>
+        <div className="row"><Button variant="ghost" onClick={() => speak(wordOfDay.word)}><Volume2 size={16} /></Button><Button onClick={() => showWord(wordOfDay.word)}>{tr('افتح الكارت')}</Button></div>
       </div>
     </Card>}
 
@@ -164,35 +165,35 @@ export function DictionaryPage() {
       {localResults.length ? <div className="stack">{localResults.map((d) => <div key={d.id} className="word-row">
         <button className="icon-btn" onClick={() => setDetail({ ...d, source: d.source || 'local' })}><strong className="en" dir="ltr">{d.word}</strong></button>
         <span className="muted" dir="rtl">{d.meaning}</span>
-        <div className="row"><Badge>{d.type}</Badge><button className="icon-btn" onClick={() => pronounce(d)}><Volume2 size={16} /></button><Button size="sm" variant={isSaved(d.word) ? 'ghost' : 'primary'} onClick={() => toggle(d)}>{isSaved(d.word) ? '✓' : 'حفظ'}</Button></div>
-      </div>)}</div> : <Empty icon="🔍" title="مفيش نتايج محلية" hint="هنجرّب المصدر العالمي تلقائيًا، أو تقدر تضيف الكلمة بنفسك." />}
+        <div className="row"><Badge>{d.type}</Badge><button className="icon-btn" onClick={() => pronounce(d)}><Volume2 size={16} /></button><Button size="sm" variant={isSaved(d.word) ? 'ghost' : 'primary'} onClick={() => toggle(d)}>{isSaved(d.word) ? '✓' : tr('حفظ')}</Button></div>
+      </div>)}</div> : <Empty icon="🔍" title={tr('مفيش نتايج محلية')} hint={tr('هنجرّب المصدر العالمي تلقائيًا، أو تقدر تضيف الكلمة بنفسك.')} />}
     </Card>}
 
-    <Modal open={!!detail} title="كارت الكلمة" onClose={() => setDetail(null)}>
+    <Modal open={!!detail} title={tr('كارت الكلمة')} onClose={() => setDetail(null)}>
       {detail && <div className="stack">
         <div className="between"><div><h2 dir="ltr" className="en" style={{ fontSize: '1.9rem' }}>{detail.word}</h2>
-          <div className="row"><Badge tone="green">{detail.type}</Badge>{detail.phonetic && <span className="muted" dir="ltr">{phon(detail.phonetic)}</span>}<Badge tone={detail.source === 'global' ? 'blue' : 'muted'}>{detail.source === 'global' ? 'الديكشنري العالمي' : detail.source === 'manual' ? 'إضافة يدوية' : 'من المنهج'}</Badge></div></div>
-          <Button variant="ghost" onClick={() => pronounce(detail)}><Volume2 size={16} /> اسمع النطق</Button></div>
-        {detail.arabic && <div className="section-card"><h3>المعنى بالعربي</h3><p dir="rtl" style={{ fontSize: '1.15rem', margin: 0 }}>{detail.arabic}</p></div>}
-        <div className="section-card"><h3>التعريف</h3><p className="en" dir="ltr" style={{ margin: 0 }}>{detail.definitions?.[0] || detail.meaning}</p></div>
-        <div className="section-card"><h3>مثالين</h3>{easyExamples(detail).length ? easyExamples(detail).map((ex, i) => <div key={i} className="en" dir="ltr" style={{ textAlign: 'left', lineHeight: 1.9 }}>• {ex}</div>) : <p className="muted">مفيش أمثلة متاحة.</p>}</div>
-        {detail.phonetic && <div className="section-card"><h3>النطق المكتوب</h3><p className="en" dir="ltr">{phon(detail.phonetic)}</p></div>}
-        <div className="section-card"><h3>اسمعها في الاستخدام</h3>
+          <div className="row"><Badge tone="green">{detail.type}</Badge>{detail.phonetic && <span className="muted" dir="ltr">{phon(detail.phonetic)}</span>}<Badge tone={detail.source === 'global' ? 'blue' : 'muted'}>{detail.source === 'global' ? tr('الديكشنري العالمي') : detail.source === 'manual' ? tr('إضافة يدوية') : tr('من المنهج')}</Badge></div></div>
+          <Button variant="ghost" onClick={() => pronounce(detail)}><Volume2 size={16} /> {tr('اسمع النطق')}</Button></div>
+        {detail.arabic && <div className="section-card"><h3>{tr('المعنى بالعربي')}</h3><p dir="rtl" style={{ fontSize: '1.15rem', margin: 0 }}>{detail.arabic}</p></div>}
+        <div className="section-card"><h3>{tr('التعريف')}</h3><p className="en" dir="ltr" style={{ margin: 0 }}>{detail.definitions?.[0] || detail.meaning}</p></div>
+        <div className="section-card"><h3>{tr('مثالين')}</h3>{easyExamples(detail).length ? easyExamples(detail).map((ex, i) => <div key={i} className="en" dir="ltr" style={{ textAlign: 'left', lineHeight: 1.9 }}>• {ex}</div>) : <p className="muted">{tr('مفيش أمثلة متاحة.')}</p>}</div>
+        {detail.phonetic && <div className="section-card"><h3>{tr('النطق المكتوب')}</h3><p className="en" dir="ltr">{phon(detail.phonetic)}</p></div>}
+        <div className="section-card"><h3>{tr('اسمعها في الاستخدام')}</h3>
           <div className="youglish-btns">{YOUGLISH_ACCENTS.map((a) => <button key={a.code} type="button" className="yg-btn en" onClick={() => setYg({ word: detail.word, accent: a.code })}>{a.label}</button>)}</div>
         </div>
-        {detail.synonyms && detail.synonyms.length > 0 && <div className="section-card"><h3>المرادفات</h3><div className="row">{detail.synonyms.map((x) => <span key={x} className="word-chip en">{x}</span>)}</div></div>}
-        {(detail.sessionIds || []).length > 0 && <div className="section-card"><h3>بتظهر في سيشنات</h3>{detail.sessionIds!.map((sid) => { const sess = data.sessions.find((x) => x.id === sid); return sess ? <div key={sid}><button className="icon-btn" onClick={() => { setDetail(null); go(`/session/${sid}`); }}>{sess.title} ←</button></div> : null; })}</div>}
-        <Button onClick={() => toggle(detail)}>{isSaved(detail.word) ? 'شيلها من المحفوظات' : 'ضيفها لكلماتي'}</Button>
+        {detail.synonyms && detail.synonyms.length > 0 && <div className="section-card"><h3>{tr('المرادفات')}</h3><div className="row">{detail.synonyms.map((x) => <span key={x} className="word-chip en">{x}</span>)}</div></div>}
+        {(detail.sessionIds || []).length > 0 && <div className="section-card"><h3>{tr('بتظهر في سيشنات')}</h3>{detail.sessionIds!.map((sid) => { const sess = data.sessions.find((x) => x.id === sid); return sess ? <div key={sid}><button className="icon-btn" onClick={() => { setDetail(null); go(`/session/${sid}`); }}>{sess.title} ←</button></div> : null; })}</div>}
+        <Button onClick={() => toggle(detail)}>{isSaved(detail.word) ? tr('شيلها من المحفوظات') : tr('ضيفها لكلماتي')}</Button>
       </div>}
     </Modal>
     {yg && <YouGlishDock word={yg.word} accent={yg.accent} onAccent={(accent) => setYg({ word: yg.word, accent })} onClose={() => setYg(null)} />}
 
-    <Modal open={!!manual} title="ضيف كلمة بنفسك" onClose={() => setManual(null)}>
-      <Field label="الكلمة"><input dir="ltr" value={manual?.word || ''} onChange={(e) => setManual({ ...manual, word: e.target.value })} /></Field>
-      <Field label="المعنى بالعربي"><input value={manual?.meaning || ''} onChange={(e) => setManual({ ...manual, meaning: e.target.value })} /></Field>
-      <Field label="النوع"><select value={manual?.type || 'noun'} onChange={(e) => setManual({ ...manual, type: e.target.value })}>{['noun','verb','adjective','adverb','phrase','preposition'].map((x) => <option key={x}>{x}</option>)}</select></Field>
-      <Field label="أمثلة (واحد في كل سطر)"><textarea dir="ltr" value={manual?.examples || ''} onChange={(e) => setManual({ ...manual, examples: e.target.value })} /></Field>
-      <Button onClick={saveManual} disabled={!manual?.word?.trim() || !manual?.meaning?.trim()}>احفظ الكلمة</Button>
+    <Modal open={!!manual} title={tr('ضيف كلمة بنفسك')} onClose={() => setManual(null)}>
+      <Field label={tr('الكلمة')}><input dir="ltr" value={manual?.word || ''} onChange={(e) => setManual({ ...manual, word: e.target.value })} /></Field>
+      <Field label={tr('المعنى بالعربي')}><input value={manual?.meaning || ''} onChange={(e) => setManual({ ...manual, meaning: e.target.value })} /></Field>
+      <Field label={tr('النوع')}><select value={manual?.type || 'noun'} onChange={(e) => setManual({ ...manual, type: e.target.value })}>{['noun','verb','adjective','adverb','phrase','preposition'].map((x) => <option key={x}>{x}</option>)}</select></Field>
+      <Field label={tr('أمثلة (واحد في كل سطر)')}><textarea dir="ltr" value={manual?.examples || ''} onChange={(e) => setManual({ ...manual, examples: e.target.value })} /></Field>
+      <Button onClick={saveManual} disabled={!manual?.word?.trim() || !manual?.meaning?.trim()}>{tr('احفظ الكلمة')}</Button>
     </Modal>
   </div>;
 }

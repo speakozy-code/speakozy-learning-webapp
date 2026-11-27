@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { getTheme, setTheme, type Theme } from '../lib/theme';
+import { tr } from '../lib/i18n';
 
 export function ThemeToggle({ label = false, className = 'icon-btn' }: { label?: boolean; className?: string }) {
   const [t, setT] = useState<Theme>(getTheme());
@@ -10,7 +11,7 @@ export function ThemeToggle({ label = false, className = 'icon-btn' }: { label?:
     return () => window.removeEventListener('speakozy-theme', sync);
   }, []);
   const next: Theme = t === 'dark' ? 'light' : 'dark';
-  const text = t === 'dark' ? 'الثيم الفاتح' : 'الثيم الداكن';
+  const text = t === 'dark' ? tr('الثيم الفاتح') : tr('الثيم الداكن');
   return <button type="button" className={`${className} theme-toggle`} onClick={() => setTheme(next)} aria-label={text} title={text}>
     {t === 'dark' ? <Sun size={18} /> : <Moon size={18} />}{label && <span>{text}</span>}
   </button>;

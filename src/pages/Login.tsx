@@ -1,10 +1,12 @@
 import { siteUrl } from '../lib/subscription';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { LangToggle } from '../components/LangToggle';
 import React, { useState } from 'react';
 import { useApp } from '../lib/store';
 import { Button, Field, Card } from '../components/UI';
 import { go } from '../App';
 import { sbSendPasswordReset } from '../lib/supabase';
+import { tr } from '../lib/i18n';
 
 const LANDING = siteUrl('/');
 
@@ -25,11 +27,11 @@ export default function Login() {
     e?.preventDefault();
     setError('');
     if (mode === 'signup') {
-      if (name.trim().split(/\s+/).filter(Boolean).length < 2) { setError('اكتب اسمك الكامل (اسم أول واسم تاني)'); return; }
-      if (!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(email.trim())) { setError('اكتب إيميل صحيح'); return; }
-      if (!/^(01[0125]\d{8}|\+[1-9]\d{7,14})$/.test(phone.replace(/[\s-]/g, ''))) { setError('رقم الموبايل: لو مصري اكتبه 01xxxxxxxxx، ولو من دولة تانية لازم يبدأ بـ + وكود الدولة (مثال: +966501234567)'); return; }
-      if (password.length < 6) { setError('الباسورد لازم يكون 6 حروف على الأقل'); return; }
-      if (password !== confirm) { setError('الباسورد مش متطابق'); return; }
+      if (name.trim().split(/\s+/).filter(Boolean).length < 2) { setError(tr('اكتب اسمك الكامل (اسم أول واسم تاني)')); return; }
+      if (!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(email.trim())) { setError(tr('اكتب إيميل صحيح')); return; }
+      if (!/^(01[0125]\d{8}|\+[1-9]\d{7,14})$/.test(phone.replace(/[\s-]/g, ''))) { setError(tr('رقم الموبايل: لو مصري اكتبه 01xxxxxxxxx، ولو من دولة تانية لازم يبدأ بـ + وكود الدولة (مثال: +966501234567)')); return; }
+      if (password.length < 6) { setError(tr('الباسورد لازم يكون 6 حروف على الأقل')); return; }
+      if (password !== confirm) { setError(tr('الباسورد مش متطابق')); return; }
     }
     setBusy(true);
     try {
@@ -37,20 +39,20 @@ export default function Login() {
       else await login(email.trim(), password);
       go('/');
     } catch (err: any) {
-      setError(err?.message?.includes('auth/') ? 'إيميل أو باسورد غلط' : (err?.message || 'مش قادرين نكمل، جرّب تاني'));
+      setError(err?.message?.includes('auth/') ? tr('إيميل أو باسورد غلط') : (err?.message || tr('مش قادرين نكمل، جرّب تاني')));
     } finally { setBusy(false); }
   }
 
   async function sendReset(e?: React.FormEvent) {
     e?.preventDefault();
     setError(''); setInfo('');
-    if (!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(email.trim())) { setError('اكتب إيميلك الصحيح'); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(email.trim())) { setError(tr('اكتب إيميلك الصحيح')); return; }
     setBusy(true);
     try {
       await sbSendPasswordReset(email);
-      setInfo('لو الإيميل ده متسجل عندنا، هيوصلك لينك لتغيير الباسورد. راجع الـInbox والـSpam.');
+      setInfo(tr('لو الإيميل ده متسجل عندنا، هيوصلك لينك لتغيير الباسورد. راجع الـInbox والـSpam.'));
     } catch (err: any) {
-      setError(err?.message?.includes('rate') ? 'استنى شوية وجرّب تاني' : 'مش قادرين نبعت الإيميل دلوقتي، جرّب تاني');
+      setError(err?.message?.includes('rate') ? tr('استنى شوية وجرّب تاني') : tr('مش قادرين نبعت الإيميل دلوقتي، جرّب تاني'));
     } finally { setBusy(false); }
   }
 
@@ -65,50 +67,50 @@ export default function Login() {
     <div className="auth-brand"><span className="brand-dot" /> SPEAKOZY</div>
     <div>
       <h1 dir="ltr" className="en">Anyone Can Speak English!</h1>
-      <p>اتعلم إنجليزي بالممارسة مش بالحفظ. سيشنات قصيرة، محتوى واضح، وخطة ماشية معاك خطوة بخطوة.</p>
+      <p>{tr('اتعلم إنجليزي بالممارسة مش بالحفظ. سيشنات قصيرة، محتوى واضح، وخطة ماشية معاك خطوة بخطوة.')}</p>
     </div>
     <div className="row auth-points">
-      <span>سيشنات لايف ومسجلة</span><span>محتوي مخصص ليك</span><span>مستويات منظمة</span><span>كويزات مرتبطة بالدرس</span><span>تصحيح بإشراف المدرب</span>
+      <span>{tr('سيشنات لايف ومسجلة')}</span><span>{tr('محتوي مخصص ليك')}</span><span>{tr('مستويات منظمة')}</span><span>{tr('كويزات مرتبطة بالدرس')}</span><span>{tr('تصحيح بإشراف المدرب')}</span>
     </div>
   </>;
 
   return <div className="auth">
     <div className="auth-hero">{hero}</div>
     <div className="auth-panel">
-      <div className="auth-theme"><ThemeToggle /></div>
+      <div className="auth-theme"><LangToggle /><ThemeToggle /></div>
       <div className="auth-card">
         <div className="auth-mobile-hero">{hero}</div>
         <div className="auth-tabs">
-          <button className={`auth-tab ${mode === 'signin' ? 'active' : ''}`} onClick={() => { setMode('signin'); setError(''); }}>تسجيل الدخول</button>
-          <button className={`auth-tab ${mode === 'signup' ? 'active' : ''}`} onClick={() => { setMode('signup'); setError(''); }}>إنشاء حساب</button>
+          <button className={`auth-tab ${mode === 'signin' ? 'active' : ''}`} onClick={() => { setMode('signin'); setError(''); }}>{tr('تسجيل الدخول')}</button>
+          <button className={`auth-tab ${mode === 'signup' ? 'active' : ''}`} onClick={() => { setMode('signup'); setError(''); }}>{tr('إنشاء حساب')}</button>
         </div>
-        <h2>{mode === 'signin' ? 'أهلًا بعودتك' : 'انضم لـ Speakozy'}</h2>
-        <p className="muted">{mode === 'signin' ? 'سجّل دخول عشان تكمل خطة تعلمك.' : 'اعمل حسابك وابدأ بأول سيشن من أي مستوى.'}</p>
-        {demo && <div className="note" style={{ margin: '1rem 0' }}>وضع تجريبي: الحسابات محفوظة على الجهاز ده. وصّل الخدمة الحقيقية عشان حسابات فعلية.</div>}
+        <h2>{mode === 'signin' ? tr('أهلًا بعودتك') : tr('انضم لـ Speakozy')}</h2>
+        <p className="muted">{mode === 'signin' ? tr('سجّل دخول عشان تكمل خطة تعلمك.') : tr('اعمل حسابك وابدأ بأول سيشن من أي مستوى.')}</p>
+        {demo && <div className="note" style={{ margin: '1rem 0' }}>{tr('وضع تجريبي: الحسابات محفوظة على الجهاز ده. وصّل الخدمة الحقيقية عشان حسابات فعلية.')}</div>}
         {forgot ? <form onSubmit={sendReset}>
-          <h2>نسيت الباسورد؟</h2>
-          <p className="muted">اكتب إيميلك وهنبعتلك لينك تعمل بيه باسورد جديد.</p>
-          <Field label="الإيميل"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required autoComplete="username" /></Field>
+          <h2>{tr('نسيت الباسورد؟')}</h2>
+          <p className="muted">{tr('اكتب إيميلك وهنبعتلك لينك تعمل بيه باسورد جديد.')}</p>
+          <Field label={tr('الإيميل')}><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required autoComplete="username" /></Field>
           {error && <div className="result-bad" style={{ marginBottom: '.8rem' }}>{error}</div>}
           {info && <div className="result-good" style={{ marginBottom: '.8rem' }}>{info}</div>}
-          <Button type="submit" disabled={busy} style={{ width: '100%' }}>{busy ? 'لحظة...' : 'ابعت لينك الاسترجاع'}</Button>
-          <button type="button" className="icon-btn" style={{ marginTop: '.8rem' }} onClick={() => { setForgot(false); setError(''); setInfo(''); }}>← رجوع لتسجيل الدخول</button>
+          <Button type="submit" disabled={busy} style={{ width: '100%' }}>{busy ? tr('لحظة...') : tr('ابعت لينك الاسترجاع')}</Button>
+          <button type="button" className="icon-btn" style={{ marginTop: '.8rem' }} onClick={() => { setForgot(false); setError(''); setInfo(''); }}>{tr('← رجوع لتسجيل الدخول')}</button>
         </form> : <form onSubmit={submit}>
-          {mode === 'signup' && <Field label="الاسم"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="اسمك" required autoComplete="name" /></Field>}
-          {mode === 'signup' && <Field label="رقم الموبايل"><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01xxxxxxxxx أو +966501234567" required inputMode="tel" autoComplete="tel" dir="ltr" style={{ textAlign: 'right' }} /></Field>}
-          <Field label="الإيميل"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required autoComplete="username" /></Field>
-          <Field label="الباسورد"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} /></Field>
-          {mode === 'signup' && <Field label="تأكيد الباسورد"><input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" required autoComplete="new-password" /></Field>}
+          {mode === 'signup' && <Field label={tr('الاسم')}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={tr('اسمك')} required autoComplete="name" /></Field>}
+          {mode === 'signup' && <Field label={tr('رقم الموبايل')}><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={tr('01xxxxxxxxx أو +966501234567')} required inputMode="tel" autoComplete="tel" dir="ltr" style={{ textAlign: 'right' }} /></Field>}
+          <Field label={tr('الإيميل')}><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required autoComplete="username" /></Field>
+          <Field label={tr('الباسورد')}><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} /></Field>
+          {mode === 'signup' && <Field label={tr('تأكيد الباسورد')}><input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" required autoComplete="new-password" /></Field>}
           {error && <div className="result-bad" style={{ marginBottom: '.8rem' }}>{error}</div>}
-          <Button type="submit" disabled={busy} style={{ width: '100%' }}>{busy ? 'لحظة...' : (mode === 'signin' ? 'تسجيل الدخول' : 'إنشاء حساب')}</Button>
-          {mode === 'signin' && !demo && <button type="button" className="icon-btn" style={{ marginTop: '.8rem' }} onClick={() => { setForgot(true); setError(''); }}>نسيت الباسورد؟</button>}
+          <Button type="submit" disabled={busy} style={{ width: '100%' }}>{busy ? tr('لحظة...') : (mode === 'signin' ? tr('تسجيل الدخول') : tr('إنشاء حساب'))}</Button>
+          {mode === 'signin' && !demo && <button type="button" className="icon-btn" style={{ marginTop: '.8rem' }} onClick={() => { setForgot(true); setError(''); }}>{tr('نسيت الباسورد؟')}</button>}
         </form>}
-        <a className="auth-landing" href={LANDING} target="_blank" rel="noreferrer">الرجوع لصفحة Speakozy</a>
+        <a className="auth-landing" href={LANDING} target="_blank" rel="noreferrer">{tr('الرجوع لصفحة Speakozy')}</a>
         {demo && <div className="demo-box">
-          <div className="muted" style={{ fontSize: '.82rem' }}>حسابات تجريبية جاهزة (اضغط عشان تتملي البيانات):</div>
+          <div className="muted" style={{ fontSize: '.82rem' }}>{tr('حسابات تجريبية جاهزة (اضغط عشان تتملي البيانات):')}</div>
           <div className="demo-row">
-            <Button variant="ghost" size="sm" onClick={() => quick('student')}>طالب تجريبي</Button>
-            <Button variant="ghost" size="sm" onClick={() => quick('admin')}>أدمن تجريبي</Button>
+            <Button variant="ghost" size="sm" onClick={() => quick('student')}>{tr('طالب تجريبي')}</Button>
+            <Button variant="ghost" size="sm" onClick={() => quick('admin')}>{tr('أدمن تجريبي')}</Button>
           </div>
         </div>}
       </div>

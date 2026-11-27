@@ -6,6 +6,7 @@ import { pickableLevels, sessionOpen, levelFullyOpen, levelLabel } from '../../l
 import { go } from '../../App';
 
 import { PdfActions } from './materialPdf';
+import { tr, uiDir } from '../../lib/i18n';
 
 export function MaterialsPage() {
   const { user, data, saveProfile } = useApp();
@@ -20,24 +21,24 @@ export function MaterialsPage() {
   const partial = level ? (!admin && !levelFullyOpen(user, level, data.levels)) : false;
   const en = true;
   const L = en ? { title:'Materials', hint:'Pick a level from the list. All levels are available for browsing.', level:'Level', words:'words', ready:'Ready', locked:'Locked', open:'Open lesson', none:'No materials in this level', noneHint:'Materials will appear here once lessons are added.', lesson:'Lesson', pdf:'Open PDF', dl:'Download' } :
-    { title:'الماتيريال', hint:'اختار مستوى من القائمة — كل المستويات متاحة للتصفح.', level:'المستوى', words:'كلمة', ready:'جاهز', locked:'مقفول', open:'افتح الدرس', none:'مفيش ماتيريال في المستوى ده', noneHint:'الماتيريال هتظهر هنا أول ما الدروس تتضاف.', lesson:'الدرس', pdf:'افتح PDF ↗', dl:'نزّل PDF ⬇' };
+    { title:tr('الماتيريال'), hint:tr('اختار مستوى من القائمة — كل المستويات متاحة للتصفح.'), level:tr('المستوى'), words:tr('كلمة'), ready:tr('جاهز'), locked:tr('مقفول'), open:tr('افتح الدرس'), none:tr('مفيش ماتيريال في المستوى ده'), noneHint:tr('الماتيريال هتظهر هنا أول ما الدروس تتضاف.'), lesson:tr('الدرس'), pdf:tr('افتح PDF ↗'), dl:tr('نزّل PDF ⬇') };
   return <div className="stack" dir={en ? 'ltr' : undefined}>
     <PageTour id="materials" />
     <div><h1>{L.title}</h1><p className="muted">{L.hint}</p></div>
     <Card>
       <Field label={L.level}><select value={levelId} onChange={(e) => { const v = e.target.value; setSelected(v); if (!admin && v && v !== user.levelId && pickableLevels(user, data.levels).some((l) => l.id === v)) void saveProfile({ currentLevelId: v }); }}>
-        <option value="">{en ? '— Pick your level —' : '— اختار الليفل بتاعك —'}</option>
+        <option value="">{en ? '— Pick your level —' : tr('— اختار الليفل بتاعك —')}</option>
         {levels.map((l) => {
           return <option key={l.id} value={l.id}>{levelLabel(l)}</option>;
         })}
       </select></Field>
-      {level && <div className="row" style={{ marginTop: '.2rem' }}><Badge tone={partial ? 'muted' : 'green'}>{levelLabel(level)}</Badge><Badge tone="blue">{sessions.length} {en ? 'lessons' : 'دروس'}</Badge></div>}
+      {level && <div className="row" style={{ marginTop: '.2rem' }}><Badge tone={partial ? 'muted' : 'green'}>{levelLabel(level)}</Badge><Badge tone="blue">{sessions.length} {en ? 'lessons' : tr('دروس')}</Badge></div>}
     </Card>
-    {!level && <div className="note" dir="rtl">اختار الليفل بتاعك علشان تبدأ.</div>}
+    {!level && <div className="note" dir={uiDir()}>{tr('اختار الليفل بتاعك علشان تبدأ.')}</div>}
     {level && sessions.length ? <div className="grid g2">{sessions.map((s) => {
       const sessionLocked = !admin && !sessionOpen(user, s, data.levels);
       const wordCount = data.dictionary.filter((w) => (w.sessionIds || []).includes(s.id)).length;
-      const grammarTitle = (s.sections.find((x) => /grammar/i.test(x.title))?.title || (en ? 'Grammar' : 'الجرامر')).replace(/^Grammar\s*[—-]\s*/i, '');
+      const grammarTitle = (s.sections.find((x) => /grammar/i.test(x.title))?.title || (en ? 'Grammar' : tr('الجرامر'))).replace(/^Grammar\s*[—-]\s*/i, '');
       return <Card key={s.id} className="material-card">
         <div className="brief-kicker">{L.lesson} {s.order}</div>
         <h3>{s.title}</h3>

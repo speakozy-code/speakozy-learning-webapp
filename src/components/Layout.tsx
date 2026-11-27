@@ -15,10 +15,12 @@ import { MobileNav } from './layout/MobileNav';
 import { Notices } from './layout/Notices';
 import { FloatingActions } from './layout/FloatingActions';
 import { NotificationsModal } from './layout/NotificationsModal';
+import { tr, setStaffMode } from '../lib/i18n';
 
 /** App chrome. Students get a top header; admins keep the sidebar. */
 export function Layout({ current, children }: { current: string; children: React.ReactNode }) {
   const { user } = useApp();
+  setStaffMode(user?.role === 'admin');
   if (!user) return <>{children}</>;
   return <AuthedLayout current={current}>{children}</AuthedLayout>;
 }
@@ -38,9 +40,9 @@ function AuthedLayout({ current, children }: { current: string; children: React.
   const notices = !admin && <Notices showSubscribe={unsubscribed} push={push} />;
 
   return <>
-    {pull.active && <div className="ptr"><span>{pull.ready ? 'سيب للتحديث ↻' : 'اسحب للتحديث ↓'}</span></div>}
+    {pull.active && <div className="ptr"><span>{pull.ready ? tr('سيب للتحديث ↻') : tr('اسحب للتحديث ↓')}</span></div>}
     {admin && <div className="topbar">
-      <button className="icon-btn" onClick={() => setDrawer(true)} aria-label="القائمة"><Menu size={18} /></button>
+      <button className="icon-btn" onClick={() => setDrawer(true)} aria-label={tr('القائمة')}><Menu size={18} /></button>
       <div className="auth-brand"><img className="brand-logo logo-for-dark" src="./logo-on-dark.png" alt="Speakozy" /><img className="brand-logo logo-for-light" src="./logo-on-light.png" alt="Speakozy" /></div>
       <ThemeToggle />
     </div>}

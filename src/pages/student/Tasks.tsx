@@ -5,6 +5,7 @@ import { Card, Button, Badge, Stat, SectionTitle, Empty, Field, fmtDate } from '
 import { levelFullyOpen, scoreRule, today, levelLabel } from '../../lib/domain';
 import { UpsellModal } from '../../components/Upsell';
 import { isSubscribed, FREE_TASK_WEEKS } from '../../lib/subscription';
+import { tr, uiDir } from '../../lib/i18n';
 
 export function TasksPage() {
   const { user, data, put, remove, grantScore } = useApp();
@@ -19,7 +20,7 @@ export function TasksPage() {
   const doneIds = data.taskCompletions.filter((c) => c.studentId === user.id).map((c) => c.taskId);
   const isDone = (t: any) => doneIds.includes(t.id);
   const statusOf = (t: any) => data.taskCompletions.find((c) => c.studentId === user.id && c.taskId === t.id)?.status || (isDone(t) ? 'approved' : '');
-  const statusBadge = (t: any) => { const st = statusOf(t); return st === 'pending' ? <Badge tone="amber">بانتظار المدرّس</Badge> : st === 'rejected' ? <Badge tone="red">اتردّ — جرّب تاني</Badge> : st === 'approved' ? <Badge tone="green">معتمد</Badge> : null; };
+  const statusBadge = (t: any) => { const st = statusOf(t); return st === 'pending' ? <Badge tone="amber">{tr('بانتظار المدرّس')}</Badge> : st === 'rejected' ? <Badge tone="red">{tr('اتردّ — جرّب تاني')}</Badge> : st === 'approved' ? <Badge tone="green">{tr('معتمد')}</Badge> : null; };
   const levelTasks = mine.filter((t) => (t.instructions || []).length > 0).sort((a, b) => (a.order || 0) - (b.order || 0));
   const otherTasks = mine.filter((t) => !(t.instructions || []).length);
   const groups = selLevel ? [{ l: selLevel, tasks: levelTasks.filter((t) => (t.targetId || user.levelId) === selLevel.id) }].filter((g) => g.tasks.length) : [];
@@ -39,19 +40,19 @@ export function TasksPage() {
   }
   return <div className="stack">
     <PageTour id="tasks" />
-    <div><h1>تاسكاتي اليومية</h1><p className="muted">دي تاسكات يوميه علشان تتكلم كل يوم. هتسجّل ريكورد بتقرا أو بتجاوب على السؤال في تاسك اليوم وتبعته على جروب الواتساب.</p>
-      <a className="btn btn-primary btn-sm" style={{ marginTop: '.6rem' }} href="https://wa.me/201091060951?text=%D8%A8%D8%B9%D8%AA%20%D8%AA%D8%A7%D8%B3%D9%83%20%D8%A7%D9%84%D9%8A%D9%88%D9%85" target="_blank" rel="noreferrer">واتساب</a></div>
+    <div><h1>{tr('تاسكاتي اليومية')}</h1><p className="muted">{tr('دي تاسكات يوميه علشان تتكلم كل يوم. هتسجّل ريكورد بتقرا أو بتجاوب على السؤال في تاسك اليوم وتبعته على جروب الواتساب.')}</p>
+      <a className="btn btn-primary btn-sm" style={{ marginTop: '.6rem' }} href="https://wa.me/201091060951?text=%D8%A8%D8%B9%D8%AA%20%D8%AA%D8%A7%D8%B3%D9%83%20%D8%A7%D9%84%D9%8A%D9%88%D9%85" target="_blank" rel="noreferrer">{tr('واتساب')}</a></div>
     <Card>
-      <Field label="الليفل بتاعك" hint="اختار الليفل بتاعك من القايمة علشان تظهرلك تاسكاته."><select value={sel} onChange={(e) => setSel(e.target.value)}>
-        <option value="">— اختار الليفل بتاعك —</option>
+      <Field label={tr('الليفل بتاعك')} hint={tr('اختار الليفل بتاعك من القايمة علشان تظهرلك تاسكاته.')}><select value={sel} onChange={(e) => setSel(e.target.value)}>
+        <option value="">{tr('— اختار الليفل بتاعك —')}</option>
         {allLevels.map((l) => <option key={l.id} value={l.id}>{levelLabel(l)}</option>)}
       </select></Field>
     </Card>
-    {!sel && <div className="note" dir="rtl">اختار الليفل بتاعك من القايمة اللي فوق علشان تظهرلك التاسكات اليومية بتاعته.</div>}
+    {!sel && <div className="note" dir={uiDir()}>{tr('اختار الليفل بتاعك من القايمة اللي فوق علشان تظهرلك التاسكات اليومية بتاعته.')}</div>}
     <div className="grid g3">
-      <Stat label="إجمالي التاسكات" value={sel ? mine.length : 0} />
-      <Stat label="خلصت" value={sel ? mine.filter(isDone).length : 0} tone="green" />
-      <Stat label="الباقي" value={sel ? mine.filter((t) => !isDone(t)).length : 0} />
+      <Stat label={tr('إجمالي التاسكات')} value={sel ? mine.length : 0} />
+      <Stat label={tr('خلصت')} value={sel ? mine.filter(isDone).length : 0} tone="green" />
+      <Stat label={tr('الباقي')} value={sel ? mine.filter((t) => !isDone(t)).length : 0} />
     </div>
     {levelTasks.length ? <>
     {groups.map(({ l: lvl, tasks: lt }) => <React.Fragment key={lvl.id}>
@@ -73,16 +74,16 @@ export function TasksPage() {
                   const done = isDone(t);
                   return <div key={t.id} className={`task-item ${done ? 'is-done' : ''} ${taskLocked(t) ? 'locked-item' : ''}`} onClick={taskLocked(t) ? () => setUpsell(true) : undefined}>
                     <div className="task-item-head">
-                      <button className={`task-check ${done ? 'checked' : ''}`} onClick={() => toggle(t)} aria-label={done ? 'علّم إنها ما خلصتش' : 'علّم إنها خلصت'}>{done ? '✓' : ''}</button>
+                      <button className={`task-check ${done ? 'checked' : ''}`} onClick={() => toggle(t)} aria-label={done ? tr('علّم إنها ما خلصتش') : tr('علّم إنها خلصت')}>{done ? '✓' : ''}</button>
                       <div className="task-item-title" style={{ cursor: 'default' }}>
                         <span className="task-badge">{t.badge || t.kind}</span>
                         <strong>{t.title}</strong>
                         <span dir="rtl">{statusBadge(t)}</span>
                       </div>
                     </div>
-                    {taskLocked(t) ? <div className="lock-cover" dir="rtl">🔒 اشترك معانا علشان تكمل</div> : <div className="task-instructions" dir="ltr">
+                    {taskLocked(t) ? <div className="lock-cover" dir={uiDir()}>{tr('🔒 اشترك معانا علشان تكمل')}</div> : <div className="task-instructions" dir="ltr">
                       {(t.instructions || []).map((ins, i) => <div key={i} className="task-ins"><span>{ins}</span></div>)}
-                      {t.source === 'generated' && <div className="muted" dir="rtl" style={{ fontSize: '.78rem', marginTop: '.4rem', textAlign: 'right' }}>سؤال عام على موضوع السيشن — ملف السيشن مفيهوش سؤال محادثة لده.</div>}
+                      {t.source === 'generated' && <div className="muted" dir={uiDir()} style={{ fontSize: '.78rem', marginTop: '.4rem', textAlign: 'right' }}>{tr('سؤال عام على موضوع السيشن — ملف السيشن مفيهوش سؤال محادثة لده.')}</div>}
                     </div>}
                   </div>;
                 })}
@@ -92,14 +93,14 @@ export function TasksPage() {
         </Card>;
       })}
     </React.Fragment>)}
-    </> : sel ? <Card><Empty icon="🗂️" title={`مفيش تاسكات لـ ${selLevel?.title || 'مستواك'} لسه`} hint="تاسكات المستوى هتظهر هنا أول ما تتضاف لمستواك." /></Card> : null}
+    </> : sel ? <Card><Empty icon="🗂️" title={tr('مفيش تاسكات لـ {0} لسه', [selLevel?.title || 'مستواك'])} hint={tr('تاسكات المستوى هتظهر هنا أول ما تتضاف لمستواك.')} /></Card> : null}
     {otherTasks.length > 0 && <Card>
-      <SectionTitle title="تاسكات تانية" />
+      <SectionTitle title={tr('تاسكات تانية')} />
       <div className="stack">{otherTasks.map((t) => <div key={t.id} className="row between section-card">
         <div><strong>{t.title}</strong>{t.dueAt && <div className="muted">{fmtDate(t.dueAt)} · {t.kind}</div>}</div>
-        {isDone(t) ? <>{statusBadge(t)}{statusOf(t) === 'rejected' && <Button size="sm" variant="ghost" onClick={() => toggle(t)}>حاول تاني</Button>}</> : <Button size="sm" onClick={() => toggle(t)}>تم</Button>}
+        {isDone(t) ? <>{statusBadge(t)}{statusOf(t) === 'rejected' && <Button size="sm" variant="ghost" onClick={() => toggle(t)}>{tr('حاول تاني')}</Button>}</> : <Button size="sm" onClick={() => toggle(t)}>{tr('تم')}</Button>}
       </div>)}</div>
     </Card>}
-    <UpsellModal open={upsell} onClose={() => setUpsell(false)} what="تاسكات الأسابيع الجاية" />
+    <UpsellModal open={upsell} onClose={() => setUpsell(false)} what={tr('تاسكات الأسابيع الجاية')} />
   </div>;
 }

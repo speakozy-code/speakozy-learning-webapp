@@ -4,6 +4,7 @@ import {
   Headphones, Gift, MessageSquareHeart, Mic2, Gamepad2, Library, Brain, ClipboardCheck, BellRing,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { tr } from '../../lib/i18n';
 
 export interface NavItem { path: string; label: string; ic: LucideIcon }
 
@@ -49,6 +50,6 @@ const SHORT_LABELS: Record<string, string> = {
   'مراجعة النتائج': 'المراجعة', 'التاسكات والإشعارات': 'التاسكات', 'التاسكات اليومية': 'التاسكات',
   'يلا نتكلم': 'نتكلم', 'العب واتعلم': 'العب',
 };
-export const shortLabel = (label: string) => SHORT_LABELS[label] || label.split(' ')[0];
+export const shortLabel = (label: string) => tr(SHORT_LABELS[label] || label.split(' ')[0]);
 
 export const isActivePath = (current: string, path: string) => (path === '/' ? current === '/' : current.startsWith(path));

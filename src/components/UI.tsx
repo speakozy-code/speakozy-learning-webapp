@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Inbox, FolderOpen, Clapperboard, Dices, PartyPopper, Puzzle, CaseSensitive, BookOpen } from 'lucide-react';
+import { tr, localeTag } from '../lib/i18n';
 
 export function Card({ children, className = '', ...rest }: any) {
   return <div className={`card ${className}`} {...rest}>{children}</div>;
@@ -24,7 +25,7 @@ export function Empty({ icon = '📭', title, hint }: any) {
   const Icon = typeof icon === 'string' ? EMPTY_ICONS[icon] : null;
   return <div className="empty"><div className="empty-icon">{Icon ? <Icon size={28} strokeWidth={1.8} /> : icon}</div><h3>{title}</h3>{hint && <p>{hint}</p>}</div>;
 }
-export function Loading({ label = 'بنحمّل...' }: any) {
+export function Loading({ label = tr('بنحمّل...') }: any) {
   return <div className="loading"><span className="spinner" /> {label}</div>;
 }
 export function Tabs({ tabs, active, onChange }: any) {
@@ -42,7 +43,7 @@ export function Modal({ open, title, onClose, children }: any) {
   if (!open) return null;
   return <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
     <div className="modal" role="dialog" aria-modal="true">
-      <div className="modal-head"><h3>{title}</h3><button className="icon-btn" onClick={onClose} aria-label="إغلاق">✕</button></div>
+      <div className="modal-head"><h3>{title}</h3><button className="icon-btn" onClick={onClose} aria-label={tr('إغلاق')}>✕</button></div>
       <div className="modal-body">{children}</div>
     </div>
   </div>;
@@ -59,6 +60,6 @@ export function useToast() {
   const [message, setMessage] = useState('');
   return { message, show: setMessage, node: <Toast message={message} onDone={() => setMessage('')} /> };
 }
-export const fmtDate = (d?: string) => d ? new Date(d).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
-export const fmtDay = (d?: string) => d ? new Date(d).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' }) : '—';
+export const fmtDate = (d?: string) => d ? new Date(d).toLocaleString(localeTag(), { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+export const fmtDay = (d?: string) => d ? new Date(d).toLocaleDateString(localeTag(), { weekday: 'long', day: 'numeric', month: 'long' }) : '—';
 export const isLate = (d?: string) => d ? new Date(d).getTime() < Date.now() : false;

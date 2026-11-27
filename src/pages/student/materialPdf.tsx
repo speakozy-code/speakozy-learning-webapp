@@ -4,6 +4,7 @@ import { useApp } from '../../lib/store';
 import { Button } from '../../components/UI';
 import { pdfAllowed } from '../../lib/domain';
 import { UpsellModal } from '../../components/Upsell';
+import { tr } from '../../lib/i18n';
 
 const MATERIAL_PDF: Record<string, string> = {
   'l5-s1': './materials/1%20-%20Leisure%20Time.pdf',
@@ -36,7 +37,7 @@ export function PdfActions({ s, stop = false, extra = null }: { s: any; stop?: b
   const st = stop ? { onClick: (e: React.MouseEvent) => e.stopPropagation() } : {};
   if (!ok) return <>
     <Button size="sm" variant="ghost" onClick={(e: any) => { e.stopPropagation(); setUpsell(true); }}>🔒 PDF</Button>
-    <UpsellModal open={upsell} onClose={() => setUpsell(false)} what={user.subscribed === false ? 'ملفات PDF' : 'PDF المستويات التانية'} />
+    <UpsellModal open={upsell} onClose={() => setUpsell(false)} what={user.subscribed === false ? tr('ملفات PDF') : tr('PDF المستويات التانية')} />
   </>;
   return <>
     <a className="btn btn-primary btn-sm" href={materialPdf(s)} target="_blank" rel="noreferrer" {...st}>PDF</a>

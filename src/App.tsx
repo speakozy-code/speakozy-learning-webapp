@@ -17,12 +17,13 @@ import ResourcesPage from './pages/Resources';
 import LessonEditor from './pages/LessonEditor';
 import TestimonialsPage from './pages/Testimonials';
 import { AdminDashboard, StudentsPage, CurriculumPage, ContentPage, GrammarStudioPage, QuizzesPage, ReviewsPage, OperationsPage, AdminSettingsPage, CertificatesPage, AdminWordsPage, TaskReviewsPage } from './pages/Admin';
+import { tr, useLang } from './lib/i18n';
 
 class ErrorBoundary extends React.Component<any, { error: any }> {
   state = { error: null as any };
   static getDerivedStateFromError(error: any) { return { error }; }
   render() {
-    if (this.state.error) return <div className="card"><h2>حصلت مشكلة في الصفحة دي — اعمل تحديث للصفحة وبياناتك في أمان</h2><pre dir="ltr" style={{ whiteSpace: 'pre-wrap', fontSize: '.8rem' }}>{String(this.state.error?.stack || this.state.error)}</pre></div>;
+    if (this.state.error) return <div className="card"><h2>{tr('حصلت مشكلة في الصفحة دي — اعمل تحديث للصفحة وبياناتك في أمان')}</h2><pre dir="ltr" style={{ whiteSpace: 'pre-wrap', fontSize: '.8rem' }}>{String(this.state.error?.stack || this.state.error)}</pre></div>;
     return this.props.children;
   }
 }
@@ -44,6 +45,7 @@ export function useRoute() {
 
 export default function App() {
   const { user, ready } = useApp();
+  useLang(); // re-render the whole page when the UI language changes
   useEffect(() => { if (user && user.role !== 'admin') return installScreenGuard(); }, [user?.id, user?.role]);
   const route = useRoute();
   const toast = useToast();
@@ -51,7 +53,7 @@ export default function App() {
   useEffect(() => sbOnPasswordRecovery(() => setRecovering(true)), []);
 
   if (recovering) return <ResetPassword onDone={() => { setRecovering(false); window.location.hash = '#/'; window.location.reload(); }} />;
-  if (!ready) return <Loading label="بنجهز Speakozy..." />;
+  if (!ready) return <Loading label={tr('بنجهز Speakozy...')} />;
   if (!user) {
     if (route === '/trial') return <><TrialPage />{toast.node}<ConsentBanner /></>;
     return <><Login />{toast.node}<ConsentBanner /></>;
