@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Bell, Menu, ChevronDown, User } from 'lucide-react';
 import { engagementProgress, levelScore } from '../../lib/domain';
 import { isSubscribed, siteUrl } from '../../lib/subscription';
@@ -14,6 +14,21 @@ interface Props { user: any; data: any; current: string; unread: number; onBell:
 export function StudentHeader({ user, data, current, unread, onBell, onMenu, onLogout }: Props) {
   const [more, setMore] = useState(false);
   const [profile, setProfile] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+  const userRef = useRef<HTMLDivElement>(null);
+  // close the "More" popover and the account menu on any click/tap outside them (or Escape)
+  useEffect(() => {
+    if (!more && !profile) return;
+    const away = (e: Event) => {
+      const t = e.target as Node;
+      if (more && !moreRef.current?.contains(t)) setMore(false);
+      if (profile && !userRef.current?.contains(t)) setProfile(false);
+    };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { setMore(false); setProfile(false); } };
+    document.addEventListener('pointerdown', away);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('pointerdown', away); document.removeEventListener('keydown', esc); };
+  }, [more, profile]);
   const level = data.levels.find((l: any) => l.id === user.levelId) || data.levels[0];
   const pct = level ? engagementProgress(data, level.id, user.id) : 0;
   const points = level ? levelScore(data, user.id, level.id) : 0;
@@ -30,7 +45,7 @@ export function StudentHeader({ user, data, current, unread, onBell, onMenu, onL
     </a>
     <nav className="tnav-pills" aria-label={tr('التنقل الرئيسي')}>
       {primary.map((n) => <a key={n.path} href={'#' + n.path} className={isActivePath(current, n.path) ? 'active' : ''}>{pillLabel(n)}</a>)}
-      <div className="tnav-more">
+      <div className="tnav-more" ref={moreRef}>
         <button className={moreActive ? 'active' : ''} onClick={() => setMore((m) => !m)} aria-expanded={more}>{tr('المزيد')} <ChevronDown size={15} /></button>
         {more && <div className="tnav-pop" onClick={() => setMore(false)}>
           {rest.map((n) => { const Icon = n.ic; return <a key={n.path} href={'#' + n.path} className={isActivePath(current, n.path) ? 'active' : ''}><Icon size={17} />{tr(n.label)}</a>; })}
@@ -43,7 +58,7 @@ export function StudentHeader({ user, data, current, unread, onBell, onMenu, onL
       <LangToggle />
       <ThemeToggle />
       <button className="tnav-icon tnav-bell" onClick={onBell} aria-label={tr('الإشعارات')} title={tr('الإشعارات')}><Bell size={18} />{unread > 0 && <span className="tnav-badge">{unread}</span>}</button>
-      <div className="tnav-user">
+      <div className="tnav-user" ref={userRef}>
         <button className="tnav-avatar" onClick={() => setProfile((p) => !p)} aria-label={tr('الملف الشخصي')} aria-expanded={profile}>
           <span className="tnav-name">{user.name}</span>
           {isSubscribed(user) && <span className="verified-badge" title={tr('طالب مشترك')}>✓</span>}
