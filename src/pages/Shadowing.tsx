@@ -43,7 +43,7 @@ export default function ShadowingPage() {
             <div className="row between" style={{ gap: '.3rem' }}><Badge tone={full ? 'green' : 'blue'}>{k + 1}</Badge>{!c.active && <Badge tone="amber">{tr('مخفي')}</Badge>}</div>
             <div><strong dir="ltr" style={{ display: 'block' }}>{c.title}</strong>
               <div className="muted" style={{ fontSize: '.8rem', marginTop: '.2rem' }}>{Math.round((c.end - c.start) / 60 * 10) / 10} {tr('دقيقة ·')} {c.lines.length} {tr('جملة')}</div></div>
-            <div>{full ? <Badge tone="green">✓ {tr('اكتمل')}</Badge> : n > 0 ? <Badge tone="amber">{n} / {c.lines.length}</Badge> : <span className="muted" style={{ fontSize: '.85rem' }}>{tr('ابدأ')}</span>}</div>
+            <div>{full ? <Badge tone="green">✓ {tr('اكتمل')}</Badge> : n > 0 ? <Badge tone="amber">{n} / {c.lines.length}</Badge> : <span style={{ display: 'inline-block', background: '#16a34a', color: '#fff', fontWeight: 700, fontSize: '.85rem', padding: '.3rem .9rem', borderRadius: '.5rem' }}>{tr('ابدأ')}</span>}</div>
           </button>;
         })}
       </div> : <Empty icon="🎬" title={tr('كليب الشادوينج لمستوى {0} هيضاف قريبًا', [level?.title || ''])} hint={tr('بنجهز كليب لكل مستوى — هيظهر هنا أول ما يتضاف.')} />}
