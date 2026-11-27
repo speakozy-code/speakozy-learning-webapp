@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Menu, ChevronDown } from 'lucide-react';
+import { Bell, Menu, ChevronDown, User } from 'lucide-react';
 import { engagementProgress, levelScore } from '../../lib/domain';
 import { isSubscribed, siteUrl } from '../../lib/subscription';
 import { ThemeToggle } from '../ThemeToggle';
@@ -48,7 +48,7 @@ export function StudentHeader({ user, data, current, unread, onBell, onMenu, onL
           <span className="tnav-name">{user.name}</span>
           {isSubscribed(user) && <span className="verified-badge" title={tr('طالب مشترك')}>✓</span>}
           <ChevronDown size={15} className="tnav-caret" />
-          <span className="avatar">{user.avatar || '🧑‍🎓'}</span>
+          <span className="tnav-usericon"><User size={18} /></span>
         </button>
         {profile && <ProfileMenu user={user} onClose={() => setProfile(false)} onLogout={onLogout} />}
       </div>

@@ -23,7 +23,7 @@ export function LeaderboardPage() {
     <Tabs tabs={[{ id: 'weekly', label: tr('أسبوعي') }, { id: 'monthly', label: tr('شهري') }, { id: 'total', label: tr('كل الوقت') }]} active={period} onChange={setPeriod} />
     {!data.settings.leaderboard.enabled ? <Card><Empty icon="🔒" title={tr('لوحة الأبطال متوقفة حاليًا')} hint={tr('الأدمن قرر يخفيها مؤقتًا.')} /></Card> : <Card>
       {board.length ? <div className="stack">{board.map((b, i) => <div key={b.id} className={`row between section-card ${b.id === user.id ? 'done' : ''}`}>
-        <div className="row"><span className="node-num">{i + 1}</span><span className="champ-avatar">{b.avatar || '🧑‍🎓'}</span><strong>{b.name}</strong><span className="verified-badge" title={tr('طالب مشترك')}>✓</span>{b.id === user.id && <Badge tone="green">{tr('أنت')}</Badge>}</div>
+        <div className="row"><span className="node-num">{i + 1}</span><strong>{b.name}</strong><span className="verified-badge" title={tr('طالب مشترك')}>✓</span>{b.id === user.id && <Badge tone="green">{tr('أنت')}</Badge>}</div>
         <strong className="green">{b.points} points</strong>
       </div>)}</div> : <Empty title={tr('مفيش مشاركين لسه')} />}
     </Card>}

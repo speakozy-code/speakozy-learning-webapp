@@ -12,7 +12,7 @@ export function AdminBar({ user, unread, onBell, onLogout, children }: { user: a
       <button className="icon-btn bell" onClick={onBell} aria-label="الإشعارات" title="الإشعارات">
         <Bell size={18} />{unread > 0 && <span className="badge badge-red bell-count">{unread}</span>}
       </button>
-      <button className="user-chip" onClick={() => setMenu((m) => !m)} aria-label="الملف الشخصي"><span className="avatar">{user.avatar || '🧑‍💼'}</span></button>
+      <button className="user-chip" onClick={() => setMenu((m) => !m)} aria-label="الملف الشخصي"><span className="user-chip-name">{user.name}</span></button>
     </div>
     {children}
   </div>;

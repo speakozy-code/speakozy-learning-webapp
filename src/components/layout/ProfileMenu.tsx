@@ -10,7 +10,6 @@ export function ProfileMenu({ user, onClose, onLogout }: { user: any; onClose: (
   const nav = (path: string) => () => { onClose(); go(path); };
   return <div className="profile-menu">
     <div className="pm-head">
-      <span className="avatar">{user.avatar || '🧑‍🎓'}</span>
       <span className="pm-who"><b>{user.name}{isSubscribed(user) && <span className="verified-badge" title={tr('طالب مشترك')}>✓</span>}</b><small dir="ltr">{user.email}</small></span>
     </div>
     <button onClick={nav('/profile')}><Settings size={17} />{tr('الحساب والإعدادات')}</button>
