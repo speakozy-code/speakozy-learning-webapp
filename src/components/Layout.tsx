@@ -56,7 +56,7 @@ function AuthedLayout({ current, children }: { current: string; children: React.
       </main>
     </div>
     {drawer && <div className="drawer-scrim" onClick={() => setDrawer(false)} />}
-    <MobileNav nav={nav} current={current} onMore={() => setDrawer(true)} />
+    <MobileNav nav={nav} current={current} onMore={() => setDrawer(true)} admin={admin} />
     <FloatingActions showPricing={unsubscribed} />
     <NotificationsModal open={bell} onClose={() => setBell(false)} notes={notes} admin={admin} user={user} put={put} />
   </>;

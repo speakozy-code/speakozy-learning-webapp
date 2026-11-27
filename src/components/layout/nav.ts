@@ -42,6 +42,8 @@ export const adminNav: NavItem[] = [
 ];
 
 /** Student links shown as pills in the desktop header; everything else goes under "المزيد". */
+/** Bottom bar on phones (students): Words → Shadowing. */
+export const STUDENT_MOBILE = ['/', '/roadmap', '/materials', '/dictionary', '/shadowing'];
 export const STUDENT_PRIMARY = ['/', '/roadmap', '/materials', '/shadowing', '/tasks'];
 
 const SHORT_LABELS: Record<string, string> = {
